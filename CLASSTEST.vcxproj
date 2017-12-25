@@ -1,0 +1,183 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{641959B1-109C-45AA-8B54-95DB10E50277}</ProjectGuid>
+    <RootNamespace>CLASSTEST</RootNamespace>
+    <Keyword>MFCProj</Keyword>
+    <ProjectName>CWCLASS</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>CLASS\ROB;CLASS\CAM;CLASS\CAM\KSJApiInc;CLASS\CAM\IMGInc;CLASS\CAM\DSInc;CLASS\CAM\PTGInc;$(ProjectDir)EXTERN\BCGCBPro;$(ProjectDir)CLASS\COM;$(ProjectDir)CLASS\SOCKET;$(ProjectDir);$(ProjectDir)INC;$(ProjectDir)INC\MotionCard;$(ProjectDir)EXTERN\KDXF\include;$(ProjectDir)EXTERN\opencv\build\include;$(ProjectDir)EXTERN\opencv\build\include\opencv;$(ProjectDir)EXTERN\opencv\build\include\opencv2;E:\wzn\opencv231\build\include;E:\wzn\opencv231\build\include\opencv2;E:\wzn\opencv231\build\include\opencv;EXTERN\MotionCard\INC;$(IncludePath)</IncludePath>
+    <LibraryPath>CLASS\CAM\IMGLib;CLASS\CAM\KSJApiLib;CLASS\CAM\PTGLib;CLASS\CAM\DSLib;$(ProjectDir)LIB\MotionCard;$(ProjectDir)EXTERN\KDXF\libs;$(ProjectDir)EXTERN\opencv\build\x86\vc10\lib;$(ProjectDir)EXTERN\BCGCBPro\lib;EXTERN\MotionCard\LIB;$(LibraryPath)</LibraryPath>
+    <EmbedManifest>false</EmbedManifest>
+    <GenerateManifest>false</GenerateManifest>
+    <SourcePath>$(SourcePath)</SourcePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>opencv_core231d.lib;opencv_highgui231d.lib;opencv_imgproc231d.lib;opencv_calib3d231d.lib</AdditionalDependencies>
+    </Link>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0804</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0804</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="bg1.png" />
+    <None Include="bg2.png" />
+    <None Include="ReadMe.txt" />
+    <None Include="res\bg1.png" />
+    <None Include="res\bg2.png" />
+    <None Include="res\CLASSTEST.ico" />
+    <None Include="res\CLASSTEST.rc2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BOSSCLASS.h" />
+    <ClInclude Include="CLASS\BCG\BCGdlg.h" />
+    <ClInclude Include="CLASS\BCG\CWBCG.h" />
+    <ClInclude Include="CLASS\MFCCTRL\GdipButton.h" />
+    <ClInclude Include="CLASS\MFCCTRL\WMFCBtn.h" />
+    <ClInclude Include="CLASS\MONITOR\explorer1.h" />
+    <ClInclude Include="CLASS\MONITOR\MyBrower.h" />
+    <ClInclude Include="CLASS\MONITOR\Smtp.h" />
+    <ClInclude Include="CLASS\MONITOR\WmonUrl.h" />
+    <ClInclude Include="CLASS\ROB\pinyin.h" />
+    <ClInclude Include="CLASS\ROB\speech_recognizer.h" />
+    <ClInclude Include="CLASS\ROB\TuLing.h" />
+    <ClInclude Include="CLASS\ROB\winrec.h" />
+    <ClInclude Include="CLASS\ROB\WListen.h" />
+    <ClInclude Include="CLASS\ROB\WROBO.h" />
+    <ClInclude Include="CLASS\ROB\WTalk.h" />
+    <ClInclude Include="DefineOfString.h" />
+    <ClInclude Include="CLASSTEST.h" />
+    <ClInclude Include="CLASSTESTDlg.h" />
+    <ClInclude Include="Def.h" />
+    <ClInclude Include="ResDlg.h" />
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="SoftConfig.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="XFunCom.h" />
+    <ClInclude Include="YCIni.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BOSSCLASS.cpp" />
+    <ClCompile Include="class\bcg\bcgdlg.CPP" />
+    <ClCompile Include="CLASS\BCG\CWBCG.cpp" />
+    <ClCompile Include="CLASS\MFCCTRL\GdipButton.cpp" />
+    <ClCompile Include="CLASS\MFCCTRL\WMFCBtn.cpp" />
+    <ClCompile Include="CLASS\MONITOR\explorer1.cpp" />
+    <ClCompile Include="CLASS\MONITOR\MyBrower.cpp" />
+    <ClCompile Include="CLASS\MONITOR\Smtp.cpp" />
+    <ClCompile Include="CLASS\MONITOR\WmonUrl.cpp" />
+    <ClCompile Include="CLASS\ROB\speech_recognizer.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="CLASS\ROB\TuLing.cpp" />
+    <ClCompile Include="CLASS\ROB\winrec.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="CLASS\ROB\WListen.cpp" />
+    <ClCompile Include="CLASS\ROB\WROBO.cpp" />
+    <ClCompile Include="CLASS\ROB\WTalk.cpp" />
+    <ClCompile Include="CLASSTEST.cpp" />
+    <ClCompile Include="CLASSTESTDlg.cpp" />
+    <ClCompile Include="ResDlg.cpp" />
+    <ClCompile Include="SoftConfig.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="XFunCom.cpp" />
+    <ClCompile Include="YCIni.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="CLASSTEST.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties RESOURCE_FILE="CLASSTEST.rc" _x007B_8856F961-340A-11D0-A96B-00C04FD705A2_x007D_="CExplorer1" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>

@@ -1,0 +1,212 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="CLASS">
+      <UniqueIdentifier>{b033364e-8f93-4c98-bdbf-d08772bdea9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CLASS\BCG">
+      <UniqueIdentifier>{978d2967-5a74-4975-9af8-0c33156d017c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CLASS\CWROB">
+      <UniqueIdentifier>{ecae7e9c-2007-4a5b-8aa2-285acd5e24b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CLASS\MFCCTRL">
+      <UniqueIdentifier>{b73f2c97-f57b-410c-b918-89900afd5ab3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="assistant">
+      <UniqueIdentifier>{e4bcb0d9-2ac2-4204-95c2-4fbe55868117}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MONITOR">
+      <UniqueIdentifier>{b751053d-d4cb-447b-8735-7c41439849bc}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+    <None Include="res\CLASSTEST.rc2">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="res\CLASSTEST.ico">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="bg1.png">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="bg2.png">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="res\bg1.png">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="res\bg2.png">
+      <Filter>资源文件</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CLASSTEST.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASSTESTDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="BOSSCLASS.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ResDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Def.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DefineOfString.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\BCG\BCGdlg.h">
+      <Filter>CLASS\BCG</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\BCG\CWBCG.h">
+      <Filter>CLASS\BCG</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\ROB\WTalk.h">
+      <Filter>CLASS\CWROB</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\ROB\WROBO.h">
+      <Filter>CLASS\CWROB</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\ROB\WListen.h">
+      <Filter>CLASS\CWROB</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\ROB\speech_recognizer.h">
+      <Filter>CLASS\CWROB</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\ROB\winrec.h">
+      <Filter>CLASS\CWROB</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\ROB\pinyin.h">
+      <Filter>CLASS\CWROB</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\MFCCTRL\WMFCBtn.h">
+      <Filter>CLASS\MFCCTRL</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\MFCCTRL\GdipButton.h">
+      <Filter>CLASS\MFCCTRL</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\ROB\TuLing.h">
+      <Filter>CLASS\CWROB</Filter>
+    </ClInclude>
+    <ClInclude Include="YCIni.h">
+      <Filter>assistant</Filter>
+    </ClInclude>
+    <ClInclude Include="XFunCom.h">
+      <Filter>assistant</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\MONITOR\WmonUrl.h">
+      <Filter>MONITOR</Filter>
+    </ClInclude>
+    <ClInclude Include="SoftConfig.h">
+      <Filter>assistant</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\MONITOR\MyBrower.h">
+      <Filter>MONITOR</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\MONITOR\explorer1.h">
+      <Filter>MONITOR</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\MONITOR\Smtp.h">
+      <Filter>MONITOR</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CLASSTEST.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASSTESTDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="BOSSCLASS.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ResDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\BCG\CWBCG.cpp">
+      <Filter>CLASS\BCG</Filter>
+    </ClCompile>
+    <ClCompile Include="class\bcg\bcgdlg.CPP">
+      <Filter>CLASS\BCG</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\ROB\WTalk.cpp">
+      <Filter>CLASS\CWROB</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\ROB\WROBO.cpp">
+      <Filter>CLASS\CWROB</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\ROB\WListen.cpp">
+      <Filter>CLASS\CWROB</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\ROB\speech_recognizer.c">
+      <Filter>CLASS\CWROB</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\ROB\winrec.c">
+      <Filter>CLASS\CWROB</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\MFCCTRL\WMFCBtn.cpp">
+      <Filter>CLASS\MFCCTRL</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\MFCCTRL\GdipButton.cpp">
+      <Filter>CLASS\MFCCTRL</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\ROB\TuLing.cpp">
+      <Filter>CLASS\CWROB</Filter>
+    </ClCompile>
+    <ClCompile Include="XFunCom.cpp">
+      <Filter>assistant</Filter>
+    </ClCompile>
+    <ClCompile Include="YCIni.cpp">
+      <Filter>assistant</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\MONITOR\WmonUrl.cpp">
+      <Filter>MONITOR</Filter>
+    </ClCompile>
+    <ClCompile Include="SoftConfig.cpp">
+      <Filter>assistant</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\MONITOR\MyBrower.cpp">
+      <Filter>MONITOR</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\MONITOR\explorer1.cpp">
+      <Filter>MONITOR</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\MONITOR\Smtp.cpp">
+      <Filter>MONITOR</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="CLASSTEST.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
