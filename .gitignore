@@ -1,5 +1,2 @@
-
-*.dll
-*.obj
 Debug/*
 EXTERN/*
