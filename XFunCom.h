@@ -12,7 +12,6 @@
 #include "cv.h"
 #include "minmax.h"
 #endif
-void CWlog(CString mlog);
 #ifndef YX_BYTE//8 - bit 1 - channel 
 #define YX_BYTE(img,y,x) ((BYTE*)(img->imageData + (y)*img->widthStep))[x]
 #endif
@@ -100,28 +99,21 @@ typedef struct FloatPoint3D
 	}
 };
 
-class LTimeCount
-{
-private:	
-	double			UseTime;				// 算法处理时间(单位:秒)
-	LARGE_INTEGER	Time, Frequency, old;	// 计数值
-
-public:	
-	void Start(); // 计时开始
-	void End(); // 计时结束
-	double GetUseTime(); // 获得算法处理时间(单位:秒)
-	void WaitTime(double waitTime);
-};
 
 
-int GetRand(int min,int max);
+
 /************************************************************************/
 /*                      文件/文件夹操作                                 */
 /************************************************************************/
+//判断文件夹是否存在
 BOOL FolderExist(CString strPath);
+//判断文件是否存在
 BOOL FileExist(CString strFileName);
+//获取对话框中的全部文件
 void GetFileFromDir(CString csDirPath,std::vector<CString> &m_FileList )  ;
+//创建文件夹
 BOOL CreateFolder(CString strPath);
+//创建完整路径
 BOOL CreateAllDirectories(CString strDir);
 //获取文件夹路径
 CString GetDirPathByDialog();
@@ -133,6 +125,10 @@ BOOL DelFilesOfDir(CString strDir);
 BOOL CopyFolder(CString strFromDir,CString strToDir);
 //获取程序运行当前路径
 CString GetCurRunDir();
+//删除非空文件夹
+bool DeleteDirectory(CString strDir);
+//获取exe文件夹路径
+CString GetAppPath();
 /************************************************************************/
 /*                    文件/文件夹操作结束                               */
 /************************************************************************/
@@ -200,10 +196,9 @@ void DrawCrossOnImage(IplImage *Img,CvPoint pt,int nLength,CvScalar rgb);
 /*								图像操作结束                             */
 /************************************************************************/
 
-void WaitTimeShowProgressDlg(int waitTime);
-bool DeleteDirectory(CString strDir);
-CString GetAppPath();
-
+/************************************************************************/
+/*								计时操作开始                             */
+/************************************************************************/
 // 精确获得算法处理时间的类(毫秒量级)
 
 class CTimeCount
@@ -230,5 +225,29 @@ public:
 		return UseTime;
 	}
 };
+class LTimeCount
+{
+private:	
+	double			UseTime;				// 算法处理时间(单位:秒)
+	LARGE_INTEGER	Time, Frequency, old;	// 计数值
+
+public:	
+	void Start(); // 计时开始
+	void End(); // 计时结束
+	double GetUseTime(); // 获得算法处理时间(单位:秒)
+	void WaitTime(double waitTime);
+};
+/************************************************************************/
+/*								计时操作结束                             */
+/************************************************************************/
+
+/************************************************************************/
+/*								其它操作开始                             */
+/************************************************************************/
+void CWlog(CString mlog);
+int GetRand(int min,int max);
+/************************************************************************/
+/*								其它操作结束                             */
+/************************************************************************/
 
 #endif
