@@ -1,5 +1,6 @@
 #if !defined(AFX_XFUNCOM_H_INCLUDED_)
 #define AFX_XFUNCOM_H_INCLUDED_
+//#define USE_OPENCV 1
 #include "resource.h"
 #include <vector>
 #include <algorithm>
@@ -7,16 +8,11 @@
 #include <afxcmn.h>
 #include <stdlib.h>
 #include <afxmt.h>
-
-
-void CWlog(CString mlog);
-
-
-
-//#include "cv.h"
+#ifdef USE_OPENCV
+#include "cv.h"
 #include "minmax.h"
-//
-
+#endif
+void CWlog(CString mlog);
 #ifndef YX_BYTE//8 - bit 1 - channel 
 #define YX_BYTE(img,y,x) ((BYTE*)(img->imageData + (y)*img->widthStep))[x]
 #endif
@@ -127,6 +123,8 @@ BOOL FileExist(CString strFileName);
 void GetFileFromDir(CString csDirPath,std::vector<CString> &m_FileList )  ;
 BOOL CreateFolder(CString strPath);
 BOOL CreateAllDirectories(CString strDir);
+//获取文件夹路径
+CString GetDirPathByDialog();
 //查找文件夹中相同后缀的文件
 CString FindFileSameExtension(CString strPath,CString strExtension);
 //删除路径和路径中的文件
@@ -183,19 +181,21 @@ int IsCStringExistSymble(CString str);
 //填充位图头文件
 void FillBitmapInfo(BITMAPINFO* bmi, int width, int height, int bpp, int origin);
 /************************************************************************/
-/* 函数功能：在图像上绘制		十字线                                  */
-/*	   参数：Img 目标图像 pt目标位置 nLength 十字线线长 rgb颜色         */
-/************************************************************************/
-//void DrawCrossOnImage(IplImage *Img,CvPoint pt,int nLength,CvScalar rgb);
-/************************************************************************/
 /* 函数功能：在DC上绘制			图形                                    */
 /************************************************************************/
 void DrawGraphOnDC(CDC *pDC,DrawShape DShape);
+#ifdef USE_OPENCV
 /************************************************************************/
 /* 函数功能：在DC上绘制图像		                                        */
 /*	   参数：Img 图像 MemDc  目标DC								        */
 /************************************************************************/
-//void DrawImageOnMemDc(IplImage *Img,CDC *pMemDC,CBitmap *bmp,float fImageScale);
+void DrawImageOnMemDc(IplImage *Img,CDC *pMemDC,CBitmap *bmp,float fImageScale);
+/************************************************************************/
+/* 函数功能：在图像上绘制		十字线                                  */
+/*	   参数：Img 目标图像 pt目标位置 nLength 十字线线长 rgb颜色         */
+/************************************************************************/
+void DrawCrossOnImage(IplImage *Img,CvPoint pt,int nLength,CvScalar rgb);
+#endif
 /************************************************************************/
 /*								图像操作结束                             */
 /************************************************************************/
@@ -203,69 +203,9 @@ void DrawGraphOnDC(CDC *pDC,DrawShape DShape);
 void WaitTimeShowProgressDlg(int waitTime);
 bool DeleteDirectory(CString strDir);
 CString GetAppPath();
-//进度条对话框
-// class CProgressDlg : public CDialog
-// {
-// 	// Construction / Destruction
-// public:
-// 	CProgressDlg(UINT nCaptionID = 0);   // standard constructor
-// 	~CProgressDlg();
-// 
-// 	BOOL Create(CWnd *pParent=NULL);
-// 
-// 	// Checking for Cancel button
-// 	BOOL CheckCancelButton();
-// 	// Progress Dialog manipulation
-// 	void SetStatus(LPCTSTR lpszMessage);
-// 	void SetRange(int nLower,int nUpper);
-// 	int  SetStep(int nStep);
-// 	int  SetPos(int nPos);
-// 	int  OffsetPos(int nPos);
-// 	int  StepIt();
-// 	enum { IDD = IDD_ABOUTBOX };   
-// 
-// 	// Dialog Data
-// 	//{{AFX_DATA(CProgressDlg)
-// 	CProgressCtrl	m_Progress;
-// 	//}}AFX_DATA
-// 
-// 	// Overrides
-// 	// ClassWizard generated virtual function overrides
-// 	//{{AFX_VIRTUAL(CProgressDlg)
-// public:
-// 	virtual BOOL DestroyWindow();
-// protected:
-// 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-// 	//}}AFX_VIRTUAL
-// 
-// 	// Implementation
-// public:
-// 	UINT m_nCaptionID;
-// 	int m_nLower;
-// 	int m_nUpper;
-// 	int m_nStep;
-// 
-// 	BOOL m_bCancel;
-// 	BOOL m_bParentDisabled;
-// 
-// 	void ReEnableParent();
-// 
-// 	virtual void OnCancel();
-// 	virtual void OnOK() {}; 
-// 	void UpdatePercent(int nCurrent);
-// 	void PumpMessages();
-// 
-// 	// Generated message map functions
-// 	//{{AFX_MSG(CProgressDlg)
-// 	virtual BOOL OnInitDialog();
-// 	//}}AFX_MSG
-// 	DECLARE_MESSAGE_MAP()
-// 	afx_msg void OnBnClickedCancel();
-// };
-
 
 // 精确获得算法处理时间的类(毫秒量级)
-/*
+
 class CTimeCount
 {
 private:	
@@ -290,5 +230,5 @@ public:
 		return UseTime;
 	}
 };
-*/
+
 #endif

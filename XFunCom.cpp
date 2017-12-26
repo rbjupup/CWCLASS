@@ -344,23 +344,7 @@ int IsCStringExistSymble(CString str)
 /*						  字符串常用操作结束						    */
 /************************************************************************/
 
-/////////////////////////////////////////////////////////////////////////////
-// CProgressDlg dialog
-// CProgressDlg::CProgressDlg(UINT nCaptionID)
-// {
-// 	m_nCaptionID = CG_IDS_PROGRESS_CAPTION;
-// 	if (nCaptionID != 0)
-// 		m_nCaptionID = nCaptionID;
-// 
-// 	m_bCancel=FALSE;
-// 	m_nLower=0;
-// 	m_nUpper=100;
-// 	m_nStep=10;
-// 	//{{AFX_DATA_INIT(CProgressDlg)
-// 	// NOTE: the ClassWizard will add member initialization here
-// 	//}}AFX_DATA_INIT
-// 	m_bParentDisabled = FALSE;
-// }
+
 /************************************************************************/
 /*								 图像操作开始                           */
 /************************************************************************/
@@ -390,25 +374,26 @@ void FillBitmapInfo(BITMAPINFO* bmi, int width, int height, int bpp, int origin)
 		}
 	}
 }
+#ifdef USE_OPENCV
 //绘制十字线
-// void DrawCrossOnImage(IplImage *Img,CvPoint pt,int nLength,CvScalar rgb)
-// {
-// 	if (Img == NULL ||pt.x<0||pt.y<0||pt.x>Img->width||pt.y>Img->height)
-// 	{
-// 		return;
-// 	}
-// 	CvPoint pt1,pt2,pt3,pt4;
-// 	pt1.x = pt.x-nLength<0?0:pt.x-nLength;
-// 	pt1.y = pt.y;
-// 	pt2.x = pt.x+nLength>Img->width?Img->width:pt.x+nLength;
-// 	pt2.y = pt.y;
-// 	pt3.x = pt.x;
-// 	pt3.y = pt.y-nLength<0?0:pt.y-nLength;
-// 	pt4.x = pt.x;
-// 	pt4.y = pt.y+nLength>Img->height?Img->height:pt.y+nLength;
-// 	cvLine(Img,pt1,pt2,rgb,2);
-// 	cvLine(Img,pt3,pt4,rgb,2);
-// }
+void DrawCrossOnImage(IplImage *Img,CvPoint pt,int nLength,CvScalar rgb)
+{
+	if (Img == NULL ||pt.x<0||pt.y<0||pt.x>Img->width||pt.y>Img->height)
+	{
+		return;
+	}
+	CvPoint pt1,pt2,pt3,pt4;
+	pt1.x = pt.x-nLength<0?0:pt.x-nLength;
+	pt1.y = pt.y;
+	pt2.x = pt.x+nLength>Img->width?Img->width:pt.x+nLength;
+	pt2.y = pt.y;
+	pt3.x = pt.x;
+	pt3.y = pt.y-nLength<0?0:pt.y-nLength;
+	pt4.x = pt.x;
+	pt4.y = pt.y+nLength>Img->height?Img->height:pt.y+nLength;
+	cvLine(Img,pt1,pt2,rgb,2);
+	cvLine(Img,pt3,pt4,rgb,2);
+}
 /************************************************************************/
 /* 函数功能：在DC上绘制			图形                                    */
 /************************************************************************/
@@ -466,250 +451,42 @@ void DrawGraphOnDC(CDC *pDC,DrawShape DShape)
 /* 函数功能：在DC上绘制图像		                                        */
 /*	   参数：Img 图像 MemDc  目标DC								        */
 /************************************************************************/
-// void DrawImageOnMemDc(IplImage *Img,CDC *pMemDC,CBitmap *bmp,float fImageScale)
-// {
-// 	ASSERT(Img);
-// 	ASSERT(pMemDC);
-//   	uchar buffer[sizeof(BITMAPINFOHEADER) + 1024];
-//   	BITMAPINFO* bmi = (BITMAPINFO*)buffer;
-//   	int bmp_w = Img->width;
-//   	int bmp_h = Img->height;
-//   
-//   	int bpp = Img ? (Img->depth & 255)*Img->nChannels : 0;
-//   	//代替cvvimage的Bpp()函数
-//   
-//   	FillBitmapInfo( bmi, bmp_w, bmp_h, bpp,Img->origin );
-//   
-//   	HBITMAP hOldBitmap;
-//   	CBitmap *pOldBit = NULL;
-//   
-// 	pOldBit = pMemDC->SelectObject(bmp);									//将位图选择进内存DC
-// 	pMemDC->FillSolidRect(CRect(0,0,bmp_w,bmp_h),RGB(255,255,255)); //按原来背景填充客户区，不然会是黑色
-// 	pMemDC->SetStretchBltMode(COLORONCOLOR);
-// 
-// 	int t = StretchDIBits(
-// 		pMemDC->GetSafeHdc(),0,0,int(Img->width * fImageScale+0.5), int(Img->height * fImageScale+0.5),0,0, bmp_w, bmp_h,
-// 		Img->imageData, bmi, DIB_RGB_COLORS,SRCCOPY );
-//   	pMemDC->SelectObject(&hOldBitmap);
-//   	if (hOldBitmap)
-//   	{
-//   		DeleteObject(hOldBitmap);
-//   		hOldBitmap=NULL;
-//   	}
-// }
+void DrawImageOnMemDc(IplImage *Img,CDC *pMemDC,CBitmap *bmp,float fImageScale)
+{
+	ASSERT(Img);
+	ASSERT(pMemDC);
+  	uchar buffer[sizeof(BITMAPINFOHEADER) + 1024];
+  	BITMAPINFO* bmi = (BITMAPINFO*)buffer;
+  	int bmp_w = Img->width;
+  	int bmp_h = Img->height;
+  
+  	int bpp = Img ? (Img->depth & 255)*Img->nChannels : 0;
+  	//代替cvvimage的Bpp()函数
+  
+  	FillBitmapInfo( bmi, bmp_w, bmp_h, bpp,Img->origin );
+  
+  	HBITMAP hOldBitmap;
+  	CBitmap *pOldBit = NULL;
+  
+	pOldBit = pMemDC->SelectObject(bmp);									//将位图选择进内存DC
+	pMemDC->FillSolidRect(CRect(0,0,bmp_w,bmp_h),RGB(255,255,255)); //按原来背景填充客户区，不然会是黑色
+	pMemDC->SetStretchBltMode(COLORONCOLOR);
+
+	int t = StretchDIBits(
+		pMemDC->GetSafeHdc(),0,0,int(Img->width * fImageScale+0.5), int(Img->height * fImageScale+0.5),0,0, bmp_w, bmp_h,
+		Img->imageData, bmi, DIB_RGB_COLORS,SRCCOPY );
+  	pMemDC->SelectObject(&hOldBitmap);
+  	if (hOldBitmap)
+  	{
+  		DeleteObject(hOldBitmap);
+  		hOldBitmap=NULL;
+  	}
+}
+#endif
 /************************************************************************/
 /*								图像操作结束                             */
 /************************************************************************/
-// CProgressDlg::~CProgressDlg()
-// {
-// 	if(m_hWnd!=NULL)
-// 		DestroyWindow();
-// }
-// 
-// BOOL CProgressDlg::DestroyWindow()
-// {
-// 	ReEnableParent();
-// 	return CDialog::DestroyWindow();
-// }
-// 
-// void CProgressDlg::ReEnableParent()
-// {
-// 	if(m_bParentDisabled && (m_pParentWnd!=NULL))
-// 		m_pParentWnd->EnableWindow(TRUE);
-// 	m_bParentDisabled=FALSE;
-// }
-// 
-// BOOL CProgressDlg::Create(CWnd *pParent)
-// {
-// 	// Get the true parent of the dialog
-// 	m_pParentWnd = CWnd::GetSafeOwner(pParent);
-// 
-// 	// m_bParentDisabled is used to re-enable the parent window
-// 	// when the dialog is destroyed. So we don't want to set
-// 	// it to TRUE unless the parent was already enabled.
-// 
-// 	if((m_pParentWnd!=NULL) && m_pParentWnd->IsWindowEnabled())
-// 	{
-// 		m_pParentWnd->EnableWindow(FALSE);
-// 		m_bParentDisabled = TRUE;
-// 	}
-// 
-// 	if(!CDialog::Create(CProgressDlg::IDD,pParent))
-// 	{
-// 		ReEnableParent();
-// 		return FALSE;
-// 	}
-// 
-// 	return TRUE;
-// }
-// 
-// void CProgressDlg::DoDataExchange(CDataExchange* pDX)
-// {
-// 	CDialog::DoDataExchange(pDX);
-// 	//{{AFX_DATA_MAP(CProgressDlg)
-// 	DDX_Control(pDX, CG_IDC_PROGDLG_PROGRESS, m_Progress);
-// 	//}}AFX_DATA_MAP
-// }
-// 
-// BEGIN_MESSAGE_MAP(CProgressDlg, CDialog)
-// 	//{{AFX_MSG_MAP(CProgressDlg)
-// 	//}}AFX_MSG_MAP
-// 	ON_BN_CLICKED(IDCANCEL, &CProgressDlg::OnBnClickedCancel)
-// END_MESSAGE_MAP()
-// 
-// void CProgressDlg::SetStatus(LPCTSTR lpszMessage)
-// {
-// // 	ASSERT(m_hWnd); // Don't call this _before_ the dialog has
-// // 	// been created. Can be called from OnInitDialog
-// // 	CWnd *pWndStatus = GetDlgItem(CG_IDC_PROGDLG_STATUS);
-// // 	// Verify that the static text control exists
-// // 	ASSERT(pWndStatus!=NULL);
-// // 	pWndStatus->SetWindowText(lpszMessage);
-// }
-// 
-// void CProgressDlg::OnCancel()
-// {
-// 	m_bCancel=TRUE;
-// }
-// 
-// void CProgressDlg::SetRange(int nLower,int nUpper)
-// {
-// 	m_nLower = nLower;
-// 	m_nUpper = nUpper;
-// 	m_Progress.SetRange(nLower,nUpper);
-// }
-// 
-// int CProgressDlg::SetPos(int nPos)
-// {
-// 	PumpMessages();
-// 	int iResult = m_Progress.SetPos(nPos);
-// 	UpdatePercent(nPos);
-// 	return iResult;
-// }
-// 
-// int CProgressDlg::SetStep(int nStep)
-// {
-// 	m_nStep = nStep; // Store for later use in calculating percentage
-// 	return m_Progress.SetStep(nStep);
-// }
-// 
-// int CProgressDlg::OffsetPos(int nPos)
-// {
-// 	PumpMessages();
-// 	int iResult = m_Progress.OffsetPos(nPos);
-// 	UpdatePercent(iResult+nPos);
-// 	return iResult;
-// }
-// 
-// int CProgressDlg::StepIt()
-// {
-// 	PumpMessages();
-// 	int iResult = m_Progress.StepIt();
-// 	UpdatePercent(iResult+m_nStep);
-// 	return iResult;
-// }
-// 
-// void CProgressDlg::PumpMessages()
-// {
-// 	// Must call Create() before using the dialog
-// 	ASSERT(m_hWnd!=NULL);
-// 
-// 	MSG msg;
-// 	// Handle dialog messages
-// 	while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-// 	{
-// 		if(!IsDialogMessage(&msg))
-// 		{
-// 			TranslateMessage(&msg);
-// 			DispatchMessage(&msg);  
-// 		}
-// 	}
-// }
-// 
-// BOOL CProgressDlg::CheckCancelButton()
-// {
-// 	// Process all pending messages
-// 	PumpMessages();
-// 
-// 	// Reset m_bCancel to FALSE so that
-// 	// CheckCancelButton returns FALSE until the user
-// 	// clicks Cancel again. This will allow you to call
-// 	// CheckCancelButton and still continue the operation.
-// 	// If m_bCancel stayed TRUE, then the next call to
-// 	// CheckCancelButton would always return TRUE
-// 
-// 	BOOL bResult = m_bCancel;
-// 	m_bCancel = FALSE;
-// 
-// 	return bResult;
-// }
-// 
-// void CProgressDlg::UpdatePercent(int nNewPos)
-// {
-// 	CWnd *pWndPercent = GetDlgItem(CG_IDC_PROGDLG_PERCENT);
-// 	int nPercent;
-// 
-// 	int nDivisor = m_nUpper - m_nLower;
-// 	ASSERT(nDivisor>0);  // m_nLower should be smaller than m_nUpper
-// 
-// 	int nDividend = (nNewPos - m_nLower);
-// 	ASSERT(nDividend>=0);   // Current position should be greater than m_nLower
-// 
-// 	nPercent = nDividend * 100 / nDivisor;
-// 
-// 	// Since the Progress Control wraps, we will wrap the percentage
-// 	// along with it. However, don't reset 100% back to 0%
-// 	if(nPercent!=100)
-// 		nPercent %= 100;
-// 
-// 	// Display the percentage
-// 	CString strBuf;
-// 	strBuf.Format(_T("%d%c"),nPercent,_T('%'));
-// 
-// 	CString strCur; // get current percentage
-// 	pWndPercent->GetWindowText(strCur);
-// 
-// 	if (strCur != strBuf)
-// 		pWndPercent->SetWindowText(strBuf);
-// }
-// 
-// /////////////////////////////////////////////////////////////////////////////
-// // CProgressDlg message handlers
-// 
-// BOOL CProgressDlg::OnInitDialog() 
-// {
-// 	CDialog::OnInitDialog();
-// 	m_Progress.SetRange(m_nLower,m_nUpper);
-// 	m_Progress.SetStep(m_nStep);
-// 	m_Progress.SetPos(m_nLower);
-// 
-// 	CString strCaption;
-// 	VERIFY(strCaption.LoadString(m_nCaptionID));
-// 	SetWindowText(strCaption);
-// 
-// 	return TRUE;  
-// }
-// 
-// 
-// void WaitTimeShowProgressDlg(int waitTime)
-// {
-// 	CProgressDlg * MsgHandler = new CProgressDlg();
-// 	MsgHandler->Create(NULL);
-// 	MsgHandler->SetStatus("Start OT");
-// 	for(int i=0; i<10; i++)
-// 	{
-// 		Sleep(waitTime/10);
-// 		MsgHandler->SetPos(100 * i/10);
-// 	}
-// 	MsgHandler->DestroyWindow();
-// 	delete  MsgHandler;
-// }
-// 
-// void CProgressDlg::OnBnClickedCancel()
-// {
-// 	// TODO: 在此添加控件通知处理程序代码
-// 	CDialog::OnCancel();
-// }
+
 
 //获取程序运行当前路径
 CString GetCurRunDir()
@@ -750,4 +527,35 @@ CString GetAppPath()
 	Tmp.Format("%s%s",driver,fullPath);
 	return Tmp;
 }
+
+CString GetDirPathByDialog()
+{  
+	TCHAR           szFolderPath[MAX_PATH] = {0};  
+	CString         strFolderPath = TEXT("");  
+
+	BROWSEINFO      sInfo;  
+	::ZeroMemory(&sInfo, sizeof(BROWSEINFO));  
+	sInfo.pidlRoot   = 0;  
+	sInfo.lpszTitle   = _T("请选择一个文件夹：");  
+	sInfo.ulFlags   = BIF_DONTGOBELOWDOMAIN | BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE | BIF_EDITBOX;  
+	sInfo.lpfn     = NULL;  
+
+	// 显示文件夹选择对话框  
+	LPITEMIDLIST lpidlBrowse = ::SHBrowseForFolder(&sInfo);   
+	if (lpidlBrowse != NULL)  
+	{  
+		// 取得文件夹名  
+		if (::SHGetPathFromIDList(lpidlBrowse,szFolderPath))    
+		{  
+			strFolderPath = szFolderPath;  
+		}  
+	}  
+	if(lpidlBrowse != NULL)  
+	{  
+		::CoTaskMemFree(lpidlBrowse);  
+	}  
+
+	return strFolderPath;  
+
+} 
 
