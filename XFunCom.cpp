@@ -1,10 +1,16 @@
 
 #include "stdafx.h"
 #include "XFunCom.h"
+#include <WinInet.h>
+#include <Iphlpapi.h>
+#pragma comment(lib,"Wininet.lib")
+#pragma comment(lib,"Iphlpapi.lib")
+#include <ctime>
 
 
-///////////////////////////////////////////////////
-// 精确获得算法处理时间的类(毫秒量级)
+//////////////////////////////////////////////////////////////////////////
+//							时间操作开始
+//////////////////////////////////////////////////////////////////////////
 void LTimeCount::Start() // 计时开始
 {
 	QueryPerformanceFrequency( &Frequency );
@@ -32,13 +38,36 @@ void LTimeCount::WaitTime(double waitTime)
 		tt.End();
 	}
 }
-
-int GetRand(int min,int max)
+//可释放CPU,消息循环队列的等待
+void XWaitTime(float fTime)
 {
-	int m_nMax;
-	m_nMax=RAND_MAX;
-	return (int)(rand()*(max-min)/m_nMax+min);
+	LTimeCount tc;
+	tc.Start();	
+	MSG msg;
+	bool bTimeOut = false;
+	HANDLE eWaitTimeEvent = NULL;
+	eWaitTimeEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	while(!bTimeOut)
+	{
+		if (PeekMessage(&msg, NULL, 0, 0,0))
+		{
+			GetMessage(&msg, NULL, 0, 0);
+			DispatchMessage(&msg);
+		}
+		tc.End();
+		if (tc.GetUseTime()>fTime)
+		{
+			bTimeOut =  true;
+		}
+		WaitForSingleObject(eWaitTimeEvent,1);
+	}
+
 }
+//////////////////////////////////////////////////////////////////////////
+//							时间操作结束
+//////////////////////////////////////////////////////////////////////////
+
+
 
 /////////////////目录检查、文件检查、目录创建
 BOOL FolderExist(CString strPath)
@@ -84,6 +113,29 @@ void GetFileFromDir(CString csDirPath,std::vector<CString> &m_FileList )
 	}  
 }  
 
+void OpenFilePath(vector<CString> &FilePathVector,CString strInitPath)
+{
+	CString t_odbFilePath;
+	CFileDialog OpenDialog(TRUE,NULL,strInitPath,OFN_ALLOWMULTISELECT|OFN_ENABLESIZING|OFN_HIDEREADONLY);
+	if (OpenDialog.DoModal() == IDOK)
+	{
+		CString path;
+		IShellItemArray *pResult=OpenDialog.GetResults();
+		OpenDialog.m_ofn.nMaxFile = 500 * MAX_PATH;
+		DWORD dwCount=0;
+		IShellItem *pItem;
+		WCHAR *pFilePath;
+		pResult->GetCount(&dwCount);
+		for (DWORD i=0;i<dwCount;i++)
+		{
+			pResult->GetItemAt(i,&pItem);
+			pItem->GetDisplayName(SIGDN_FILESYSPATH,&pFilePath);
+			t_odbFilePath+=pFilePath;
+			FilePathVector.push_back(t_odbFilePath);
+			t_odbFilePath=_T("");
+		}
+	}
+}
 
 BOOL CreateAllDirectories(CString strDir)
 {
@@ -247,6 +299,58 @@ bool JudgePointInRect(CPoint pt,CRect JRect)
 		return true;
 	}
 }
+CString GetAppPath()
+{
+	CString Tmp;
+	CHAR filepath[MAX_PATH];
+	TCHAR driver[MAX_PATH];
+	TCHAR fullPath[MAX_PATH];
+	TCHAR namePath[MAX_PATH];
+	GetModuleFileName(NULL,filepath,MAX_PATH);
+	_tsplitpath(filepath,driver,fullPath,namePath,namePath);
+	Tmp.Format("%s%s",driver,fullPath);
+	return Tmp;
+}
+
+CString GetDirPathByDialog()
+{  
+	TCHAR           szFolderPath[MAX_PATH] = {0};  
+	CString         strFolderPath = TEXT("");  
+
+	BROWSEINFO      sInfo;  
+	::ZeroMemory(&sInfo, sizeof(BROWSEINFO));  
+	sInfo.pidlRoot   = 0;  
+	sInfo.lpszTitle   = _T("请选择一个文件夹：");  
+	sInfo.ulFlags   = BIF_DONTGOBELOWDOMAIN | BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE | BIF_EDITBOX;  
+	sInfo.lpfn     = NULL;  
+
+	// 显示文件夹选择对话框  
+	LPITEMIDLIST lpidlBrowse = ::SHBrowseForFolder(&sInfo);   
+	if (lpidlBrowse != NULL)  
+	{  
+		// 取得文件夹名  
+		if (::SHGetPathFromIDList(lpidlBrowse,szFolderPath))    
+		{  
+			strFolderPath = szFolderPath;  
+		}  
+	}  
+	if(lpidlBrowse != NULL)  
+	{  
+		::CoTaskMemFree(lpidlBrowse);  
+	}  
+
+	return strFolderPath;  
+
+} 
+//获取程序运行当前路径
+CString GetCurRunDir()
+{
+	CString str = "";
+	TCHAR szFilePath[MAX_PATH + 1];
+	GetModuleFileName(NULL,szFilePath,MAX_PATH);
+	(_tcsrchr(szFilePath,_T('\\')))[1] = 0;
+	return str = szFilePath;
+}
 /************************************************************************/
 /*							字符串常用操作						        */
 /************************************************************************/
@@ -339,6 +443,158 @@ int IsCStringExistSymble(CString str)
 		}
 	}
 	return 0;
+}
+/************************************************************************
+函数名称: GetCStringBetweenAB
+函数功能: 获取字符串中A和B之间的字符 
+输入参数: strSrc 原始字符串 cA cB为差分字符 
+返回值: 结果 字符串为空则标示失败 
+************************************************************************/
+CString GetCStringBetweenAB(CString strSrc,char cA,char cB)
+{
+	CString tmp;
+	int nPos1,nPos2;
+	int nLength = strSrc.GetLength();
+	tmp = _T("");
+	if(nLength<3)
+	{
+		return tmp;
+	}
+	nPos1 = strSrc.Find(cA);
+	if(nPos1<0)
+	{
+		return tmp;
+	}
+	if (cA == cB)
+	{
+		nPos2 = strSrc.Find(cB,nPos1+1);
+	}
+	else
+	{
+		nPos2 = strSrc.Find(cB);
+	}
+	if(nPos2<0)
+	{
+		return tmp;
+	}
+	tmp = strSrc.Mid(nPos1+1,nPos2-nPos1-1);
+	return tmp;
+}
+CString GetCStringBetweenAB(CString strSrc,CString strA,CString strB)
+{
+	CString tmp = _T("");
+	int nPos1,nPos2;
+	int nL,nL1,nL2;
+	nL = strSrc.GetLength();
+	nL1 = strA.GetLength();
+	nL2 = strB.GetLength();
+	nPos1 = strSrc.Find(strA);
+	if (strcmp(strA,strB) == 0)
+	{
+		nPos2 = strSrc.Find(strB,nPos1+1);
+	}
+	else
+	{
+		nPos2 = strSrc.Find(strB);
+	}
+
+	if(nPos1<0||nPos2<0)
+	{
+		return tmp;
+	}
+	tmp = strSrc.Mid(nPos1+nL1,nPos2-nPos1-nL1);
+	return tmp;
+}
+/************************************************************************
+函数名称: GetNumberAfterA
+函数功能: 获取字符串中A字符以后的数字，遇到非数字则停止 
+输入参数: strSrc 原始字符串 cA字符 
+返回值: 结果 字符串为空则标示失败 
+************************************************************************/
+
+CString GetNumberAfterA(CString &strSrc,char cA)
+{
+	CString tmp = _T("");
+	int nPos1;
+	int nL;
+	nL = strSrc.GetLength();
+	nPos1 = strSrc.Find(cA);
+	tmp=strSrc.Right(nL-nPos1-1).SpanIncluding(_T("0123456789.+-"));
+	return tmp;
+}
+//从nPOs位置开始获取一串数字直至碰上非数字字符，并将原始字符串去掉以取出的部分
+CString GetNumberStartN(CString &strSrc,int nPos)
+{
+	CString tmp = _T("");
+	int nL;
+	nL = strSrc.GetLength();
+	int nNum = 0;
+	if (nPos>=0)
+	{
+		for (int i=nPos;i<nL;i++)
+		{
+			char c = strSrc.GetAt(i);
+			if ((c>='0'&&c<='9')||c == '-'||c == '+'||c == '.')
+			{
+				tmp+=c;
+				nNum ++;
+			}
+			else
+			{
+				break;
+			}
+		}
+		if (nNum>0)
+		{
+			strSrc = strSrc.Right(nL-nPos-nNum);
+		}
+	}
+	return tmp;
+}
+void splitStr(TCHAR* srcStr,TCHAR* findedStr,vector<CString> &param)
+{
+	TCHAR* TmpStr = srcStr;
+	size_t len = strlen(srcStr);
+	size_t pos = 0;
+	while(strstr(TmpStr,findedStr) != NULL)
+	{
+		pos =len - strlen(strstr(TmpStr,findedStr));
+		TmpStr[pos] ='\0';
+		if (pos != 0)
+			param.push_back(CString(srcStr));
+		TmpStr += (pos += strlen(findedStr)); 
+		srcStr = TmpStr;
+		len = strlen(TmpStr);
+	}
+	if(len > 0)
+		param.push_back(CString(srcStr));
+}
+//检测字符串是否从某个子串开始
+bool IsStartWith(TCHAR *srcStr ,TCHAR *FindedSrt)
+{
+	if ( 0 == strlen(srcStr))
+		return false;
+	size_t lenght = strlen(srcStr);
+	for (int i = 0;i < lenght ; i++) {
+		if(TCHAR(' ') == *srcStr)srcStr++;
+		else
+			break;
+	}
+	TCHAR *clearStr = strstr(srcStr,FindedSrt);
+	if (clearStr == NULL)
+		return false;
+	return strcmp(srcStr,clearStr) == 0;
+}
+//寻找字符串并替换
+void ReplaceStr(CString &dynText, CString strFinded, CString strMid)
+{
+	int npos = dynText.Find(strFinded);
+	if (npos >=0) {
+		CString strLeft = dynText.Left(npos);
+		CString strRight = dynText.Right(dynText.GetLength() - npos - strFinded.GetLength());
+		dynText.Format("%s%s%s",strLeft,strMid,strRight);
+		npos = 0;
+	}
 }
 /************************************************************************/
 /*						  字符串常用操作结束						    */
@@ -488,15 +744,10 @@ void DrawImageOnMemDc(IplImage *Img,CDC *pMemDC,CBitmap *bmp,float fImageScale)
 /************************************************************************/
 
 
-//获取程序运行当前路径
-CString GetCurRunDir()
-{
-	CString str = "";
-	TCHAR szFilePath[MAX_PATH + 1];
-	GetModuleFileName(NULL,szFilePath,MAX_PATH);
-	(_tcsrchr(szFilePath,_T('\\')))[1] = 0;
-	return str = szFilePath;
-}
+
+/************************************************************************/
+/*								其它操作开始                             */
+/************************************************************************/
 
 CCriticalSection g_filelock;
 
@@ -514,48 +765,73 @@ void CWlog(CString mlog)	{
 	test.Close();
 	g_filelock.Unlock();
 }
-
-CString GetAppPath()
+int GetRand(int min,int max)
 {
-	CString Tmp;
-	CHAR filepath[MAX_PATH];
-	TCHAR driver[MAX_PATH];
-	TCHAR fullPath[MAX_PATH];
-	TCHAR namePath[MAX_PATH];
-	GetModuleFileName(NULL,filepath,MAX_PATH);
-	_tsplitpath(filepath,driver,fullPath,namePath,namePath);
-	Tmp.Format("%s%s",driver,fullPath);
-	return Tmp;
+	int m_nMax;
+	m_nMax=RAND_MAX;
+	srand((unsigned)time(0));
+	return (int)(rand()*(max-min)/m_nMax+min);
 }
 
-CString GetDirPathByDialog()
-{  
-	TCHAR           szFolderPath[MAX_PATH] = {0};  
-	CString         strFolderPath = TEXT("");  
+/************************************************************************/
+/*								其它操作结束                             */
+/************************************************************************/
+/************************************************************************/
+/*							网络相关操作						        */
+/************************************************************************/
+int GetInternetConnectState()
+{
+	DWORD flags;//上网方式 
+	BOOL m_bOnline=TRUE;//是否在线 
 
-	BROWSEINFO      sInfo;  
-	::ZeroMemory(&sInfo, sizeof(BROWSEINFO));  
-	sInfo.pidlRoot   = 0;  
-	sInfo.lpszTitle   = _T("请选择一个文件夹：");  
-	sInfo.ulFlags   = BIF_DONTGOBELOWDOMAIN | BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE | BIF_EDITBOX;  
-	sInfo.lpfn     = NULL;  
+	m_bOnline=InternetGetConnectedState(&flags,0); 
+	if(m_bOnline)//在线 
+	{ 
+		if ((flags & INTERNET_CONNECTION_MODEM) ==INTERNET_CONNECTION_MODEM) 
+		{ 
+			//在线拨号上网
+			return 0;
+		} 
+		if ((flags & INTERNET_CONNECTION_LAN) ==INTERNET_CONNECTION_LAN) 
+		{ 
+			return 1;
+			//cout<<"在线：通过局域网\n"; 
+		} 
+		if ((flags & INTERNET_CONNECTION_PROXY) ==INTERNET_CONNECTION_PROXY) 
+		{ 
+			return 2;
+			//cout<<"在线：代理\n"; 
+		} 
+		if ((flags & INTERNET_CONNECTION_MODEM_BUSY) ==INTERNET_CONNECTION_MODEM_BUSY) 
+		{ 
+			//cout<<"MODEM被其他非INTERNET连接占用\n"; 
+			return 3;
+		} 
+	} 
+	else 
+	{
+		return -1;
+	}
+}
+//判断一个IP是否联通
+BOOL IfIPConnect(const char *strIPAddr)
+{
+	UINT ip = inet_addr(strIPAddr);
+	ULONG hopCount = 0;
+	ULONG RTT = 0;
 
-	// 显示文件夹选择对话框  
-	LPITEMIDLIST lpidlBrowse = ::SHBrowseForFolder(&sInfo);   
-	if (lpidlBrowse != NULL)  
-	{  
-		// 取得文件夹名  
-		if (::SHGetPathFromIDList(lpidlBrowse,szFolderPath))    
-		{  
-			strFolderPath = szFolderPath;  
-		}  
-	}  
-	if(lpidlBrowse != NULL)  
-	{  
-		::CoTaskMemFree(lpidlBrowse);  
-	}  
-
-	return strFolderPath;  
-
-} 
-
+	if(GetRTTAndHopCount(ip, &hopCount, 2, &RTT) == TRUE) 
+	{
+		// 		printf("Hops: %ld\n", hopCount);
+		// 		printf("RTT: %ld\n", RTT);
+		return TRUE;
+	}
+	else 
+	{
+		//printf("Error: %ld\n", GetLastError());
+		return FALSE;
+	}
+}
+/************************************************************************/
+/*						  网络相关操作结束						        */
+/************************************************************************/

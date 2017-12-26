@@ -8,6 +8,7 @@
 #include <afxcmn.h>
 #include <stdlib.h>
 #include <afxmt.h>
+using namespace std;
 #ifdef USE_OPENCV
 #include "cv.h"
 #include "minmax.h"
@@ -111,6 +112,7 @@ BOOL FolderExist(CString strPath);
 BOOL FileExist(CString strFileName);
 //获取对话框中的全部文件
 void GetFileFromDir(CString csDirPath,std::vector<CString> &m_FileList )  ;
+void OpenFilePath(vector<CString> &FilePathVector,CString strInitPath = _T(""));
 //创建文件夹
 BOOL CreateFolder(CString strPath);
 //创建完整路径
@@ -167,6 +169,29 @@ void char_to_wchar(const char *ptr, wchar_t *buf);
 返回值	:TRUE标示存在 FALSE标示不存在
 ************************************************************************/
 int IsCStringExistSymble(CString str);
+/************************************************************************
+函数名称: GetCStringBetweenAB
+函数功能: 获取字符串中A和B之间的字符 
+输入参数: strSrc 原始字符串 cA cB为差分字符 
+返回值: 结果 字符串为空则标示失败 
+************************************************************************/
+CString GetCStringBetweenAB(CString strSrc,char cA,char cB);
+CString GetCStringBetweenAB(CString strSrc,CString strA,CString strB);
+/************************************************************************
+函数名称: GetNumberAfterA
+函数功能: 获取字符串中A字符以后的数字，遇到非数字则停止 
+输入参数: strSrc 原始字符串 cA字符 
+返回值: 结果 字符串为空则标示失败 
+************************************************************************/
+CString GetNumberAfterA(CString &strSrc,char cA);
+//从nPOs位置开始获取一串数字直至碰上非数字字符，并将原始字符串去掉以取出的部分
+CString GetNumberStartN(CString &strSrc,int nPos);
+//去掉前面的空格,将字符串按照分割符分开
+void splitStr(TCHAR* srcStr,TCHAR* findedStr,std::vector<CString> &param);
+//检测字符串是否从某个子串开始
+bool IsStartWith(TCHAR *srcStr ,TCHAR *FindedSrt);
+//替换部分字符
+void ReplaceStr(CString &dynText, CString strFinded, CString strMid);
 /************************************************************************/
 /*						  字符串常用操作结束						    */
 /************************************************************************/
@@ -237,6 +262,7 @@ public:
 	double GetUseTime(); // 获得算法处理时间(单位:秒)
 	void WaitTime(double waitTime);
 };
+void XWaitTime(float fTime);
 /************************************************************************/
 /*								计时操作结束                             */
 /************************************************************************/
@@ -246,8 +272,22 @@ public:
 /************************************************************************/
 void CWlog(CString mlog);
 int GetRand(int min,int max);
+//调用cmd.exe实现对bat文件的调用,或者直接对其它软件进行调用
+void WaitProcess(LPTSTR FileName,LPTSTR Param);
+
 /************************************************************************/
 /*								其它操作结束                             */
+/************************************************************************/
+/************************************************************************/
+/*							网络相关操作						        */
+/************************************************************************/
+//判断网络是否连通且输出联通类型
+int GetInternetConnectState();
+//判断一个IP是否联通
+BOOL IfIPConnect(const char *strIPAddr);
+
+/************************************************************************/
+/*						  网络相关操作结束						        */
 /************************************************************************/
 
 #endif

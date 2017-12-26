@@ -1,5 +1,8 @@
 #include "StdAfx.h"
 #include "TuLing.h"
+#include <Windows.h> 
+ #include <winhttp.h> 
+ #pragma comment(lib,"winhttp.lib")
 /*
 图灵机器人 C++实现
 
