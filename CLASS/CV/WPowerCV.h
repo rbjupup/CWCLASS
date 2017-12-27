@@ -1,6 +1,7 @@
 #pragma once
 #include "opencv2/opencv.hpp"
 #include "opencv/cv.h"
+#include "stdafx.h"
 class CWPowerCV
 {
 public:

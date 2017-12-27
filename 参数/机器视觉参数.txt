@@ -1,0 +1,6 @@
+[[输入数据]]
+4 = 100
+3 = 100
+2 = D:\test
+1 = D:\app\appdoc\QQFile\813078405\FileRecv\b195425b.dat\ROIImg1.bmp
+输入总数 = 4

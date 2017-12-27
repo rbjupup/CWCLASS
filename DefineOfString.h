@@ -75,3 +75,9 @@
 #define MONFUN4 CString("连续监控")
 #define HELPMONFUN4 CString("用来监控一系列网址，通过数据监控保存的ini文件进行设置\r\n输入1：监控网址数（WEBNUM）\r\n\
 输入2-1+WEBNUM:ini文件路径\r\n输入2+WEBNUM：刷新间隔时间")
+
+
+
+#define CLASSNAME9 CString("机器视觉")
+#define CVFUN1 CString("切割图像")
+#define HELPCVFUN1 CString("输入1:输入图像路径\r\n输入2:输出图像文件夹路径\r\n输入3:X方向分割次数\r\n输入4:Y方向分割次数\r\n")

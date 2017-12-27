@@ -8,6 +8,7 @@ using namespace std;
 #include "CLASS/MFCCTRL/WMFCBtn.h"
 #include "stdafx.h"
 #include "CLASS/MONITOR/WmonUrl.h"
+#include "CLASS/CV/WPowerCV.h"
 
 
 
@@ -31,5 +32,6 @@ private:
 	CWROBO    m_robo;						//AI类
 	CWMFCBtn m_cwmfcBtn;					//透明按钮对话框
 	CWmonUrl m_monitor;						//网页监听类
+	CWPowerCV m_powcv;						//opencv二次开发
 };
 

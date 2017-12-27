@@ -13,6 +13,7 @@ BOSSCLASS::BOSSCLASS(void)
 	m_vecSupportClass.push_back(CLASSNAME6);
 	m_vecSupportClass.push_back(CLASSNAME7);
 	m_vecSupportClass.push_back(CLASSNAME8);
+	m_vecSupportClass.push_back(CLASSNAME9);
 
 	vector<CString> WZNCalibreateSupportFunction;
 	WZNCalibreateSupportFunction.push_back(CALFUN1);
@@ -65,6 +66,10 @@ BOSSCLASS::BOSSCLASS(void)
 	MFCMONClassSupportFunction.push_back(MONFUN3);
 	MFCMONClassSupportFunction.push_back(MONFUN4);
 	m_vecSupportFunction.push_back(MFCMONClassSupportFunction);
+
+	vector<CString> CVClassSupportFunction;
+	CVClassSupportFunction.push_back(CVFUN1);
+	m_vecSupportFunction.push_back(CVClassSupportFunction);
 }
 
 
@@ -228,6 +233,19 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 		}
 
 	}
+
+	if (classname == CLASSNAME9)
+	{
+		if (funname == CVFUN1){
+			CString tmp1,tmp2;
+			int ntmp1,ntmp2;
+			tmp1 = param[0];
+			tmp2 = param[1];
+			ntmp1 = atoi(param[2]);
+			ntmp2 = atoi(param[3]);
+			m_powcv.SplitIMG(tmp1,tmp1,ntmp1,ntmp1);
+		}
+	}
 	return true;
 }
 
@@ -267,6 +285,11 @@ CString BOSSCLASS::GetFunctionHelp(CString classname,CString funname){
 			return HELPMONFUN3;
 		if (funname == MONFUN4)
 			return HELPMONFUN4;
+	}
+	if (classname == CLASSNAME9)
+	{
+		if (funname == CVFUN1)
+			return HELPCVFUN1;
 	}
 	return totalhelp;
 }
