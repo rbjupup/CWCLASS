@@ -7,7 +7,7 @@
 #pragma comment(lib,"Iphlpapi.lib")
 #include <ctime>
 
-
+CString LogSavePath = CString("LOG\\log.txt");
 //////////////////////////////////////////////////////////////////////////
 //							时间操作开始
 //////////////////////////////////////////////////////////////////////////
@@ -74,7 +74,7 @@ BOOL FolderExist(CString strPath)
 {
 	WIN32_FIND_DATA   wfd;
 	BOOL rValue = FALSE;
-	HANDLE hFind = FindFirstFile(strPath, &wfd);
+	HANDLE hFind = FindFirstFile(strPath+"*.*", &wfd);
 	if ((hFind != INVALID_HANDLE_VALUE) && (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 	{
 		rValue = TRUE;   
@@ -88,7 +88,7 @@ BOOL FileExist(CString strFileName)
 	CFileFind fFind;
 	return fFind.FindFile(strFileName); 
 }
-void GetFileFromDir(CString csDirPath,std::vector<CString> &m_FileList )  
+void GetDirNameFromDir(CString csDirPath,std::vector<CString> &m_FileList )  
 {  
 	csDirPath+="\\*";  
 	HANDLE file;  
@@ -112,7 +112,44 @@ void GetFileFromDir(CString csDirPath,std::vector<CString> &m_FileList )
 		bState = FindNextFile(file, &fileData);  
 	}  
 }  
+//strDir为传入的文件夹路径，vecFiles为扫描到的文件集 
+void GetFileNameFromDir(CString strDir, std::vector<CString>& vecFiles,int type) 
+{  
+	vecFiles.clear();
+	CFileFind ff;  
+	//在路径后面添加\*.*后缀  
+	if (strDir.Right(1) != "\\")  
+		strDir += "\\";  
+	strDir += "*.*";  
+	BOOL ret = ff.FindFile(strDir);  
+	while (ret)  
+	{  
+		ret = ff.FindNextFile();  
+		if (ff.IsDirectory() && !ff.IsDots())  
+		{  
+			CString path = ff.GetFilePath();  
+			GetFileNameFromDir(path, vecFiles);  
+		}  
+		else if (!ff.IsDirectory() && !ff.IsDots())  
+		{  
+			
+			CString name = ff.GetFileName();//获取带后缀的文件名  
+			switch(type){
+			case 0:
+				name = ff.GetFileName();//获取带后缀的文件名  
+				break;
+			case 1:
+				name = ff.GetFilePath();//获取文件路径  
+				break;
+			case 2:
+				name = ff.GetFileTitle();//获取不带后缀的文件名  
+				break;
+			}
+			vecFiles.push_back(name);  
+		}  
 
+	}  
+}  
 void OpenFilePath(vector<CString> &FilePathVector,CString strInitPath)
 {
 	CString t_odbFilePath;
@@ -312,34 +349,24 @@ CString GetAppPath()
 	return Tmp;
 }
 
-CString GetDirPathByDialog()
-{  
-	TCHAR           szFolderPath[MAX_PATH] = {0};  
-	CString         strFolderPath = TEXT("");  
+CString GetDirPathByDialog(CString rootpath,CWnd* papa)
+{
+	try{
+	CFolderPickerDialog fd(NULL, 0, papa, 0);
+	//fd.GetOFN().lpstrInitialDir = rootpath;// 默认目录
+	if (fd.DoModal()== IDOK)
+	{
+		CString des;
+		des = fd.GetPathName();
+		return des;
+	}
+	}
+	catch(...){
+		int a = 0;
+		AfxMessageBox("进了");
+	}
+	return "";
 
-	BROWSEINFO      sInfo;  
-	::ZeroMemory(&sInfo, sizeof(BROWSEINFO));  
-	sInfo.pidlRoot   = 0;  
-	sInfo.lpszTitle   = _T("请选择一个文件夹：");  
-	sInfo.ulFlags   = BIF_DONTGOBELOWDOMAIN | BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE | BIF_EDITBOX;  
-	sInfo.lpfn     = NULL;  
-
-	// 显示文件夹选择对话框  
-	LPITEMIDLIST lpidlBrowse = ::SHBrowseForFolder(&sInfo);   
-	if (lpidlBrowse != NULL)  
-	{  
-		// 取得文件夹名  
-		if (::SHGetPathFromIDList(lpidlBrowse,szFolderPath))    
-		{  
-			strFolderPath = szFolderPath;  
-		}  
-	}  
-	if(lpidlBrowse != NULL)  
-	{  
-		::CoTaskMemFree(lpidlBrowse);  
-	}  
-
-	return strFolderPath;  
 
 } 
 //获取程序运行当前路径
@@ -757,13 +784,26 @@ void CWlog(CString mlog)	{
 	CString ttt;
 	SYSTEMTIME time;
 	GetLocalTime(&time);
-	ttt.Format("%s:%d/%d/%d/ %d:%d:%d\r\n",mlog,time.wYear,time.wMonth,time.wDay,time.wHour,time.wMinute,time.wSecond);\
+	ttt.Format("%d/%d/%d/ %d:%d:%d:    %s\r\n",time.wYear,time.wMonth,time.wDay,time.wHour,time.wMinute,time.wSecond,mlog);
 	TRACE(ttt);
-	test.Open(_T("LOG\\log.txt"),CFile::modeCreate|CFile::modeNoTruncate|CFile::modeReadWrite);
+	test.Open(_T(LogSavePath),CFile::modeCreate|CFile::modeNoTruncate|CFile::modeReadWrite);
 	test.SeekToEnd();
 	test.Write(ttt,ttt.GetLength());
 	test.Close();
 	g_filelock.Unlock();
+}
+void SetLogPath(CString savePath)
+{
+	if (savePath == "")
+		return;
+	if (!FileExist(savePath))
+	{
+		int pos = savePath.ReverseFind('\\');
+		CString path = savePath.Left(pos);
+		CreateAllDirectories(path);
+
+	}
+	LogSavePath = savePath;
 }
 int GetRand(int min,int max)
 {
@@ -832,6 +872,25 @@ BOOL IfIPConnect(const char *strIPAddr)
 		return FALSE;
 	}
 }
+
+void CwlogFormat(LPCTSTR log , ...)
+{
+	CString sFormat = log;
+	// Do ordinary printf replacements
+	// NOTE: Documented max-length of wvsprintf() is 1024
+	TCHAR szBuffer[1025] = { 0 };
+	va_list argList;
+	va_start( argList, log );
+
+	// wvsprintf不支持浮点格式，所以换成_vstprintf
+	int iRet = ::_vstprintf( szBuffer, sFormat, argList );
+	CWlog(szBuffer);
+	va_end( argList );
+
+}
+
+
+
 /************************************************************************/
 /*						  网络相关操作结束						        */
 /************************************************************************/

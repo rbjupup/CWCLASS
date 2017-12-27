@@ -110,15 +110,18 @@ typedef struct FloatPoint3D
 BOOL FolderExist(CString strPath);
 //判断文件是否存在
 BOOL FileExist(CString strFileName);
-//获取对话框中的全部文件
-void GetFileFromDir(CString csDirPath,std::vector<CString> &m_FileList )  ;
+//获取文件夹中的全部文件夹
+void GetDirNameFromDir(CString csDirPath,std::vector<CString> &m_FileList )  ;
+//获取文件夹中全部文件
+void GetFileNameFromDir(CString strDir, std::vector<CString>& vecFiles,int type = 0);
+//多选文件框
 void OpenFilePath(vector<CString> &FilePathVector,CString strInitPath = _T(""));
 //创建文件夹
 BOOL CreateFolder(CString strPath);
 //创建完整路径
 BOOL CreateAllDirectories(CString strDir);
 //获取文件夹路径
-CString GetDirPathByDialog();
+CString GetDirPathByDialog(CString rootpath,CWnd* papa);
 //查找文件夹中相同后缀的文件
 CString FindFileSameExtension(CString strPath,CString strExtension);
 //删除路径和路径中的文件
@@ -270,7 +273,13 @@ void XWaitTime(float fTime);
 /************************************************************************/
 /*								其它操作开始                             */
 /************************************************************************/
+//使用CString的格式来写日志
+//写日志到文件中
+void CwlogFormat(LPCTSTR log , ... );
 void CWlog(CString mlog);
+//设置日志保存的地址
+void SetLogPath(CString savePath);
+//获取一个在最大值到最小值之间的随机数
 int GetRand(int min,int max);
 //调用cmd.exe实现对bat文件的调用,或者直接对其它软件进行调用
 void WaitProcess(LPTSTR FileName,LPTSTR Param);
@@ -285,7 +294,6 @@ void WaitProcess(LPTSTR FileName,LPTSTR Param);
 int GetInternetConnectState();
 //判断一个IP是否联通
 BOOL IfIPConnect(const char *strIPAddr);
-
 /************************************************************************/
 /*						  网络相关操作结束						        */
 /************************************************************************/
