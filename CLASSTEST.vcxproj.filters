@@ -31,6 +31,9 @@
     <Filter Include="MONITOR">
       <UniqueIdentifier>{b751053d-d4cb-447b-8735-7c41439849bc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CLASS\CV">
+      <UniqueIdentifier>{85ce3427-9e2e-4aff-b72f-e18b5bee24b4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -114,17 +117,8 @@
     <ClInclude Include="CLASS\ROB\TuLing.h">
       <Filter>CLASS\CWROB</Filter>
     </ClInclude>
-    <ClInclude Include="YCIni.h">
-      <Filter>assistant</Filter>
-    </ClInclude>
-    <ClInclude Include="XFunCom.h">
-      <Filter>assistant</Filter>
-    </ClInclude>
     <ClInclude Include="CLASS\MONITOR\WmonUrl.h">
       <Filter>MONITOR</Filter>
-    </ClInclude>
-    <ClInclude Include="SoftConfig.h">
-      <Filter>assistant</Filter>
     </ClInclude>
     <ClInclude Include="CLASS\MONITOR\MyBrower.h">
       <Filter>MONITOR</Filter>
@@ -132,8 +126,20 @@
     <ClInclude Include="CLASS\MONITOR\explorer1.h">
       <Filter>MONITOR</Filter>
     </ClInclude>
-    <ClInclude Include="CLASS\MONITOR\Smtp.h">
-      <Filter>MONITOR</Filter>
+    <ClInclude Include="CLASS\CV\WPowerCV.h">
+      <Filter>CLASS\CV</Filter>
+    </ClInclude>
+    <ClInclude Include="assistant\SoftConfig.h">
+      <Filter>assistant</Filter>
+    </ClInclude>
+    <ClInclude Include="assistant\XFunCom.h">
+      <Filter>assistant</Filter>
+    </ClInclude>
+    <ClInclude Include="assistant\YCIni.h">
+      <Filter>assistant</Filter>
+    </ClInclude>
+    <ClInclude Include="assistant\Smtp.h">
+      <Filter>assistant</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -182,17 +188,8 @@
     <ClCompile Include="CLASS\ROB\TuLing.cpp">
       <Filter>CLASS\CWROB</Filter>
     </ClCompile>
-    <ClCompile Include="XFunCom.cpp">
-      <Filter>assistant</Filter>
-    </ClCompile>
-    <ClCompile Include="YCIni.cpp">
-      <Filter>assistant</Filter>
-    </ClCompile>
     <ClCompile Include="CLASS\MONITOR\WmonUrl.cpp">
       <Filter>MONITOR</Filter>
-    </ClCompile>
-    <ClCompile Include="SoftConfig.cpp">
-      <Filter>assistant</Filter>
     </ClCompile>
     <ClCompile Include="CLASS\MONITOR\MyBrower.cpp">
       <Filter>MONITOR</Filter>
@@ -200,8 +197,20 @@
     <ClCompile Include="CLASS\MONITOR\explorer1.cpp">
       <Filter>MONITOR</Filter>
     </ClCompile>
-    <ClCompile Include="CLASS\MONITOR\Smtp.cpp">
-      <Filter>MONITOR</Filter>
+    <ClCompile Include="CLASS\CV\WPowerCV.cpp">
+      <Filter>CLASS\CV</Filter>
+    </ClCompile>
+    <ClCompile Include="assistant\SoftConfig.cpp">
+      <Filter>assistant</Filter>
+    </ClCompile>
+    <ClCompile Include="assistant\XFunCom.cpp">
+      <Filter>assistant</Filter>
+    </ClCompile>
+    <ClCompile Include="assistant\YCIni.cpp">
+      <Filter>assistant</Filter>
+    </ClCompile>
+    <ClCompile Include="assistant\Smtp.cpp">
+      <Filter>assistant</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

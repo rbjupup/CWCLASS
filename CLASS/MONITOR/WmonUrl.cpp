@@ -15,8 +15,6 @@
 
 #pragma comment(lib,"WinInet.lib")
 
-#include "Smtp.h"
-
 using namespace std;
 
 int getUrlContent(string url)
@@ -238,7 +236,6 @@ vector<CString> CWmonUrl::GetDataByUrl(CString urlpath,vector<CString> filterFro
 		}
 	}
 	if(!isOk){
-		char t_receiver[50];char t_sendcount[50],t_sendPwd[50];
 		CString sendcount = CString((_T("wuzenan1234@163.com")));
 		CString sendPwd = CString(_T("a123456a"));
 		CString senddata;
@@ -248,18 +245,11 @@ vector<CString> CWmonUrl::GetDataByUrl(CString urlpath,vector<CString> filterFro
 			tmp.Format("数据%d:%s,数据类型为%d\r\n",i,dlg.m_resTotal[i],dlg.m_resTotalType[i]);
 			senddata += tmp;
 		}
-		CSmtp smtp(  
-			25,                             /*smtp端口*/  
-			"smtp.163.com",                 /*smtp服务器地址*/  
-			LPCSTR(sendcount),    /*你的邮箱地址*/  
-			LPCSTR(sendPwd),                  /*邮箱密码*/  
-			LPCSTR(receiver),    /*目的邮箱地址*/  
-			string("宝宝，宝宝!"),                          /*主题*/  
-			LPCSTR(senddata)       /*邮件正文*/  
-			);  
-		smtp.SendEmail_Ex();
+		SendAEmail(sendcount, sendPwd, receiver, senddata,"亲爱的宝宝!");
+
 	}
 
 
 	return dlg.m_resTotal;
 }
+

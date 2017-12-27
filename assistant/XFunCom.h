@@ -1,6 +1,7 @@
 #if !defined(AFX_XFUNCOM_H_INCLUDED_)
 #define AFX_XFUNCOM_H_INCLUDED_
-//#define USE_OPENCV 1
+#define USE_OPENCV 1
+#define USE_EMAIL
 #include "resource.h"
 #include <vector>
 #include <algorithm>
@@ -8,11 +9,17 @@
 #include <afxcmn.h>
 #include <stdlib.h>
 #include <afxmt.h>
-using namespace std;
 #ifdef USE_OPENCV
 #include "cv.h"
 #include "minmax.h"
 #endif
+#ifdef USE_EMAIL
+#include "Smtp.h"
+#endif
+
+
+
+using namespace std;
 #ifndef YX_BYTE//8 - bit 1 - channel 
 #define YX_BYTE(img,y,x) ((BYTE*)(img->imageData + (y)*img->widthStep))[x]
 #endif
@@ -294,6 +301,8 @@ void WaitProcess(LPTSTR FileName,LPTSTR Param);
 int GetInternetConnectState();
 //判断一个IP是否联通
 BOOL IfIPConnect(const char *strIPAddr);
+//发送一封Email
+BOOL SendAEmail(CString sendcount, CString sendPwd, CString receiver, CString senddata,CString topic,CString filePath = "");
 /************************************************************************/
 /*						  网络相关操作结束						        */
 /************************************************************************/

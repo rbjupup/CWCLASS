@@ -777,7 +777,21 @@ void DrawImageOnMemDc(IplImage *Img,CDC *pMemDC,CBitmap *bmp,float fImageScale)
 /************************************************************************/
 
 CCriticalSection g_filelock;
+void CwlogFormat(LPCTSTR log , ...)
+{
+	CString sFormat = log;
+	// Do ordinary printf replacements
+	// NOTE: Documented max-length of wvsprintf() is 1024
+	TCHAR szBuffer[1025] = { 0 };
+	va_list argList;
+	va_start( argList, log );
 
+	// wvsprintf不支持浮点格式，所以换成_vstprintf
+	int iRet = ::_vstprintf( szBuffer, sFormat, argList );
+	CWlog(szBuffer);
+	va_end( argList );
+
+}
 void CWlog(CString mlog)	{
 	g_filelock.Lock();
 	CFile test;
@@ -873,20 +887,26 @@ BOOL IfIPConnect(const char *strIPAddr)
 	}
 }
 
-void CwlogFormat(LPCTSTR log , ...)
+
+
+BOOL SendAEmail(CString sendcount, CString sendPwd, CString receiver, CString senddata,CString topic,CString filePath)
 {
-	CString sFormat = log;
-	// Do ordinary printf replacements
-	// NOTE: Documented max-length of wvsprintf() is 1024
-	TCHAR szBuffer[1025] = { 0 };
-	va_list argList;
-	va_start( argList, log );
-
-	// wvsprintf不支持浮点格式，所以换成_vstprintf
-	int iRet = ::_vstprintf( szBuffer, sFormat, argList );
-	CWlog(szBuffer);
-	va_end( argList );
-
+	char t_receiver[50];char t_sendcount[50],t_sendPwd[50];
+	CSmtp smtp(  
+		25,                    /*smtp端口*/  
+		"smtp.163.com",        /*smtp服务器地址*/  
+		LPCSTR(sendcount),    /*你的邮箱地址*/  
+		LPCSTR(sendPwd),      /*邮箱密码*/  
+		LPCSTR(receiver),    /*目的邮箱地址*/  
+		LPCSTR(topic),       /*主题*/  
+		LPCSTR(senddata)     /*邮件正文*/  
+		);  
+	if(filePath != ""){/*附件地址*/  
+		string tmp = LPCSTR(filePath);
+		smtp.AddAttachment(tmp); 
+	}
+	smtp.SendEmail_Ex();
+	return TRUE;
 }
 
 
