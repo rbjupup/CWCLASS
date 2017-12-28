@@ -1,12 +1,8 @@
 #define SUPPORTCLASSNUM 1
 
-#define CLASSNAME1 CString("标定类")
-#define CALFUN1 CString("TESTCAMTOBOARD")
-#define CALFUN2 CString("RELOAD")
-#define CALFUN3 CString("SAVE")
-#define CALFUN4 CString("SUCKCENTERCALIBREATE")
-#define CALFUN5 CString("TESTGetAxisDis")
-#define CALFUN6 CString("TESTAngleOfAxis")
+#define CLASSNAME1 CString("测试类")
+#define CWFUN1 CString("随手测试")
+#define HELPCWFUN1 CString("测试类不具体包含某个功能,一般用于迅速用函数实现某个功能,实现后即可重写")
 
 
 #define CLASSNAME2 CString("TCP通讯")

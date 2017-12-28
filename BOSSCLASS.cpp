@@ -5,7 +5,7 @@
 #include "YCIni.h"
 BOSSCLASS::BOSSCLASS(void)
 {
-//	m_vecSupportClass.push_back(CLASSNAME1);
+	m_vecSupportClass.push_back(CLASSNAME1);
 //	m_vecSupportClass.push_back(CLASSNAME2);
 //	m_vecSupportClass.push_back(CLASSNAME3);
 	m_vecSupportClass.push_back(CLASSNAME4);
@@ -16,13 +16,8 @@ BOSSCLASS::BOSSCLASS(void)
 	m_vecSupportClass.push_back(CLASSNAME9);
 
 	vector<CString> WZNCalibreateSupportFunction;
-	WZNCalibreateSupportFunction.push_back(CALFUN1);
-	WZNCalibreateSupportFunction.push_back(CALFUN2);
-	WZNCalibreateSupportFunction.push_back(CALFUN3);
-	WZNCalibreateSupportFunction.push_back(CALFUN4);
-	WZNCalibreateSupportFunction.push_back(CALFUN5);
-	WZNCalibreateSupportFunction.push_back(CALFUN6);
-//	m_vecSupportFunction.push_back(WZNCalibreateSupportFunction);
+	WZNCalibreateSupportFunction.push_back(CWFUN1);
+	m_vecSupportFunction.push_back(WZNCalibreateSupportFunction);
 
 	vector<CString> SocketClassSupportFunction;
 	SocketClassSupportFunction.push_back(SOCKETFUN1);
@@ -105,6 +100,11 @@ void GetWEBDataFromVec(CString &urlpath1, vector<CString> param, vector<CString>
 
 bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString> param)
 {
+	if (classname == CLASSNAME1)
+	{
+		if (funname == CWFUN1){
+		}
+	}
 	if (classname == CLASSNAME4)
 	{
 		if (funname == BCGFUN1){
@@ -241,7 +241,7 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 			m_powcv.SplitIMG(param[0],param[1],atoi(param[2]),atoi(param[3]));
 		}		
 		if (funname == CVFUN2){
-			m_powcv.ImgCal(param[0],param[1],param[2],atoi(param[3]),atoi(param[4]),atoi(param[5]));
+			m_powcv.ImgCal(param[0],param[1],param[2],atoi(param[3]),atoi(param[4]),atoi(param[5]),atoi(param[6]));
 		}
 	}
 	return true;
@@ -250,6 +250,11 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 CString BOSSCLASS::GetFunctionHelp(CString classname,CString funname){
 	CString totalhelp = CString("此函数没有声明，无需输入");
 
+	if (classname == CLASSNAME1)
+	{
+		if (funname == CWFUN1)
+			return HELPCWFUN1;
+	}
 	if (classname == CLASSNAME4)
 	{
 		if (funname == BCGFUN1)

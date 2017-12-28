@@ -41,37 +41,56 @@ BOOL CWPowerCV::SplitIMG(CString InputImgPath,CString OutPutDir,int XNum,int YNu
 }
 //两张图像进行计算
 //0表示相加1表示相减其它的等需要了再写
-BOOL CWPowerCV::ImgCal(CString srcfirst,CString srcsecond,CString savePath,int XMove,int YMove,int CalType /*= 0*/)
+BOOL CWPowerCV::ImgCal(CString srcfirst,CString srcsecond,CString savePath,int XMove,int YMove,int CalType /*= 0*/,BOOL bDir)
 {
-	if (!FileExist(srcfirst)||!FileExist(srcsecond)||XMove <= 0|| YMove <= 0)
+
+
+	vector<CString> inputpath;
+	if (!FileExist(srcsecond)||XMove <= 0|| YMove <= 0)
 		return FALSE;
-	IplImage* src1 = NULL;
-	IplImage* src2 = NULL;
-	src1 = cvLoadImage(srcfirst);
-	src2 = cvLoadImage(srcsecond);
-	CvRect srcROI;
-	srcROI.x = XMove;
-	srcROI.y = YMove;
-	srcROI.width = (XMove+src2->width)>src1->width? src1->width - XMove : src2->width;
-	srcROI.height = (YMove+src2->height)>src1->height? src1->height - YMove : src2->height;
-	cvSetImageROI(src1,srcROI);
-	int pos = 0;CString newname;
-	switch(CalType){
-	case 0:
-		cvAdd(src1,src2,src1);
-		pos = srcfirst.ReverseFind('.');
-		newname = srcfirst.Left(pos);
-		pos = srcfirst.ReverseFind('\\');
-		newname = newname.Right(newname.GetLength() - pos);
-		cvResetImageROI(src1);
-		cvSaveImage(savePath + newname+"_type0.bmp",src1);
-		break;
-	default:
-		break;
+	if (bDir)
+	{
+		GetFileNameFromDir(srcfirst,inputpath,1);
+		if (inputpath.size() == 0)
+		{
+			return FALSE;
+		}
 	}
-IMGCALRELEASE:
-	cvReleaseImage(&src1);
-	cvReleaseImage(&src2);
+	else
+		inputpath.push_back(srcfirst);
+	for (int i = 0; i < inputpath.size();i++)
+	{
+		srcfirst = inputpath[i];
+		if(!FileExist(srcfirst))
+			continue;
+		IplImage* src1 = NULL;
+		IplImage* src2 = NULL;
+		src1 = cvLoadImage(srcfirst);
+		src2 = cvLoadImage(srcsecond);
+		CvRect srcROI;
+		srcROI.x = XMove;
+		srcROI.y = YMove;
+		srcROI.width = (XMove+src2->width)>src1->width? src1->width - XMove : src2->width;
+		srcROI.height = (YMove+src2->height)>src1->height? src1->height - YMove : src2->height;
+		cvSetImageROI(src1,srcROI);
+		int pos = 0;CString newname;
+		switch(CalType){
+		case 0:
+			cvAdd(src1,src2,src1);
+			pos = srcfirst.ReverseFind('.');
+			newname = srcfirst.Left(pos);
+			pos = srcfirst.ReverseFind('\\');
+			newname = newname.Right(newname.GetLength() - pos);
+			cvResetImageROI(src1);
+			cvSaveImage(savePath + newname+"_type0.bmp",src1);
+			break;
+		default:
+			break;
+		}
+		cvReleaseImage(&src1);
+		cvReleaseImage(&src2);
+	}
+
 	return TRUE;
 
 }
