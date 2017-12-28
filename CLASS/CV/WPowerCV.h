@@ -11,5 +11,6 @@ public:
 
 public:
 	BOOL SplitIMG(CString InputImgPath,CString OutPutDir,int XNum,int YNum);
+	BOOL ImgCal(CString srcfirst,CString srcsecond,CString savePath,int XMove,int YMove,int CalType = 0);
 };
 

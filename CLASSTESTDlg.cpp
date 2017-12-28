@@ -566,4 +566,6 @@ void CCLASSTESTDlg::RunSellf()
 	// 显示非模态对话框   
 	theApp.m_resdlg->ShowWindow(SW_SHOW);   
 	m_boss.CallFunction(surClass,surFun,param);
+	theApp.m_resdlg->AddStatus("finish");
+
 }

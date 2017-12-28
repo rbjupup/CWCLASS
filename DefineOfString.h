@@ -81,3 +81,5 @@
 #define CLASSNAME9 CString("机器视觉")
 #define CVFUN1 CString("切割图像")
 #define HELPCVFUN1 CString("输入1:输入图像路径\r\n输入2:输出图像文件夹路径\r\n输入3:X方向分割次数\r\n输入4:Y方向分割次数\r\n")
+#define CVFUN2 CString("图像运算")
+#define HELPCVFUN2 CString("输入1:输入图像路径1\r\n输入2:输入图像路径2\r\n输入3:输出图像路径\r\n输入4:X方向偏移\r\n输入5:X方向偏移\r\n输入6:计算类型，0是加1是减\r\n")

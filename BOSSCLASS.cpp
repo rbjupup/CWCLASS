@@ -69,6 +69,7 @@ BOSSCLASS::BOSSCLASS(void)
 
 	vector<CString> CVClassSupportFunction;
 	CVClassSupportFunction.push_back(CVFUN1);
+	CVClassSupportFunction.push_back(CVFUN2);
 	m_vecSupportFunction.push_back(CVClassSupportFunction);
 }
 
@@ -237,13 +238,10 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 	if (classname == CLASSNAME9)
 	{
 		if (funname == CVFUN1){
-			CString tmp1,tmp2;
-			int ntmp1,ntmp2;
-			tmp1 = param[0];
-			tmp2 = param[1];
-			ntmp1 = atoi(param[2]);
-			ntmp2 = atoi(param[3]);
-			m_powcv.SplitIMG(tmp1,tmp1,ntmp1,ntmp1);
+			m_powcv.SplitIMG(param[0],param[1],atoi(param[2]),atoi(param[3]));
+		}		
+		if (funname == CVFUN2){
+			m_powcv.ImgCal(param[0],param[1],param[2],atoi(param[3]),atoi(param[4]),atoi(param[5]));
 		}
 	}
 	return true;
@@ -290,6 +288,8 @@ CString BOSSCLASS::GetFunctionHelp(CString classname,CString funname){
 	{
 		if (funname == CVFUN1)
 			return HELPCVFUN1;
+		if (funname == CVFUN2)
+			return HELPCVFUN2;
 	}
 	return totalhelp;
 }
