@@ -70,19 +70,19 @@ BOOL CWPowerCV::ImgCal(CString srcfirst,CString srcsecond,CString savePath,int X
 		CvRect srcROI;
 		srcROI.x = XMove;
 		srcROI.y = YMove;
-		srcROI.width = (XMove+src2->width)>src1->width? src1->width - XMove : src2->width;
-		srcROI.height = (YMove+src2->height)>src1->height? src1->height - YMove : src2->height;
-		cvSetImageROI(src1,srcROI);
+		srcROI.width = (XMove+src1->width)>src2->width? src2->width - XMove : src1->width;
+		srcROI.height = (YMove+src1->height)>src2->height? src2->height - YMove : src1->height;
+		cvSetImageROI(src2,srcROI);
 		int pos = 0;CString newname;
 		switch(CalType){
 		case 0:
-			cvAdd(src1,src2,src1);
+			cvAdd(src2,src1,src2);
 			pos = srcfirst.ReverseFind('.');
 			newname = srcfirst.Left(pos);
 			pos = srcfirst.ReverseFind('\\');
 			newname = newname.Right(newname.GetLength() - pos);
-			cvResetImageROI(src1);
-			cvSaveImage(savePath + newname+"_type0.bmp",src1);
+			cvResetImageROI(src2);
+			cvSaveImage(savePath + newname+"_type0.bmp",src2);
 			break;
 		default:
 			break;
