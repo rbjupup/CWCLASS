@@ -1,7 +1,7 @@
 #if !defined(AFX_XFUNCOM_H_INCLUDED_)
 #define AFX_XFUNCOM_H_INCLUDED_
 #define USE_OPENCV 1
-//#define USE_EMAIL
+#define USE_EMAIL
 //使用正则之前要先将extern的正则文件覆盖到mfc目录下
 #define USE_STL
 #include "resource.h"
@@ -322,7 +322,9 @@ int GetInternetConnectState();
 //判断一个IP是否联通
 BOOL IfIPConnect(const char *strIPAddr);
 //发送一封Email
+#ifdef USE_EMAIL
 BOOL SendAEmail(CString sendcount, CString sendPwd, CString receiver, CString senddata,CString topic,CString filePath = "");
+#endif
 /************************************************************************/
 /*						  网络相关操作结束						        */
 /************************************************************************/

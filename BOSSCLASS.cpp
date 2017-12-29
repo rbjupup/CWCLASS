@@ -104,6 +104,7 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 	if (classname == CLASSNAME1)
 	{
 		if (funname == CWFUN1){
+			GetresByStlRx("123.bat","({*.bat})");
 		}
 	}
 	if (classname == CLASSNAME4)
