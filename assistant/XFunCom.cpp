@@ -6,38 +6,11 @@
 #pragma comment(lib,"Wininet.lib")
 #pragma comment(lib,"Iphlpapi.lib")
 #include <ctime>
+#include <tlhelp32.h>
+#include <psapi.h>
+#pragma comment (lib,"psapi.lib") 
 
 CString LogSavePath = CString("LOG\\log.txt");
-//////////////////////////////////////////////////////////////////////////
-//							时间操作开始
-//////////////////////////////////////////////////////////////////////////
-void LTimeCount::Start() // 计时开始
-{
-	QueryPerformanceFrequency( &Frequency );
-	QueryPerformanceCounter  ( &old );
-	UseTime = 0.0;
-}
-void LTimeCount::End() // 计时结束
-{
-	QueryPerformanceCounter( &Time );
-	UseTime = (double) ( Time.QuadPart - old.QuadPart) / (double)Frequency.QuadPart;
-// 	TRACE("Use time = %20.10f(s)\n", UseTime );
-}
-
-double LTimeCount::GetUseTime() // 获得算法处理时间(单位:秒)
-{		
-	return UseTime;
-}
-void LTimeCount::WaitTime(double waitTime)
-{
-	LTimeCount tt;
-	tt.Start();
-	tt.End();
-	while(tt.GetUseTime()*1000 < waitTime)
-	{
-		tt.End();
-	}
-}
 //可释放CPU,消息循环队列的等待
 void XWaitTime(float fTime)
 {
@@ -61,8 +34,41 @@ void XWaitTime(float fTime)
 		}
 		WaitForSingleObject(eWaitTimeEvent,1);
 	}
+	CloseHandle(eWaitTimeEvent);
+	eWaitTimeEvent = NULL;
 
 }
+//////////////////////////////////////////////////////////////////////////
+//							时间操作开始
+//////////////////////////////////////////////////////////////////////////
+void LTimeCount::Start() // 计时开始
+{
+	QueryPerformanceFrequency( &Frequency );
+	QueryPerformanceCounter  ( &old );
+	UseTime = 0.0;
+}
+void LTimeCount::End() // 计时结束
+{
+	QueryPerformanceCounter( &Time );
+	UseTime = (double) ( Time.QuadPart - old.QuadPart) / (double)Frequency.QuadPart;
+	// 	TRACE("Use time = %20.10f(s)\n", UseTime );
+}
+
+double LTimeCount::GetUseTime() // 获得算法处理时间(单位:秒)
+{		
+	return UseTime;
+}
+void LTimeCount::WaitTime(double waitTime)
+{
+	LTimeCount tt;
+	tt.Start();
+	tt.End();
+	while(tt.GetUseTime()*1000 < waitTime)
+	{
+		tt.End();
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////
 //							时间操作结束
 //////////////////////////////////////////////////////////////////////////
@@ -132,7 +138,7 @@ void GetFileNameFromDir(CString strDir, std::vector<CString>& vecFiles,int type)
 		}  
 		else if (!ff.IsDirectory() && !ff.IsDots())  
 		{  
-			
+
 			CString name = ff.GetFileName();//获取带后缀的文件名  
 			switch(type){
 			case 0:
@@ -246,7 +252,7 @@ BOOL DelFilesOfDir(CString strDir)
 }
 //删除文件夹目录(非空) 上面提到的删除目录的方法只能删除空目录（即文件夹），如果目录下有文件或者子目录，就不能删除了，VC里好像没有直接的函数，只能手动写个函数来删除了，下面提供一个删除非空目录的方法： 
 
-	bool DeleteDirectory(CString strDir)
+bool DeleteDirectory(CString strDir)
 {
 	if(strDir.IsEmpty())   
 
@@ -352,14 +358,14 @@ CString GetAppPath()
 CString GetDirPathByDialog(CString rootpath,CWnd* papa)
 {
 	try{
-	CFolderPickerDialog fd(NULL, 0, papa, 0);
-	//fd.GetOFN().lpstrInitialDir = rootpath;// 默认目录
-	if (fd.DoModal()== IDOK)
-	{
-		CString des;
-		des = fd.GetPathName();
-		return des;
-	}
+		CFolderPickerDialog fd(NULL, 0, papa, 0);
+		//fd.GetOFN().lpstrInitialDir = rootpath;// 默认目录
+		if (fd.DoModal()== IDOK)
+		{
+			CString des;
+			des = fd.GetPathName();
+			return des;
+		}
 	}
 	catch(...){
 		int a = 0;
@@ -462,7 +468,7 @@ int IsCStringExistSymble(CString str)
 	{
 		if ((FileN[i]>='0'&&FileN[i]<='9')||(FileN[i]>='a'&&FileN[i]<='z')||(FileN[i]>='A'&&FileN[i]<='Z')||FileN[i]>127||FileN[i]<0)
 		{
-			
+
 		}
 		else
 		{
@@ -699,7 +705,7 @@ void DrawGraphOnDC(CDC *pDC,DrawShape DShape)
 		pt3.y = DShape.CterPoint.y + DShape.nLength;
 		pt4.x = DShape.CterPoint.x - DShape.nLength;
 		pt4.y = DShape.CterPoint.y + DShape.nLength;
-		
+
 		pen.CreatePen(PS_SOLID,1,DShape.rgb);
 		oldpen=pDC->SelectObject(&pen);
 		//绘制直线
@@ -738,19 +744,19 @@ void DrawImageOnMemDc(IplImage *Img,CDC *pMemDC,CBitmap *bmp,float fImageScale)
 {
 	ASSERT(Img);
 	ASSERT(pMemDC);
-  	uchar buffer[sizeof(BITMAPINFOHEADER) + 1024];
-  	BITMAPINFO* bmi = (BITMAPINFO*)buffer;
-  	int bmp_w = Img->width;
-  	int bmp_h = Img->height;
-  
-  	int bpp = Img ? (Img->depth & 255)*Img->nChannels : 0;
-  	//代替cvvimage的Bpp()函数
-  
-  	FillBitmapInfo( bmi, bmp_w, bmp_h, bpp,Img->origin );
-  
-  	HBITMAP hOldBitmap;
-  	CBitmap *pOldBit = NULL;
-  
+	uchar buffer[sizeof(BITMAPINFOHEADER) + 1024];
+	BITMAPINFO* bmi = (BITMAPINFO*)buffer;
+	int bmp_w = Img->width;
+	int bmp_h = Img->height;
+
+	int bpp = Img ? (Img->depth & 255)*Img->nChannels : 0;
+	//代替cvvimage的Bpp()函数
+
+	FillBitmapInfo( bmi, bmp_w, bmp_h, bpp,Img->origin );
+
+	HBITMAP hOldBitmap;
+	CBitmap *pOldBit = NULL;
+
 	pOldBit = pMemDC->SelectObject(bmp);									//将位图选择进内存DC
 	pMemDC->FillSolidRect(CRect(0,0,bmp_w,bmp_h),RGB(255,255,255)); //按原来背景填充客户区，不然会是黑色
 	pMemDC->SetStretchBltMode(COLORONCOLOR);
@@ -758,12 +764,12 @@ void DrawImageOnMemDc(IplImage *Img,CDC *pMemDC,CBitmap *bmp,float fImageScale)
 	int t = StretchDIBits(
 		pMemDC->GetSafeHdc(),0,0,int(Img->width * fImageScale+0.5), int(Img->height * fImageScale+0.5),0,0, bmp_w, bmp_h,
 		Img->imageData, bmi, DIB_RGB_COLORS,SRCCOPY );
-  	pMemDC->SelectObject(&hOldBitmap);
-  	if (hOldBitmap)
-  	{
-  		DeleteObject(hOldBitmap);
-  		hOldBitmap=NULL;
-  	}
+	pMemDC->SelectObject(&hOldBitmap);
+	if (hOldBitmap)
+	{
+		DeleteObject(hOldBitmap);
+		hOldBitmap=NULL;
+	}
 }
 #endif
 /************************************************************************/
@@ -826,7 +832,93 @@ int GetRand(int min,int max)
 	srand((unsigned)time(0));
 	return (int)(rand()*(max-min)/m_nMax+min);
 }
+void WaitProcess(LPTSTR FileName,LPTSTR Param)
+{
+	SHELLEXECUTEINFO ShellInfo = {0};
+	ShellInfo.cbSize	= sizeof(SHELLEXECUTEINFO);
+	ShellInfo.fMask	= SEE_MASK_NOCLOSEPROCESS;
+	ShellInfo.hwnd	= 0;
+	ShellInfo.lpVerb	= 0;
+	ShellInfo.lpFile	= FileName;     /////传入cmd.exe路径
+	ShellInfo.lpParameters	= Param;    //////传入   /c  copy ....
+	ShellInfo.lpDirectory	= 0;
+	ShellInfo.nShow	= SW_HIDE;
+	ShellInfo.hInstApp	= 0;
 
+	ShellExecuteEx(&ShellInfo);
+	//WaitForSingleObject(ShellInfo.hProcess,-1);
+	DWORD dwExitCode;
+	GetExitCodeProcess(ShellInfo.hProcess,&dwExitCode);
+	while (dwExitCode == STILL_ACTIVE)
+	{ 
+		XWaitTime(0.1);
+		GetExitCodeProcess(ShellInfo.hProcess, &dwExitCode);
+	}
+	CloseHandle(ShellInfo.hProcess); 
+}
+BOOL memsort()
+{
+	HANDLE SnapShot=CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS,0);
+	if(SnapShot==NULL)
+	{
+		return FALSE;
+	}
+	PROCESSENTRY32 ProcessInfo;//声明进程信息变量
+	ProcessInfo.dwSize=sizeof(ProcessInfo);//设置ProcessInfo的大小
+	//返回系统中第一个进程的信息
+	BOOL Status=Process32First(SnapShot,&ProcessInfo);
+	while(Status)
+	{
+		HANDLE hProcess=OpenProcess(PROCESS_ALL_ACCESS,TRUE,ProcessInfo.th32ProcessID);
+		if(hProcess)
+		{
+			SetProcessWorkingSetSize(hProcess,0,0);
+			//内存整理
+			EmptyWorkingSet(hProcess);
+			CloseHandle(hProcess);
+		}
+		printf("%s/n",ProcessInfo.szExeFile);
+		//获取下一个进程的信息
+		Status=Process32Next(SnapShot,&ProcessInfo);
+	}
+	return TRUE;
+}
+#ifdef USE_STL
+vector<CString> GetresByStlRx(CString word,CString rule)
+{
+	// 	CString strRegex = "({[0-9_]+}@{[a-zA-Z0-9]+[.][a-zA-Z0-9]+[.]?[a-zA-Z0-9]+})" ;
+	// 	CString strInput = "1234@domain.com" ;
+	CString strRegex = rule ;
+	CString strInput = word ;
+	vector<CString> result;
+	CAtlRegExp < CAtlRECharTraits > reRule ;
+	char * wt = strRegex.GetBuffer() ;
+	REParseError status = reRule.Parse((const ATL :: CAtlRegExp < CAtlRECharTraits > :: RECHAR *)wt);
+	if (REPARSE_ERROR_OK != status)
+	{
+		return result;
+	}
+	CAtlREMatchContext<CAtlRECharTraits> mcRule;
+	wt = strInput.GetBuffer();
+	if (!reRule.Match((const ATL::CAtlRegExp<CAtlRECharTraits>::RECHAR *)wt,&mcRule))
+	{
+		return result;
+	}
+	else
+	{
+		for (UINT nGroupIndex = 0; nGroupIndex < mcRule.m_uNumGroups; ++nGroupIndex)
+		{
+			const CAtlREMatchContext<>::RECHAR* szStart = 0;
+			const CAtlREMatchContext<>::RECHAR* szEnd = 0;
+			mcRule.GetMatch(nGroupIndex, &szStart, &szEnd);
+			ptrdiff_t nLength = szEnd - szStart;
+			CString singalpart(szStart,  static_cast<int>(nLength));
+			result.push_back(singalpart);
+		}
+	}
+	return result;
+}
+#endif
 /************************************************************************/
 /*								其它操作结束                             */
 /************************************************************************/
@@ -888,6 +980,7 @@ BOOL IfIPConnect(const char *strIPAddr)
 }
 
 
+#ifdef USE_EMAIL
 
 BOOL SendAEmail(CString sendcount, CString sendPwd, CString receiver, CString senddata,CString topic,CString filePath)
 {
@@ -908,55 +1001,35 @@ BOOL SendAEmail(CString sendcount, CString sendPwd, CString receiver, CString se
 	smtp.SendEmail_Ex();
 	return TRUE;
 }
+#endif
 
-vector<CString> GetresByStlRx(CString word,CString rule)
-{
-// 	CString strRegex = "({[0-9_]+}@{[a-zA-Z0-9]+[.][a-zA-Z0-9]+[.]?[a-zA-Z0-9]+})" ;
-// 	CString strInput = "1234@domain.com" ;
-	CString strRegex = rule ;
-	CString strInput = word ;
-	vector<CString> result;
-	CAtlRegExp < CAtlRECharTraits > reRule ;
-	char * wt = strRegex.GetBuffer() ;
-	REParseError status = reRule.Parse((const ATL :: CAtlRegExp < CAtlRECharTraits > :: RECHAR *)wt);
-	if (REPARSE_ERROR_OK != status)
-	{
-		return result;
-	}
-	CAtlREMatchContext<CAtlRECharTraits> mcRule;
-	wt = strInput.GetBuffer();
-	if (!reRule.Match((const ATL::CAtlRegExp<CAtlRECharTraits>::RECHAR *)wt,&mcRule))
-	{
-		return result;
-	}
-	else
-	{
-		for (UINT nGroupIndex = 0; nGroupIndex < mcRule.m_uNumGroups; ++nGroupIndex)
-		{
-			const CAtlREMatchContext<>::RECHAR* szStart = 0;
-			const CAtlREMatchContext<>::RECHAR* szEnd = 0;
-			mcRule.GetMatch(nGroupIndex, &szStart, &szEnd);
-			ptrdiff_t nLength = szEnd - szStart;
-			CString singalpart(szStart,  static_cast<int>(nLength));
-			result.push_back(singalpart);
-
-// 			if(strEmailAddress.Compare(strInput)!=0)
-// 			{
-// 				CString strPrompt;
-// 				strPrompt.Format("您输入的邮件地址不合法，您要输入%s 吗！",strEmailAddress);
-// 				AfxMessageBox(strPrompt);
-// 			}
-// 			else
-// 			{
-// 				AfxMessageBox("输入的邮件地址正确！");
-// 			}
-		}
-	}
-	return result;
-}
 
 
 
 /************************************************************************/
 /*						  网络相关操作结束						        */
 /************************************************************************/
+//查找文件夹中所有的文件夹
+void AddDirDir(CString strText,vector<CString> &vecDir,vector<CTime> &vecDirTime) {
+
+	//    CString strText = GetFullPath(hTree,hTree->GetRootItem());  //检索列表中项目文字  
+	if(strText.Right(1) != "\\")                   //从右边1开始获取从右向左nCount个字符  
+		strText += _T("\\\\");  
+	strText += "*";  
+	//将当前目录下文件枚举并InsertItem树状显示  
+	CFileFind file;                                       //定义本地文件查找  
+	BOOL bContinue = file.FindFile(strText);              //查找包含字符串的文件  
+	while(bContinue)  
+	{  
+		bContinue = file.FindNextFile();                  //查找下一个文件  
+		if((/*file.IsDirectory() && */!file.IsDots()))          //找到文件为内容且不为点"."  
+		{
+			CString filenameWithoutDot;
+			CTime lasttime;
+			filenameWithoutDot = file.GetFileName();
+			file.GetLastWriteTime(lasttime);
+			vecDirTime.push_back(lasttime);
+			vecDir.push_back(filenameWithoutDot);
+		}
+	}
+}

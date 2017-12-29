@@ -1,7 +1,7 @@
 #if !defined(AFX_XFUNCOM_H_INCLUDED_)
 #define AFX_XFUNCOM_H_INCLUDED_
 #define USE_OPENCV 1
-#define USE_EMAIL
+//#define USE_EMAIL
 //使用正则之前要先将extern的正则文件覆盖到mfc目录下
 #define USE_STL
 #include "resource.h"
@@ -11,6 +11,10 @@
 #include <afxcmn.h>
 #include <stdlib.h>
 #include <afxmt.h>
+
+
+
+
 
 #ifdef USE_OPENCV
 #include "cv.h"
@@ -136,6 +140,8 @@ BOOL CreateFolder(CString strPath);
 BOOL CreateAllDirectories(CString strDir);
 //获取文件夹路径
 CString GetDirPathByDialog(CString rootpath,CWnd* papa);
+//查找文件夹中所有的文件夹
+void AddDirDir(CString strText,vector<CString> &vecDir,vector<CTime> &vecDirTime) ;
 //查找文件夹中相同后缀的文件
 CString FindFileSameExtension(CString strPath,CString strExtension);
 //删除路径和路径中的文件
@@ -209,6 +215,10 @@ void splitStr(TCHAR* srcStr,TCHAR* findedStr,std::vector<CString> &param);
 bool IsStartWith(TCHAR *srcStr ,TCHAR *FindedSrt);
 //替换部分字符
 void ReplaceStr(CString &dynText, CString strFinded, CString strMid);
+//CString转char*
+#ifndef _CString2Char
+#define _CString2Char(str)			(LPSTR)(LPCSTR)str
+#endif
 /************************************************************************/
 /*						  字符串常用操作结束						    */
 /************************************************************************/
@@ -299,6 +309,8 @@ int GetRand(int min,int max);
 void WaitProcess(LPTSTR FileName,LPTSTR Param);
 //使用正则表达式进行匹配
 vector<CString> GetresByStlRx(CString word,CString rule);
+//内存整理
+BOOL memsort();
 /************************************************************************/
 /*								其它操作结束                             */
 /************************************************************************/
