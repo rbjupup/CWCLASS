@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 #include "WPowerCV.h"
 #include "XFunCom.h"
-
 CWPowerCV::CWPowerCV(void)
 {
 }

@@ -2,6 +2,8 @@
 #define AFX_XFUNCOM_H_INCLUDED_
 #define USE_OPENCV 1
 #define USE_EMAIL
+//使用正则之前要先将extern的正则文件覆盖到mfc目录下
+#define USE_STL
 #include "resource.h"
 #include <vector>
 #include <algorithm>
@@ -9,14 +11,19 @@
 #include <afxcmn.h>
 #include <stdlib.h>
 #include <afxmt.h>
+
 #ifdef USE_OPENCV
 #include "cv.h"
 #include "minmax.h"
 #endif
+
 #ifdef USE_EMAIL
 #include "Smtp.h"
 #endif
 
+#ifdef USE_STL
+#include <atlrx.h>
+#endif
 
 
 using namespace std;
@@ -290,7 +297,8 @@ void SetLogPath(CString savePath);
 int GetRand(int min,int max);
 //调用cmd.exe实现对bat文件的调用,或者直接对其它软件进行调用
 void WaitProcess(LPTSTR FileName,LPTSTR Param);
-
+//使用正则表达式进行匹配
+vector<CString> GetresByStlRx(CString word,CString rule);
 /************************************************************************/
 /*								其它操作结束                             */
 /************************************************************************/

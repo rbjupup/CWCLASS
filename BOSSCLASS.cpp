@@ -3,6 +3,7 @@
 #include "mmsystem.h"
 #include "CLASSTEST.h"
 #include "YCIni.h"
+#include "XFunCom.h"
 BOSSCLASS::BOSSCLASS(void)
 {
 	m_vecSupportClass.push_back(CLASSNAME1);

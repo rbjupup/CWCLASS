@@ -909,6 +909,52 @@ BOOL SendAEmail(CString sendcount, CString sendPwd, CString receiver, CString se
 	return TRUE;
 }
 
+vector<CString> GetresByStlRx(CString word,CString rule)
+{
+// 	CString strRegex = "({[0-9_]+}@{[a-zA-Z0-9]+[.][a-zA-Z0-9]+[.]?[a-zA-Z0-9]+})" ;
+// 	CString strInput = "1234@domain.com" ;
+	CString strRegex = rule ;
+	CString strInput = word ;
+	vector<CString> result;
+	CAtlRegExp < CAtlRECharTraits > reRule ;
+	char * wt = strRegex.GetBuffer() ;
+	REParseError status = reRule.Parse((const ATL :: CAtlRegExp < CAtlRECharTraits > :: RECHAR *)wt);
+	if (REPARSE_ERROR_OK != status)
+	{
+		return result;
+	}
+	CAtlREMatchContext<CAtlRECharTraits> mcRule;
+	wt = strInput.GetBuffer();
+	if (!reRule.Match((const ATL::CAtlRegExp<CAtlRECharTraits>::RECHAR *)wt,&mcRule))
+	{
+		return result;
+	}
+	else
+	{
+		for (UINT nGroupIndex = 0; nGroupIndex < mcRule.m_uNumGroups; ++nGroupIndex)
+		{
+			const CAtlREMatchContext<>::RECHAR* szStart = 0;
+			const CAtlREMatchContext<>::RECHAR* szEnd = 0;
+			mcRule.GetMatch(nGroupIndex, &szStart, &szEnd);
+			ptrdiff_t nLength = szEnd - szStart;
+			CString singalpart(szStart,  static_cast<int>(nLength));
+			result.push_back(singalpart);
+
+// 			if(strEmailAddress.Compare(strInput)!=0)
+// 			{
+// 				CString strPrompt;
+// 				strPrompt.Format("您输入的邮件地址不合法，您要输入%s 吗！",strEmailAddress);
+// 				AfxMessageBox(strPrompt);
+// 			}
+// 			else
+// 			{
+// 				AfxMessageBox("输入的邮件地址正确！");
+// 			}
+		}
+	}
+	return result;
+}
+
 
 
 /************************************************************************/
