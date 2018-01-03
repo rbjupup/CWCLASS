@@ -34,6 +34,9 @@
     <Filter Include="CLASS\CV">
       <UniqueIdentifier>{85ce3427-9e2e-4aff-b72f-e18b5bee24b4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CLASS\RTREE">
+      <UniqueIdentifier>{e68025e7-98be-42a2-b2b6-21409734f8d1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -141,6 +144,12 @@
     <ClInclude Include="assistant\Smtp.h">
       <Filter>assistant</Filter>
     </ClInclude>
+    <ClInclude Include="CLASS\RTREE\RTree.h">
+      <Filter>CLASS\RTREE</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\RTREE\BigData.h">
+      <Filter>CLASS\RTREE</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CLASSTEST.cpp">
@@ -211,6 +220,9 @@
     </ClCompile>
     <ClCompile Include="assistant\Smtp.cpp">
       <Filter>assistant</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\RTREE\BigData.cpp">
+      <Filter>CLASS\RTREE</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

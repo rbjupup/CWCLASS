@@ -130,6 +130,8 @@
     <ClInclude Include="CLASS\ROB\WListen.h" />
     <ClInclude Include="CLASS\ROB\WROBO.h" />
     <ClInclude Include="CLASS\ROB\WTalk.h" />
+    <ClInclude Include="CLASS\RTREE\BigData.h" />
+    <ClInclude Include="CLASS\RTREE\RTree.h" />
     <ClInclude Include="DefineOfString.h" />
     <ClInclude Include="CLASSTEST.h" />
     <ClInclude Include="CLASSTESTDlg.h" />
@@ -165,6 +167,7 @@
     <ClCompile Include="CLASS\ROB\WTalk.cpp" />
     <ClCompile Include="CLASSTEST.cpp" />
     <ClCompile Include="CLASSTESTDlg.cpp" />
+    <ClCompile Include="CLASS\RTREE\BigData.cpp" />
     <ClCompile Include="ResDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
