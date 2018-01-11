@@ -384,6 +384,64 @@ CString GetCurRunDir()
 	(_tcsrchr(szFilePath,_T('\\')))[1] = 0;
 	return str = szFilePath;
 }
+
+
+void Decompresss(CString Input,CString OutPut,int useTool)
+{
+	CString pstrPath = GetAppPath();
+	CString cmd;
+	CreateAllDirectories(OutPut);
+	switch(useTool){
+	case 0://使用的是7z
+		pstrPath += "7za.exe";
+		if(strstr(Input.GetBuffer(),".tgz") != NULL || strstr(Input.GetBuffer(),".tar.gz") != NULL){
+			cmd.Format("/c %s x \"%s\" -so | \"%s\" x -si -ttar -y -o\"%s""",pstrPath,Input,pstrPath,OutPut);
+		}
+		else{
+			cmd.Format("/c %s x \"%s\" -y -o\"%s\"",pstrPath,Input,OutPut);
+		}
+		break;
+	case 1:
+		pstrPath += "decom\\HaoZipC.exe";
+		if(!FileExist(pstrPath))
+		{
+			myAfxMessageBox("找不到解压软件");
+			return;
+		}
+		cmd.Format("/c %s x \"%s\" -y -o\"%s\"",pstrPath,Input,OutPut);
+		break;
+	}
+// 	USES_CONVERSION;
+// 	LPTSTR p = W2A(cmd);
+	WaitProcess("cmd.exe",cmd.GetBuffer());
+}
+void SplitFilePath(vector<CString> &res)
+{
+	res.clear();
+
+	TCHAR pstrPath[MAX_PATH];
+
+	TCHAR sFilename[MAX_PATH];
+
+	TCHAR sDrive[_MAX_DRIVE];
+
+	TCHAR sDir[_MAX_DIR];
+
+	TCHAR sFname[_MAX_FNAME] = _T("");
+
+	TCHAR sExt[_MAX_EXT];
+
+	TCHAR curWorkDir[_MAX_EXT] = _T("");
+
+	GetModuleFileName(NULL, sFilename, _MAX_PATH);
+
+	_tsplitpath_s(sFilename, sDrive, sDir, sFname, sExt);
+	res.push_back(sDrive);
+	res.push_back(sDir);
+	res.push_back(sFname);
+	res.push_back(sExt);
+	return;
+}
 /************************************************************************/
 /*							字符串常用操作						        */
 /************************************************************************/
@@ -886,6 +944,7 @@ BOOL memsort()
 #ifdef USE_STL
 vector<CString> GetresByStlRx(CString word,CString rule)
 {
+	//http://blog.csdn.net/flyfish1986/article/details/5877838语法参考
 	// 	CString strRegex = "({[0-9_]+}@{[a-zA-Z0-9]+[.][a-zA-Z0-9]+[.]?[a-zA-Z0-9]+})" ;
 	// 	CString strInput = "1234@domain.com" ;
 	CString strRegex = rule ;
@@ -919,6 +978,36 @@ vector<CString> GetresByStlRx(CString word,CString rule)
 	return result;
 }
 #endif
+void WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue)
+{
+	if(isWaitForTrue){
+		while(!waitObject)
+		{
+			Sleep(10);
+			MSG msg;
+			if(PeekMessage(&msg,NULL,0,0,PM_REMOVE))  
+			{  
+				DispatchMessage(&msg);  
+				TranslateMessage(&msg);  
+			} 
+		}
+	}
+	else
+	{
+		while(waitObject)
+		{
+			Sleep(10);
+			MSG msg;
+			if(PeekMessage(&msg,NULL,0,0,PM_REMOVE))  
+			{  
+				DispatchMessage(&msg);  
+				TranslateMessage(&msg);  
+			} 
+
+		}
+	}
+
+}
 /************************************************************************/
 /*								其它操作结束                             */
 /************************************************************************/
@@ -1032,4 +1121,9 @@ void AddDirDir(CString strText,vector<CString> &vecDir,vector<CTime> &vecDirTime
 			vecDir.push_back(filenameWithoutDot);
 		}
 	}
+}
+
+void SplitFilePath(CString inPutPath,vector<CString> &res)
+{
+
 }

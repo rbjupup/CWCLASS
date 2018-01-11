@@ -1,7 +1,7 @@
 #if !defined(AFX_XFUNCOM_H_INCLUDED_)
 #define AFX_XFUNCOM_H_INCLUDED_
 #define USE_OPENCV 1
-#define USE_EMAIL
+//#define USE_EMAIL
 //使用正则之前要先将extern的正则文件覆盖到mfc目录下
 #define USE_STL
 #include "resource.h"
@@ -154,6 +154,10 @@ CString GetCurRunDir();
 bool DeleteDirectory(CString strDir);
 //获取exe文件夹路径
 CString GetAppPath();
+//文件解压缩
+void Decompresss(CString Input,CString OutPut,int useTool);
+//分割路径
+void SplitFilePath(vector<CString> &res);
 /************************************************************************/
 /*                    文件/文件夹操作结束                               */
 /************************************************************************/
@@ -311,6 +315,8 @@ void WaitProcess(LPTSTR FileName,LPTSTR Param);
 vector<CString> GetresByStlRx(CString word,CString rule);
 //内存整理
 BOOL memsort();
+//等待某个变量为真或者为否再继续执行接下去的代码
+void WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue);
 /************************************************************************/
 /*								其它操作结束                             */
 /************************************************************************/
