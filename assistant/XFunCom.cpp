@@ -405,7 +405,7 @@ void Decompresss(CString Input,CString OutPut,int useTool)
 		pstrPath += "decom\\HaoZipC.exe";
 		if(!FileExist(pstrPath))
 		{
-			myAfxMessageBox("找不到解压软件");
+			AfxMessageBox("找不到解压软件");
 			return;
 		}
 		cmd.Format("/c %s x \"%s\" -y -o\"%s\"",pstrPath,Input,OutPut);

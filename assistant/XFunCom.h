@@ -1,7 +1,7 @@
 #if !defined(AFX_XFUNCOM_H_INCLUDED_)
 #define AFX_XFUNCOM_H_INCLUDED_
 #define USE_OPENCV 1
-//#define USE_EMAIL
+#define USE_EMAIL
 //使用正则之前要先将extern的正则文件覆盖到mfc目录下
 #define USE_STL
 #include "resource.h"
