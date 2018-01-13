@@ -150,6 +150,12 @@
     <ClInclude Include="CLASS\RTREE\BigData.h">
       <Filter>CLASS\RTREE</Filter>
     </ClInclude>
+    <ClInclude Include="CLASS\MFCCTRL\ImageStatic.h">
+      <Filter>CLASS\MFCCTRL</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\CV\CvvImage.h">
+      <Filter>CLASS\CV</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CLASSTEST.cpp">
@@ -223,6 +229,12 @@
     </ClCompile>
     <ClCompile Include="CLASS\RTREE\BigData.cpp">
       <Filter>CLASS\RTREE</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\MFCCTRL\ImageStatic.cpp">
+      <Filter>CLASS\MFCCTRL</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\CV\CvvImage.cpp">
+      <Filter>CLASS\CV</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

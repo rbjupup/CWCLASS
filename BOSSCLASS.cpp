@@ -66,6 +66,9 @@ BOSSCLASS::BOSSCLASS(void)
 	vector<CString> CVClassSupportFunction;
 	CVClassSupportFunction.push_back(CVFUN1);
 	CVClassSupportFunction.push_back(CVFUN2);
+	CVClassSupportFunction.push_back(CVFUN3);
+	CVClassSupportFunction.push_back(CVFUN4);
+	CVClassSupportFunction.push_back(CVFUN5);
 	m_vecSupportFunction.push_back(CVClassSupportFunction);
 }
 
@@ -244,6 +247,16 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 		}		
 		if (funname == CVFUN2){
 			m_powcv.ImgCal(param[0],param[1],param[2],atoi(param[3]),atoi(param[4]),atoi(param[5]),atoi(param[6]));
+		}		
+		if (funname == CVFUN3){
+			m_powcv.ParsePtSet(param[0],param[1],atoi(param[2]));
+		}
+		if (funname == CVFUN4){
+			m_powcv.SplitByThreshold(param[0],param[1],atoi(param[2]));
+			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]));
+			theApp.m_resdlg->m_Show.ShowImage();
+		}
+		if (funname == CVFUN5){
 		}
 	}
 	return true;
@@ -297,6 +310,12 @@ CString BOSSCLASS::GetFunctionHelp(CString classname,CString funname){
 			return HELPCVFUN1;
 		if (funname == CVFUN2)
 			return HELPCVFUN2;
+		if (funname == CVFUN3)
+			return HELPCVFUN3;
+		if (funname == CVFUN4)
+			return HELPCVFUN4;
+		if (funname == CVFUN5)
+			return HELPCVFUN5;
 	}
 	return totalhelp;
 }

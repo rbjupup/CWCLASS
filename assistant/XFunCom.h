@@ -11,26 +11,75 @@
 #include <afxcmn.h>
 #include <stdlib.h>
 #include <afxmt.h>
-
-
-
-
-
 #ifdef USE_OPENCV
 #include "cv.h"
 #include "minmax.h"
 #endif
-
 #ifdef USE_EMAIL
 #include "Smtp.h"
 #endif
-
 #ifdef USE_STL
 #include <atlrx.h>
 #endif
-
-
 using namespace std;
+
+
+/************************************************************************/
+/*                          目录开始                                    */
+/************************************************************************/
+/*
+
+文件和文件夹 
+判断文件夹是否存在
+判断文件是否存在
+获取文件夹中的全部文件夹
+获取文件夹中全部文件
+获取文件中全部数据
+将全部数据写入文件中
+多选文件框
+创建文件夹
+创建完整路径
+获取文件夹路径0表示文件夹，1表示文件
+查找文件夹中所有的文件夹
+查找文件夹中相同后缀的文件
+删除路径和路径中的文件
+拷贝路径
+获取程序运行当前路径
+删除非空文件夹
+获取exe文件夹路径
+文件解压缩
+分割路径
+
+字符串
+
+图像
+填充位图头文件
+在DC上绘制图像
+在图像上绘制十字线
+
+计时
+
+其它函数
+使用CString的格式来写日志
+写日志到文件中
+设置日志保存的地址
+获取一个在最大值到最小值之间的随机数
+调用cmd.exe实现对bat文件的调用,或者直接对其它软件进行调用
+使用正则表达式进行匹配
+内存整理
+等待某个变量为真或者为否再继续执行接下去的代码
+
+
+网络
+判断网络是否连通且输出联通类型
+判断一个IP是否联通
+发送一封Email
+*/
+
+/************************************************************************/
+/*                          目录结束                                    */
+/************************************************************************/
+
 #ifndef YX_BYTE//8 - bit 1 - channel 
 #define YX_BYTE(img,y,x) ((BYTE*)(img->imageData + (y)*img->widthStep))[x]
 #endif
@@ -132,14 +181,18 @@ BOOL FileExist(CString strFileName);
 void GetDirNameFromDir(CString csDirPath,std::vector<CString> &m_FileList )  ;
 //获取文件夹中全部文件
 void GetFileNameFromDir(CString strDir, std::vector<CString>& vecFiles,int type = 0);
+//获取文件中全部数据
+void GetDataFromFile(CString filePath,std::vector<CString>& vecData);
+//将全部数据写入文件中
+void WriteDataToFile(CString strFilePath,std::vector<CString>& vecData);
 //多选文件框
 void OpenFilePath(vector<CString> &FilePathVector,CString strInitPath = _T(""));
 //创建文件夹
 BOOL CreateFolder(CString strPath);
 //创建完整路径
 BOOL CreateAllDirectories(CString strDir);
-//获取文件夹路径
-CString GetDirPathByDialog(CString rootpath,CWnd* papa);
+//获取文件夹路径0表示文件夹，1表示文件
+CString GetDirPathByDialog(CString rootpath,CWnd* papa,int type = 0);
 //查找文件夹中所有的文件夹
 void AddDirDir(CString strText,vector<CString> &vecDir,vector<CTime> &vecDirTime) ;
 //查找文件夹中相同后缀的文件
@@ -231,7 +284,7 @@ void ReplaceStr(CString &dynText, CString strFinded, CString strMid);
 /*								 图像操作开始                           */
 /************************************************************************/
 //填充位图头文件
-void FillBitmapInfo(BITMAPINFO* bmi, int width, int height, int bpp, int origin);
+void FillBitmapInfo1(BITMAPINFO* bmi, int width, int height, int bpp, int origin);
 /************************************************************************/
 /* 函数功能：在DC上绘制			图形                                    */
 /************************************************************************/

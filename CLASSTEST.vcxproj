@@ -117,8 +117,10 @@
     <ClInclude Include="BOSSCLASS.h" />
     <ClInclude Include="CLASS\BCG\BCGdlg.h" />
     <ClInclude Include="CLASS\BCG\CWBCG.h" />
+    <ClInclude Include="CLASS\CV\CvvImage.h" />
     <ClInclude Include="CLASS\CV\WPowerCV.h" />
     <ClInclude Include="CLASS\MFCCTRL\GdipButton.h" />
+    <ClInclude Include="CLASS\MFCCTRL\ImageStatic.h" />
     <ClInclude Include="CLASS\MFCCTRL\WMFCBtn.h" />
     <ClInclude Include="CLASS\MONITOR\explorer1.h" />
     <ClInclude Include="CLASS\MONITOR\MyBrower.h" />
@@ -149,8 +151,10 @@
     <ClCompile Include="BOSSCLASS.cpp" />
     <ClCompile Include="class\bcg\bcgdlg.CPP" />
     <ClCompile Include="CLASS\BCG\CWBCG.cpp" />
+    <ClCompile Include="CLASS\CV\CvvImage.cpp" />
     <ClCompile Include="CLASS\CV\WPowerCV.cpp" />
     <ClCompile Include="CLASS\MFCCTRL\GdipButton.cpp" />
+    <ClCompile Include="CLASS\MFCCTRL\ImageStatic.cpp" />
     <ClCompile Include="CLASS\MFCCTRL\WMFCBtn.cpp" />
     <ClCompile Include="CLASS\MONITOR\explorer1.cpp" />
     <ClCompile Include="CLASS\MONITOR\MyBrower.cpp" />

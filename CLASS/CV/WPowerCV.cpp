@@ -93,3 +93,99 @@ BOOL CWPowerCV::ImgCal(CString srcfirst,CString srcsecond,CString savePath,int X
 	return TRUE;
 
 }
+
+BOOL CWPowerCV::ParsePtSet(CString inputPath,CString OutPutPath,int type)
+{
+	//读取到数组
+	vector<CString> alinepts;
+	vector<float>	falinepts;
+	vector<CString> ptsdata;
+	GetDataFromFile(inputPath,ptsdata);
+	if(ptsdata.size() < 1)
+		return FALSE;
+	CVTRYSTART
+	splitStr(ptsdata[0].GetBuffer(0),",",alinepts);
+	vector<vector<float>> pts;
+	CvMat *mat;
+	mat = cvCreateMat( alinepts.size(), ptsdata.size(), CV_32FC1);
+	int row = alinepts.size();
+	int col = ptsdata.size();
+	int maxvalue = 0;
+	cvZero(mat);
+	for (int i = 0; i < ptsdata.size();i++)
+	{
+		alinepts.clear();
+		splitStr(ptsdata[i].GetBuffer(0),",",alinepts);
+		for (int j =0; j < alinepts.size();j++){
+			cvmSet( mat, j, i, atof(alinepts[j]) );
+		}
+	}
+	double MinValue;
+	double MaxValue;
+
+	CvPoint MinLocation;
+	CvPoint MaxLocation;
+	cvMinMaxLoc(mat,& MinValue,& MaxValue,& MinLocation,& MaxLocation);
+	maxvalue = MaxValue +1;
+	for (int i = 0; i < row;i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			float val = cvmGet(mat,i,j);
+			if(val == MinValue)
+				cvmSet( mat,i , j,maxvalue);
+			else
+				cvmSet( mat,i , j,val);
+		}
+	}
+	cvMinMaxLoc(mat,& MinValue,& MaxValue,& MinLocation,& MaxLocation);
+	for (int i = 0; i < row;i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			float val = cvmGet(mat,i,j);
+			if(val == maxvalue)
+				cvmSet( mat,i , j,MinValue);
+		}
+	}
+	cvMinMaxLoc(mat,& MinValue,& MaxValue,& MinLocation,& MaxLocation);
+	double co0 = - MinValue/(MaxValue - MinValue)*255.0;
+	double co1 = 255.0/(MaxValue - MinValue);
+	//将所有数据归一化到0-255
+	IplImage* pImg = cvCreateImage(cvSize(row,col),8,1);
+	vector<CString> out;
+	CString tmp;
+	for (int i = 0; i < row;i++)
+	{
+		CString alinestr;
+		for (int j = 0; j < col; j++)
+		{
+			float val = cvmGet(mat,i,j);
+			tmp.Format("%.3f",val);
+			val = val*co1 + co0;
+			//cvmSet( mat,i , j,val);
+			if(j == 0)
+				alinestr += tmp;
+			else 
+				alinestr = alinestr + ","+ tmp;
+			cvSet2D(pImg,j,i,cvScalarAll(val));
+		}
+		if(i>=1000&&i<2000)
+			out.push_back(alinestr);
+	}
+	//WriteDataToFile("D:\\2.csv",out);
+	cvSaveImage(OutPutPath,pImg);
+	cvReleaseImage(&pImg);
+	cvReleaseMat(&mat);
+	CVTRYEND
+	return TRUE;
+}
+
+BOOL CWPowerCV::SplitByThreshold(CString InputImgPath,CString OutPutPath,int threshold)
+{
+	IplImage *pImg = cvLoadImage(InputImgPath,0);
+	cvThreshold(pImg,pImg,threshold,255,CV_THRESH_BINARY);
+	cvSaveImage(OutPutPath,pImg);
+	cvReleaseImage(&pImg);
+	return TRUE;
+}

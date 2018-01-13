@@ -156,6 +156,60 @@ void GetFileNameFromDir(CString strDir, std::vector<CString>& vecFiles,int type)
 
 	}  
 }  
+void WriteDataToFile(CString strFilePath,std::vector<CString>& vecData)
+{
+	if (!FileExist(strFilePath))
+	{	
+		CreateAllDirectories(strFilePath.Left(strFilePath.ReverseFind('\\')));
+	}
+	LTimeCount tt;
+	tt.Start();
+	CStdioFile m_StFile;
+	int m_nRows = 0;
+	m_StFile.Open(strFilePath,CFile::modeReadWrite|CFile::modeCreate);
+	if (m_StFile == NULL)
+	{
+		return;
+	}
+	CString str;
+	for (int i = 0; i < vecData.size();i++)
+	{
+		m_StFile.WriteString(vecData[i]);				//整行读取
+		m_StFile.WriteString("\r\n");
+	}
+	m_StFile.Close();
+	tt.End();
+	TRACE("StdioFile读入%d行耗时：%.3f\n",m_nRows,tt.GetUseTime());
+	return;
+}
+void GetDataFromFile(CString strFilePath,std::vector<CString>& vecData)
+{
+	if (!FileExist(strFilePath))
+	{
+		AfxMessageBox("当前指定资料不存在!");
+		return;
+	}
+	LTimeCount tt;
+	tt.Start();
+	CStdioFile m_StFile;
+	int m_nRows = 0;
+	m_StFile.Open(strFilePath,CFile::modeRead);
+	if (m_StFile == NULL)
+	{
+		return;
+	}
+	CString str;
+	while (m_StFile.ReadString(str))					//整行读取
+	{
+		//TRACE("%s\n",str);
+		vecData.push_back(str);
+		m_nRows ++;
+	}
+	m_StFile.Close();
+	tt.End();
+	TRACE("StdioFile读入%d行耗时：%.3f\n",m_nRows,tt.GetUseTime());
+	return;
+}
 void OpenFilePath(vector<CString> &FilePathVector,CString strInitPath)
 {
 	CString t_odbFilePath;
@@ -355,8 +409,32 @@ CString GetAppPath()
 	return Tmp;
 }
 
-CString GetDirPathByDialog(CString rootpath,CWnd* papa)
+CString GetDirPathByDialog(CString rootpath,CWnd* papa,int type)
 {
+	if(type == 1){
+		CString path;
+		CFileDialog OpenDialog(TRUE,NULL,"",OFN_ALLOWMULTISELECT|OFN_ENABLESIZING|OFN_HIDEREADONLY);
+		if (IDOK == OpenDialog.DoModal())
+		{
+
+			IShellItemArray *pResult=OpenDialog.GetResults();
+			OpenDialog.m_ofn.nMaxFile = 500 * MAX_PATH;
+			DWORD dwCount=0;
+			IShellItem *pItem;
+			WCHAR *pFilePath;
+			pResult->GetCount(&dwCount);
+			for (DWORD i=0;i<dwCount;i++)
+			{
+				pResult->GetItemAt(i,&pItem);
+				pItem->GetDisplayName(SIGDN_FILESYSPATH,&pFilePath);
+				path+=pFilePath;
+				path+="\n";
+			}
+		}
+		path.TrimLeft();
+		path.TrimRight();
+		return path;
+	}
 	try{
 		CFolderPickerDialog fd(NULL, 0, papa, 0);
 		//fd.GetOFN().lpstrInitialDir = rootpath;// 默认目录
@@ -647,15 +725,18 @@ void splitStr(TCHAR* srcStr,TCHAR* findedStr,vector<CString> &param)
 	TCHAR* TmpStr = srcStr;
 	size_t len = strlen(srcStr);
 	size_t pos = 0;
-	while(strstr(TmpStr,findedStr) != NULL)
+	char* hadstr = 0;
+	hadstr = strstr(TmpStr,findedStr);
+	while(hadstr != NULL)
 	{
-		pos =len - strlen(strstr(TmpStr,findedStr));
+		pos =len - strlen(hadstr);
 		TmpStr[pos] ='\0';
 		if (pos != 0)
 			param.push_back(CString(srcStr));
 		TmpStr += (pos += strlen(findedStr)); 
 		srcStr = TmpStr;
 		len = strlen(TmpStr);
+		hadstr = strstr(TmpStr,findedStr);
 	}
 	if(len > 0)
 		param.push_back(CString(srcStr));
@@ -696,7 +777,7 @@ void ReplaceStr(CString &dynText, CString strFinded, CString strMid)
 /*								 图像操作开始                           */
 /************************************************************************/
 //填充位图头文件
-void FillBitmapInfo(BITMAPINFO* bmi, int width, int height, int bpp, int origin)
+void FillBitmapInfo1(BITMAPINFO* bmi, int width, int height, int bpp, int origin)
 {
 	assert( bmi && width >= 0 && height >= 0 && (bpp == 8 || bpp == 24 || bpp == 32));
 
@@ -810,7 +891,7 @@ void DrawImageOnMemDc(IplImage *Img,CDC *pMemDC,CBitmap *bmp,float fImageScale)
 	int bpp = Img ? (Img->depth & 255)*Img->nChannels : 0;
 	//代替cvvimage的Bpp()函数
 
-	FillBitmapInfo( bmi, bmp_w, bmp_h, bpp,Img->origin );
+	FillBitmapInfo1( bmi, bmp_w, bmp_h, bpp,Img->origin );
 
 	HBITMAP hOldBitmap;
 	CBitmap *pOldBit = NULL;
@@ -1123,7 +1204,4 @@ void AddDirDir(CString strText,vector<CString> &vecDir,vector<CTime> &vecDirTime
 	}
 }
 
-void SplitFilePath(CString inPutPath,vector<CString> &res)
-{
 
-}

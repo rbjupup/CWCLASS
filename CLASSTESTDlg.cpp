@@ -86,6 +86,8 @@ BEGIN_MESSAGE_MAP(CCLASSTESTDlg, CDialog)
 	ON_BN_CLICKED(IDC_BUTTON_READ, &CCLASSTESTDlg::OnBnClickedButtonRead)
 	ON_BN_CLICKED(IDC_BUTTONU, &CCLASSTESTDlg::OnBnClickedButtonu)
 	ON_BN_CLICKED(IDC_BUTTOND, &CCLASSTESTDlg::OnBnClickedButtond)
+	ON_BN_CLICKED(IDC_BUTTON_INPUT2, &CCLASSTESTDlg::OnBnClickedButtonInput2)
+	ON_BN_CLICKED(IDC_BUTTON_INPUT3, &CCLASSTESTDlg::OnBnClickedButtonInput3)
 END_MESSAGE_MAP()
 
 
@@ -568,4 +570,41 @@ void CCLASSTESTDlg::RunSellf()
 	m_boss.CallFunction(surClass,surFun,param);
 	theApp.m_resdlg->AddStatus("finish");
 
+}
+
+
+void CCLASSTESTDlg::OnBnClickedButtonInput2()
+{
+	UpdateData(TRUE);
+	int ncount = m_ListInput.GetItemCount();
+
+	CString numIndex;
+	numIndex.Format("%d",ncount+1);
+	m_ListInput.InsertItem(ncount,numIndex);
+
+	CString dirPath = GetDirPathByDialog("",this,0);
+	if(dirPath == "")
+		return;
+	m_ListInput.SetItemText(ncount,1,dirPath);
+	m_strInput = CString("");
+	UpdateData(FALSE);
+}
+
+
+void CCLASSTESTDlg::OnBnClickedButtonInput3()
+{
+	UpdateData(TRUE);
+	int ncount = m_ListInput.GetItemCount();
+
+	CString numIndex;
+	numIndex.Format("%d",ncount+1);
+	m_ListInput.InsertItem(ncount,numIndex);
+
+	CString dirPath = GetDirPathByDialog("",this,1);
+	if(dirPath == "")
+		return;
+
+	m_ListInput.SetItemText(ncount,1,dirPath);
+	m_strInput = CString("");
+	UpdateData(FALSE);
 }

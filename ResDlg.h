@@ -1,7 +1,8 @@
 #pragma once
 #include "resource.h"
 #include "afxwin.h"
-
+#include "afxcmn.h"
+#include "CLASS/MFCCTRL/ImageStatic.h"
 // CResDlg ¶Ô»°¿ò
 
 #define CDialog CBCGPDialog
@@ -21,6 +22,12 @@ protected:
 public:
 	void AddStatus(CString);
 	CString m_strRes;
-	CStatic m_Show;
+	CImageStatic m_Show;
 	virtual BOOL OnInitDialog();
+	int newValueIndex;
+	BOOL m_bUseSlider;
+	CSliderCtrl m_newValSlider;
+	afx_msg void OnNMReleasedcaptureSlidervalue(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnBnClickedButton3();
+	afx_msg void OnBnClickedButton2();
 };

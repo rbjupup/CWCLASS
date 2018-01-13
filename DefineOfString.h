@@ -79,3 +79,10 @@
 #define HELPCVFUN1 CString("输入1:输入图像路径\r\n输入2:输出图像文件夹路径\r\n输入3:X方向分割次数\r\n输入4:Y方向分割次数\r\n")
 #define CVFUN2 CString("图像运算")
 #define HELPCVFUN2 CString("输入1:输入图像路径1\r\n输入2:输入图像路径2\r\n输入3:输出图像路径\r\n输入4:X方向偏移\r\n输入5:X方向偏移\r\n输入6:计算类型，0是加1是减\r\n")
+
+#define CVFUN3 CString("点云生成灰度图")
+#define HELPCVFUN3 CString("输入1:输入图文件路径1\r\n输入2:输出图像路径2\r\n输入3:点云文件类型，0是csv\r\n")
+#define CVFUN4 CString("灰度图阈值分割")
+#define HELPCVFUN4 CString("输入1:输入图像路径1\r\n输入2:输出图像路径2\r\n输入3:阈值\r\n")
+#define CVFUN5 CString("图像轮廓寻找")
+#define HELPCVFUN5 CString("说明：找轮廓并会知道原图上\r\n输入1:输入图像路径1\r\n输入2:输出图像路径2\r\n输入3:方法\r\n")

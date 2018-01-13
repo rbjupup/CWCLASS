@@ -61,4 +61,6 @@ public:
 	afx_msg void OnBnClickedButtonu();
 	afx_msg void OnBnClickedButtond();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	afx_msg void OnBnClickedButtonInput2();
+	afx_msg void OnBnClickedButtonInput3();
 };
