@@ -15,7 +15,6 @@ CResDlg::CResDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CResDlg::IDD, pParent)
 	, m_strRes(_T(""))
 	, newValueIndex(0)
-	, m_bUseSlider(FALSE)
 {
 
 }
@@ -30,7 +29,6 @@ void CResDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_RESSTR, m_strRes);
 	DDX_Control(pDX, IDC_SHOW, m_Show);
 	DDX_Text(pDX, IDC_EDIT1, newValueIndex);
-	DDX_Check(pDX, IDC_CHECK1, m_bUseSlider);
 	DDX_Control(pDX, IDC_SLIDER1, m_newValSlider);
 }
 
@@ -39,6 +37,8 @@ BEGIN_MESSAGE_MAP(CResDlg, CDialog)
 	ON_NOTIFY(NM_RELEASEDCAPTURE, IDC_SLIDER1, &CResDlg::OnNMReleasedcaptureSlidervalue)
 	ON_BN_CLICKED(IDC_BUTTON3, &CResDlg::OnBnClickedButton3)
 	ON_BN_CLICKED(IDC_BUTTON2, &CResDlg::OnBnClickedButton2)
+	ON_EN_CHANGE(IDC_EDIT1, &CResDlg::OnEnChangeEdit1)
+	ON_BN_CLICKED(IDC_BUTTON_MAX, &CResDlg::OnBnClickedButtonMax)
 END_MESSAGE_MAP()
 
 
@@ -117,4 +117,26 @@ void CResDlg::OnBnClickedButton2()
 	GetDlgItem(IDC_STATIC_NEWVAL)->SetWindowText(after);
 
 	((CCLASSTESTDlg*)(theApp.m_pMainWnd))->OnBnClickedButtonStart();
+}
+
+
+void CResDlg::OnEnChangeEdit1()
+{
+	UpdateData();
+	CString newstr;
+	newstr = ((CCLASSTESTDlg*)(theApp.m_pMainWnd))->m_ListInput.GetItemText(newValueIndex,1);
+	int newval = atoi(newstr);
+	if(newval == 0)
+		return
+	m_newValSlider.SetPos(newval);
+	newstr.Format("%d",newval);
+	GetDlgItem(IDC_STATIC_NEWVAL)->SetWindowText(newstr);
+}
+
+
+void CResDlg::OnBnClickedButtonMax()
+{
+	CString maxval;
+	GetDlgItem(IDC_EDIT_SLIDERMAX)->GetWindowText(maxval);
+	m_newValSlider.SetRange(0,atoi(maxval),1);
 }

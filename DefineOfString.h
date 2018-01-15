@@ -86,3 +86,7 @@
 #define HELPCVFUN4 CString("输入1:输入图像路径1\r\n输入2:输出图像路径2\r\n输入3:阈值\r\n")
 #define CVFUN5 CString("图像轮廓寻找")
 #define HELPCVFUN5 CString("说明：找轮廓并会知道原图上\r\n输入1:输入图像路径1\r\n输入2:输出图像路径2\r\n输入3:方法\r\n")
+#define CVFUN6 CString("漫水填充")
+#define HELPCVFUN6 CString("说明：使用种子点填充相似像素\r\n输入1:输入图像路径1\r\n")
+#define CVFUN7 CString("ROI分割")
+#define HELPCVFUN7 CString("说明：使用ROI将图片的感兴趣区域提取出来\r\n输入1:输入图像路径\r\n输入2:输出图像路径\r\n输入3:x\r\n输入4:y\r\n输入5:宽\r\n输入3:高\r\n")

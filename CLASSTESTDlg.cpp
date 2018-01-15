@@ -139,8 +139,11 @@ BOOL CCLASSTESTDlg::OnInitDialog()
 	for (int  i = 0 ; i < supportclass.size(); i++)
 	{
 		m_cbSupportClass.AddString(supportclass[i]);
+		if(supportclass[i] == CLASSNAME1)
+			m_cbSupportClass.SetCurSel(i);
+
 	}
-	m_cbSupportClass.SetCurSel(0);
+	//m_cbSupportClass.SetCurSel(0);
 
 	vector<CString> supportFunction;
 	CString curClassName;

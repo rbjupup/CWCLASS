@@ -10,7 +10,7 @@ CWPowerCV::~CWPowerCV(void)
 {
 }
 
-BOOL CWPowerCV::SplitIMG(CString InputImgPath,CString OutPutDir,int XNum,int YNum)
+BOOL CWPowerCV::SplitByXYNum(CString InputImgPath,CString OutPutDir,int XNum,int YNum)
 {
 	//加载图像
 	if (!FileExist(InputImgPath)||XNum <= 0|| YNum <= 0)
@@ -188,4 +188,83 @@ BOOL CWPowerCV::SplitByThreshold(CString InputImgPath,CString OutPutPath,int thr
 	cvSaveImage(OutPutPath,pImg);
 	cvReleaseImage(&pImg);
 	return TRUE;
+}
+void CWPowerCV::FindContour(CString InputImgPath,CString OutPutPath,int method){
+	IplImage *frame,*gray,*sobel;
+	InputImgPath.Replace("\\","/");
+	frame=cvLoadImage(InputImgPath);//加载图像
+	gray=cvCreateImage(cvGetSize(frame),frame->depth,1);//分配图像空间
+	sobel=cvCreateImage(cvGetSize(frame),IPL_DEPTH_16S,1);
+	cvNamedWindow("frame");
+	cvNamedWindow("gray");
+	cvNamedWindow("sobel");
+	cvCvtColor(frame,gray,CV_BGR2GRAY);//转为灰度
+	cvSobel(gray,sobel,1,0,3);
+
+	IplImage *sobel8u=cvCreateImage(cvGetSize(sobel),IPL_DEPTH_8U,1);
+	cvConvertScaleAbs(sobel,sobel8u,1,0);
+	cvSaveImage(OutPutPath,sobel8u);
+	cvReleaseImage(&frame);//释放空间（对视频处理很重要，不释放会造成内存泄露）
+	cvReleaseImage(&gray);
+	cvReleaseImage(&sobel);
+	cvReleaseImage(&sobel8u);
+}
+IplImage *src;  //源图像  
+IplImage *mask;     //掩码图像  
+IplImage *src1;       
+int lodiff = 20, updiff = 20;  
+int  connectivity = 4;  
+int new_mask_val = 255;  
+void onmouse(int event, int x, int y, int flags, void *param)  
+{  
+	switch (event)  
+	{  
+	case CV_EVENT_LBUTTONDOWN:  
+		{     
+			CvPoint seed = cvPoint(x, y);  
+			int b = rand() & 255, g = rand() & 255, r = rand() & 255;//随机找到一个颜色  
+			CvConnectedComp comp;  
+			CvScalar color = CV_RGB(r, g, b);  
+			int flags = connectivity | CV_FLOODFILL_FIXED_RANGE | (new_mask_val<< 8);  
+			cvFloodFill(src, seed, color, CV_RGB(lodiff, lodiff, lodiff), CV_RGB(updiff, updiff, updiff), &comp, flags, mask);  
+			cvShowImage("image", src);  
+			printf("%g pixels were repainted\n", comp.area);  
+		}  
+		break;  
+	case  CV_EVENT_RBUTTONDOWN:  
+		cvShowImage("image", src1);  
+		break;  
+
+	}  
+}  
+void CWPowerCV::FillFloodFillTest(CString InpuPath)
+{
+	InpuPath.Replace("\\","/");
+	src = cvLoadImage(InpuPath,1);  
+	src1 = cvCloneImage(src);  
+	/*********************************创建掩码图像****************************/  
+	IplImage *mask = cvCreateImage(cvSize(src->width + 2, src->height + 2), 8, 1);  
+	cvNamedWindow("image", CV_WINDOW_AUTOSIZE);  
+	/******************创建滑动条**********************************/  
+	cvCreateTrackbar("loDiff", "image", &lodiff, 255, NULL);  
+	cvCreateTrackbar("upDiff", "image", &updiff, 255, NULL);  
+	/********************定义鼠标响应函数****************************/  
+	cvSetMouseCallback("image", onmouse, NULL);  
+	cvShowImage("image", src);  
+	cvWaitKey(0);  
+	cvReleaseImage(&mask);  
+	cvReleaseImage(&src);  
+	cvDestroyWindow("image");  
+}
+
+BOOL CWPowerCV::SplitByROI(CString InputImgPath,CString OutPutPath,int x,int y, int width,int height)
+{
+	CVTRYSTART
+	InputImgPath.Replace("\\","/");
+	IplImage *pImg = cvLoadImage(InputImgPath,0);
+	cvSetImageROI(pImg,cvRect(x,y,width,height));
+	cvSaveImage(OutPutPath,pImg);
+	cvReleaseImage(&pImg);
+	return TRUE;
+	CVTRYEND
 }

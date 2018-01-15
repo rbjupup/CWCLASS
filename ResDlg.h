@@ -25,9 +25,10 @@ public:
 	CImageStatic m_Show;
 	virtual BOOL OnInitDialog();
 	int newValueIndex;
-	BOOL m_bUseSlider;
-	CSliderCtrl m_newValSlider;
+	CBCGPSliderCtrl m_newValSlider;
 	afx_msg void OnNMReleasedcaptureSlidervalue(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnBnClickedButton3();
 	afx_msg void OnBnClickedButton2();
+	afx_msg void OnEnChangeEdit1();
+	afx_msg void OnBnClickedButtonMax();
 };

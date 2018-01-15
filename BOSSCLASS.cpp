@@ -69,6 +69,8 @@ BOSSCLASS::BOSSCLASS(void)
 	CVClassSupportFunction.push_back(CVFUN3);
 	CVClassSupportFunction.push_back(CVFUN4);
 	CVClassSupportFunction.push_back(CVFUN5);
+	CVClassSupportFunction.push_back(CVFUN6);
+	CVClassSupportFunction.push_back(CVFUN7);
 	m_vecSupportFunction.push_back(CVClassSupportFunction);
 }
 
@@ -102,12 +104,13 @@ void GetWEBDataFromVec(CString &urlpath1, vector<CString> param, vector<CString>
 	dMaxMillTime = atoi(param[6+2*atoi(param[1]) + 2*atoi(param[2+2*atoi(param[1])])]);
 }
 
+
 bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString> param)
 {
 	if (classname == CLASSNAME1)
 	{
 		if (funname == CWFUN1){
-			GetresByStlRx("123.bat","({*.bat})");
+
 		}
 	}
 	if (classname == CLASSNAME4)
@@ -243,7 +246,7 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 	if (classname == CLASSNAME9)
 	{
 		if (funname == CVFUN1){
-			m_powcv.SplitIMG(param[0],param[1],atoi(param[2]),atoi(param[3]));
+			m_powcv.SplitByXYNum(param[0],param[1],atoi(param[2]),atoi(param[3]));
 		}		
 		if (funname == CVFUN2){
 			m_powcv.ImgCal(param[0],param[1],param[2],atoi(param[3]),atoi(param[4]),atoi(param[5]),atoi(param[6]));
@@ -257,6 +260,17 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 			theApp.m_resdlg->m_Show.ShowImage();
 		}
 		if (funname == CVFUN5){
+			m_powcv.FindContour(param[0],param[1],atoi(param[2]));
+			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]));
+			theApp.m_resdlg->m_Show.ShowImage();
+		}
+		if (funname == CVFUN6){
+			m_powcv.FillFloodFillTest(param[0]);
+		}
+		if (funname == CVFUN7){
+			m_powcv.SplitByROI(param[0],param[1],atoi(param[2]),atoi(param[3]),atoi(param[4]),atoi(param[5]));
+			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]));
+			theApp.m_resdlg->m_Show.ShowImage();
 		}
 	}
 	return true;
@@ -316,6 +330,10 @@ CString BOSSCLASS::GetFunctionHelp(CString classname,CString funname){
 			return HELPCVFUN4;
 		if (funname == CVFUN5)
 			return HELPCVFUN5;
+		if (funname == CVFUN6)
+			return HELPCVFUN6;
+		if (funname == CVFUN7)
+			return HELPCVFUN7;
 	}
 	return totalhelp;
 }
