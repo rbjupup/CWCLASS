@@ -70,8 +70,9 @@ void CResDlg::AddStatus(CString status)
 BOOL CResDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-
+#ifdef BCG
 	EnableVisualManagerStyle();
+#endif
 	// TODO:  在此添加额外的初始化
 	m_newValSlider.SetRange(0,255);
 	return TRUE;  // return TRUE unless you set the focus to a control

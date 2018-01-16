@@ -6,8 +6,9 @@
 
 
 // ABCGDlg 对话框
-
+#ifdef BCG
 #define CDialog CBCGPDialog
+#endif
 
 #define MAX_SERIES 5
 class ABCGDlg : public CDialog
@@ -27,11 +28,12 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 
+#ifdef BCG
 //波形图绘制所需
 	CBCGPChartCtrl m_wndChart;
 	CBCGPChartSeries*	m_arSeries[1];
 //波形图绘制所需End
-
+#endif
 
 	virtual BOOL OnInitDialog();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);

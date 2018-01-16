@@ -41,7 +41,7 @@
 
 
 #define TEST_CLASS 1
-#define BCG 1
+//#define BCG 0
 
 
 

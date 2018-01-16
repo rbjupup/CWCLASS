@@ -4,8 +4,9 @@
 #include "afxcmn.h"
 #include "CLASS/MFCCTRL/ImageStatic.h"
 // CResDlg ¶Ô»°¿ò
-
+#ifdef BCG
 #define CDialog CBCGPDialog
+#endif
 class CResDlg : public CDialog
 {
 	DECLARE_DYNAMIC(CResDlg)
@@ -25,7 +26,12 @@ public:
 	CImageStatic m_Show;
 	virtual BOOL OnInitDialog();
 	int newValueIndex;
+#ifdef BCG
 	CBCGPSliderCtrl m_newValSlider;
+#else
+	CSliderCtrl m_newValSlider;
+
+#endif
 	afx_msg void OnNMReleasedcaptureSlidervalue(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnBnClickedButton3();
 	afx_msg void OnBnClickedButton2();

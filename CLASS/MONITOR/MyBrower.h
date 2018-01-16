@@ -22,7 +22,11 @@ protected:
 	DECLARE_MESSAGE_MAP()
 private:
 	CExplorer1 m_browseer;
+#ifdef BCG
 	CBCGPButton m_testBotton;
+#else
+	CButton m_testBotton;
+#endif
 
 	afx_msg void OnBnClickedButton1();
 	afx_msg void OnSize(UINT nType, int cx, int cy);

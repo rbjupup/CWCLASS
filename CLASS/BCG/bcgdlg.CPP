@@ -20,7 +20,9 @@ ABCGDlg::~ABCGDlg()
 void ABCGDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
+#ifdef BCG
 	DDX_Control(pDX, IDC_CHART, m_wndChart);
+#endif
 }
 
 
@@ -105,7 +107,7 @@ void ABCGDlg::OnTimer(UINT_PTR nIDEvent)
 //	CBCGPChartExampleView::OnTimer(nIDEvent);
 
 	
-
+#ifdef BCG
 	CBCGPChartVisualObject* pChart = m_wndChart.GetChart();
 	ASSERT_VALID(pChart);
 
@@ -119,6 +121,8 @@ void ABCGDlg::OnTimer(UINT_PTR nIDEvent)
 
 	pChart->SetDirty();
 	pChart->Redraw();
+#endif
+
 	CDialog::OnTimer(nIDEvent);
 }
 
@@ -126,6 +130,7 @@ void ABCGDlg::OnTimer(UINT_PTR nIDEvent)
 void ABCGDlg::OnBnClickedButtonStart()
 {
 	SetTimer(0, 100, NULL);
-
+#ifdef BCG
 	m_wndChart.SetFocus();
+#endif
 }

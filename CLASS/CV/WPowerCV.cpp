@@ -100,7 +100,7 @@ BOOL CWPowerCV::ImgCal(CString srcfirst,CString srcsecond,CString savePath,int X
 
 }
 
-BOOL CWPowerCV::ParsePtSet(CString inputPath,CString OutPutPath,int type)
+BOOL CWPowerCV::ParsePtSet(CString inputPath,CString OutPutPath,int type,double *co)
 {
 	//读取到数组
 	vector<CString> alinepts;
@@ -159,6 +159,10 @@ BOOL CWPowerCV::ParsePtSet(CString inputPath,CString OutPutPath,int type)
 	double co1 = 255.0/(MaxValue - MinValue);
 	ssznpic.co0 = co0;
 	ssznpic.co1 = co1;
+	if(co != NULL){
+		co[0] = co0;
+		co[1] = co1;
+	}
 	//将所有数据归一化到0-255
 	IplImage* pImg = cvCreateImage(cvSize(row,col),8,1);
 	vector<CString> out;

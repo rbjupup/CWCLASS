@@ -8,7 +8,9 @@
 #include "afxcmn.h"
 
 // CCLASSTESTDlg 对话框
+#ifdef BCG
 #define CDialog CBCGPDialog
+#endif
 class CCLASSTESTDlg : public CDialog
 {
 // 构造
@@ -39,14 +41,19 @@ public:
 	afx_msg void OnBnClickedButtonStart();
 
 	void RunSellf();
-
+#ifdef BCG
 	CBCGPComboBox m_cbSupportClass;
 	CBCGPComboBox m_cbFunction;
+	CBCGPListCtrl m_ListInput;
+#else
+	CComboBox m_cbSupportClass;
+	CComboBox m_cbFunction;
+	CListCtrl m_ListInput;
+#endif
 	afx_msg void OnCbnSelchangeCombo2();
 	CString m_strHelp;
 	CString m_strInput;
 	afx_msg void OnBnClickedButtonInput();
-	CBCGPListCtrl m_ListInput;
 	afx_msg void OnBnClickedButton1();
 	afx_msg void OnCbnSelchangeCombo1();
 	afx_msg void OnBnClickedButton2();

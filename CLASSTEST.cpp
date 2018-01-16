@@ -61,7 +61,7 @@ BOOL CCLASSTESTApp::InitInstance()
 	CBCGPVisualManager2010::SetStyle (CBCGPVisualManager2010::VS2010_Black);
 	CBCGPVisualManager::SetDefaultManager (RUNTIME_CLASS (CBCGPVisualManager2010));
 #endif
-	GdiplusStartup(&m_pGdiToken,&m_gdiplusStartupInput,NULL);  
+	//GdiplusStartup(&m_pGdiToken,&m_gdiplusStartupInput,NULL);  
 	// 创建 shell 管理器，以防对话框包含
 	// 任何 shell 树视图控件或 shell 列表视图控件。
 //	CShellManager *pShellManager = new CShellManager;
