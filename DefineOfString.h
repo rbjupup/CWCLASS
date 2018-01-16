@@ -39,7 +39,7 @@
 #define HELPCAMFUN2 CString("采集的图片将放在E;\\pic.bmp")
 
 
-#define CLASSNAME6 CString("听说读写")
+#define CLASSNAME6 CString("机器人")
 #define ROBOFUN1 CString("翻译文字")
 #define HELPROBOFUN1 CString("输入1：要转化的文字\r\n输入2：保存wav的路径\r\n输入3: 声音类型(0是小燕，1是小风)")
 #define ROBOFUN2 CString("朗读文字")
@@ -58,7 +58,7 @@
 #define HELPMFCBTNFUN1 CString("操作步骤：\r\n1:添加GDI+\r\n2:复制黏贴")
 
 
-#define CLASSNAME8 CString("C++监听")
+#define CLASSNAME8 CString("C++爬虫")
 #define MONFUN1 CString("简易网页监听")
 #define HELPMONBTNFUN1 CString("编写中")
 #define MONFUN2 CString("测试MFCBrower")
@@ -79,7 +79,6 @@
 #define HELPCVFUN1 CString("输入1:输入图像路径\r\n输入2:输出图像文件夹路径\r\n输入3:X方向分割次数\r\n输入4:Y方向分割次数\r\n")
 #define CVFUN2 CString("图像运算")
 #define HELPCVFUN2 CString("输入1:输入图像路径1\r\n输入2:输入图像路径2\r\n输入3:输出图像路径\r\n输入4:X方向偏移\r\n输入5:X方向偏移\r\n输入6:计算类型，0是加1是减\r\n")
-
 #define CVFUN3 CString("点云生成灰度图")
 #define HELPCVFUN3 CString("输入1:输入图文件路径1\r\n输入2:输出图像路径2\r\n输入3:点云文件类型，0是csv\r\n")
 #define CVFUN4 CString("灰度图阈值分割")
@@ -89,4 +88,12 @@
 #define CVFUN6 CString("漫水填充")
 #define HELPCVFUN6 CString("说明：使用种子点填充相似像素\r\n输入1:输入图像路径1\r\n")
 #define CVFUN7 CString("ROI分割")
-#define HELPCVFUN7 CString("说明：使用ROI将图片的感兴趣区域提取出来\r\n输入1:输入图像路径\r\n输入2:输出图像路径\r\n输入3:x\r\n输入4:y\r\n输入5:宽\r\n输入3:高\r\n")
+#define HELPCVFUN7 CString("说明：使用ROI将图片的感兴趣区域提取出来\r\n输入1:输入图像路径\r\n输入2:输出图像路径\r\n输入3:x\r\n输入4:y\r\n输入5:宽\r\n输入6:高\r\n")
+#define CVFUN8 CString("动态阈值")
+#define HELPCVFUN8 CString("说明：自制往某个方向的动态阈值,\r\n输入1:输入图像路径\r\n输入2:输出图像路径\r\n输入3:迭代宽度\r\n输入4:阈值宽度\r\n输入5:动态方向\r\n输入6:初始阈值\r\n")
+#define CVFUN9 CString("获取轮廓外包框")
+#define HELPCVFUN9 CString("说明：通过调节最小轮廓,将轮廓分别提取出来\r\n输入1:输入图像路径\r\n输入2:输出图像路径\r\n输入3:最小轮廓面积\r\n")
+#define CVFUN10 CString("深视智能")
+#define HELPCVFUN10 CString("说明：请先按照点云转灰度图-ROI分割-动态阈值-获取轮廓外包框-深视智能的顺序处理,会得到相应的结果\r\n")
+#define CVFUN11 CString("平面拟合")
+#define HELPCVFUN11 CString("说明：拟合出一个三维平面,会得到相应的结果\r\n")

@@ -137,7 +137,7 @@ void CvvImage::CopyOf( CvvImage& image, int desired_color )
 
 
 
-	void CvvImage::CopyOf( IplImage* img, int desired_color )  
+void CvvImage::CopyOf( IplImage* img, int desired_color )  
 {  
 	if( HG_IS_IMAGE(img) )  
 	{  

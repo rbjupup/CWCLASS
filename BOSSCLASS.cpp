@@ -71,6 +71,10 @@ BOSSCLASS::BOSSCLASS(void)
 	CVClassSupportFunction.push_back(CVFUN5);
 	CVClassSupportFunction.push_back(CVFUN6);
 	CVClassSupportFunction.push_back(CVFUN7);
+	CVClassSupportFunction.push_back(CVFUN8);
+	CVClassSupportFunction.push_back(CVFUN9);
+	CVClassSupportFunction.push_back(CVFUN10);
+	CVClassSupportFunction.push_back(CVFUN11);
 	m_vecSupportFunction.push_back(CVClassSupportFunction);
 }
 
@@ -110,7 +114,6 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 	if (classname == CLASSNAME1)
 	{
 		if (funname == CWFUN1){
-
 		}
 	}
 	if (classname == CLASSNAME4)
@@ -272,6 +275,24 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]));
 			theApp.m_resdlg->m_Show.ShowImage();
 		}
+		if (funname == CVFUN8){
+			m_powcv.SplitByDirection(param[0],param[1],atoi(param[2]),atoi(param[3]),atoi(param[4]),atoi(param[5]));
+			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]));
+			theApp.m_resdlg->m_Show.ShowImage();
+		}
+		if (funname == CVFUN9){
+			m_powcv.GetContour(param[0],param[1],atoi(param[2]));
+			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]));
+			theApp.m_resdlg->m_Show.ShowImage();
+		}
+		if (funname == CVFUN10){
+			m_powcv.testsszn();
+		}
+		if (funname == CVFUN11){
+			m_powcv.FitPlane(param[0],param[1],atoi(param[2]),atoi(param[3]),atoi(param[4]),atoi(param[5]),atoi(param[6]));
+			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]));
+			theApp.m_resdlg->m_Show.ShowImage();
+		}
 	}
 	return true;
 }
@@ -334,6 +355,14 @@ CString BOSSCLASS::GetFunctionHelp(CString classname,CString funname){
 			return HELPCVFUN6;
 		if (funname == CVFUN7)
 			return HELPCVFUN7;
+		if (funname == CVFUN8)
+			return HELPCVFUN8;
+		if (funname == CVFUN9)
+			return HELPCVFUN9;
+		if (funname == CVFUN10)
+			return HELPCVFUN10;
+		if (funname == CVFUN11)
+			return HELPCVFUN11;
 	}
 	return totalhelp;
 }
