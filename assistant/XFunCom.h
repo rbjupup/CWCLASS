@@ -1,10 +1,9 @@
 #if !defined(AFX_XFUNCOM_H_INCLUDED_)
 #define AFX_XFUNCOM_H_INCLUDED_
 #define USE_OPENCV 1
-#define USE_EMAIL
+//#define USE_EMAIL
 //使用正则之前要先将extern的正则文件覆盖到mfc目录下
 #define USE_STL
-#include "resource.h"
 #include <vector>
 #include <algorithm>
 #include <afxtempl.h>
@@ -99,13 +98,29 @@ using namespace std;
 #define YX_BYTE_R(img,y,x) ((BYTE*)(img->imageData + (y)*img->widthStep))[x*3+2]
 #endif
 
+#ifndef COUNT_DIS
+#define COUNT_DIS(x1,y1,x2,y2) sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
+#endif
+
+#define Mil2Pix(fx,fDPI)				float(fx*((float)25.4/fDPI))												//mil转像素
+#define Pix2Mil(nx,fDPI)				float(nx*(fDPI/(float)25.4))												//像素转mil
+#define PixArea2Dia(fArea,fDPI)			Pix2Mil(2*sqrt(fArea/PI),fDPI)												//像素面积转mil直径
+#define Dia2PixArea(fDia,fDPI)			PI*(Mil2Pix(fDia/2,fDPI))*(Mil2Pix(fDia/2,fDPI))							//mil直径转像素面积
 #define random(x) (rand()%x)								//随机数生成器
 
+
+#define					Rad2Ang(x)							float(x*180.0/PI)
+#define					Ang2Rad(x)							float(x*PI/180.0)
 // #define EUCLIDEAN	-1
 // #define SIMILARITY	0
 // #define AFFINE		1
 // #define PERSPECTIVE 2
 // #define PROJECTIVE	3
+#define EUCLIDEAN	-1
+#define SIMILARITY	0
+#define AFFINE		1
+#define PERSPECTIVE 2
+#define PROJECTIVE	3
 enum  SHAPE
 {
 	SHAPE_RECTANGLE_R,				//给定一个RECT的方式绘制矩形
@@ -194,6 +209,8 @@ void OpenFilePath(vector<CString> &FilePathVector,CString strInitPath = _T(""));
 BOOL CreateFolder(CString strPath);
 //创建完整路径
 BOOL CreateAllDirectories(CString strDir);
+//复制文件夹
+void CopyDirectory(CString Src,CString Dst);
 //获取文件夹路径0表示文件夹，1表示文件
 CString GetDirPathByDialog(CString rootpath,CWnd* papa,int type = 0);
 //查找文件夹中所有的文件夹
@@ -230,6 +247,8 @@ bool JudgePointInRect(CPoint pt,CRect JRect);
 输出参数: 无 
 ************************************************************************/   
 int str_to_hex(char *string, unsigned char *cbuf, int len);
+int String2Hex(CString str, char *SendOut);
+char ConvertHexData(char ch);
 /**************************************************************************** 
 函数名称: hex_to_str 
 函数功能: 十六进制转字符串 
@@ -279,6 +298,13 @@ void ReplaceStr(CString &dynText, CString strFinded, CString strMid);
 #ifndef _CString2Char
 #define _CString2Char(str)			(LPSTR)(LPCSTR)str
 #endif
+/**************************************************************************** 
+函数名称: CString_to_char 
+函数功能: CString转char
+输入参数: str 输入字符串 ptr输出字符串。 
+输出参数: 无 
+*****************************************************************************/   
+BOOL CString_to_char(CString str,char *ptr,int charlength);
 /************************************************************************/
 /*						  字符串常用操作结束						    */
 /************************************************************************/
@@ -350,6 +376,8 @@ public:
 	void WaitTime(double waitTime);
 };
 void XWaitTime(float fTime);
+//判断时间是否在某个时间段内--精确到小时
+BOOL JudgeInTime(SYSTEMTIME CurrentTime,SYSTEMTIME STime,SYSTEMTIME ETime);
 /************************************************************************/
 /*								计时操作结束                             */
 /************************************************************************/
@@ -373,6 +401,19 @@ vector<CString> GetresByStlRx(CString word,CString rule);
 BOOL memsort();
 //等待某个变量为真或者为否再继续执行接下去的代码
 void WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue);
+BOOL WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue,double waitTimes);
+//检查是否在矩形中
+bool CheckInRect(CPoint point,CRect rect);
+//截屏
+void CutScreen(CDC *pDstDc);
+//透明位图显示
+BOOL DrawTransparentBitmap(HDC hdcDest,int nXOriginDest, int nYOriginDest, int nWidthDest, int nHeightDest, HDC hdcSrc,
+	int nXOriginSrc, int nYOriginSrc, int nWidthSrc, int nHeightSrc, UINT crTransparent);
+//获取外包框
+CRect GetRelRoundRect(CPoint *pt,int nPointNum);
+CRect GetRoundRect(CPoint *pt,int nPointNum);
+//点在多边形内
+BOOL PtInPolygon(CPoint p, CPoint pt[], int nCount);
 /************************************************************************/
 /*								其它操作结束                             */
 /************************************************************************/
@@ -399,9 +440,25 @@ BOOL SendAEmail(CString sendcount, CString sendPwd, CString receiver, CString se
 // Ax + by + cz = D   拟合一个平面
 void cvFitPlane(const CvMat* points, float* plane);
 #endif
-
+template<typename T>
+void cwsort(vector<double> &sortBy,vector<T> &data,int startindex,int endindex)
+{
+	for (int i = startindex; i < endindex; i++) {
+		for (int j = startindex; j < endindex - i - 1+startindex; j++) {
+			if (sortBy[j] > sortBy[j + 1]) {
+				T temp = data[j];
+				double tmp = sortBy[j];
+				data[j] = data[j + 1];
+				sortBy[j] = sortBy[j + 1];
+				data[j + 1] = temp;
+				sortBy[j + 1] = tmp;
+			}
+		}
+	}
+}
 /************************************************************************/
 /*                        数据处理结束                                  */
 /************************************************************************/
 
 #endif
+

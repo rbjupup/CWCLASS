@@ -68,6 +68,52 @@ void LTimeCount::WaitTime(double waitTime)
 		tt.End();
 	}
 }
+//判断时间是否在某个时间段内
+BOOL JudgeInTime(SYSTEMTIME CurrentTime,SYSTEMTIME STime,SYSTEMTIME ETime)
+{
+	BOOL bInTime = FALSE;
+	if (CurrentTime.wYear>STime.wYear&&CurrentTime.wYear<ETime.wYear)
+	{
+		return TRUE;
+	}
+	else if (CurrentTime.wYear<STime.wYear||CurrentTime.wYear>ETime.wYear)
+	{
+		return FALSE;
+	}
+	else
+	{
+		if (CurrentTime.wMonth>STime.wMonth&&CurrentTime.wMonth<ETime.wMonth)
+		{
+			return TRUE;
+		}
+		else if (CurrentTime.wMonth<STime.wMonth||CurrentTime.wMonth>ETime.wMonth)
+		{
+			return FALSE;
+		}
+		else
+		{
+			if (CurrentTime.wDay>STime.wDay&&CurrentTime.wDay<ETime.wDay)
+			{
+				return TRUE;
+			}
+			else if (CurrentTime.wDay<STime.wDay||CurrentTime.wDay>ETime.wDay)
+			{
+				return FALSE;
+			}
+			else
+			{
+				if (CurrentTime.wHour>=STime.wHour&&CurrentTime.wHour<=ETime.wHour)
+				{
+					return TRUE;
+				}
+				else if (CurrentTime.wHour<STime.wHour||CurrentTime.wHour>ETime.wHour)
+				{
+					return FALSE;
+				}
+			}
+		}
+	}
+}
 
 //////////////////////////////////////////////////////////////////////////
 //							时间操作结束
@@ -254,6 +300,22 @@ BOOL CreateAllDirectories(CString strDir)
 	// 	CreateDirectory(strDir,NULL); 
 	bSuccess = CreateDirectory(strDir, NULL) ? TRUE : FALSE;
 	return bSuccess;
+}
+//复制文件夹
+void CopyDirectory(CString Src,CString Dst)
+{
+	Src += "\0\0";
+	Dst += "\0\0";
+	SHFILEOPSTRUCT FileOp;
+	ZeroMemory(&FileOp,sizeof(SHFILEOPSTRUCT));
+	FileOp.hwnd=NULL;
+	FileOp.wFunc=FO_COPY;
+	FileOp.pFrom=Src;
+	FileOp.pTo=Dst;
+	FileOp.fFlags=FOF_NOCONFIRMATION | FOF_NOCONFIRMMKDIR | FOF_NOERRORUI | FOF_SILENT;
+	FileOp.hNameMappings=NULL;
+	FileOp.lpszProgressTitle=NULL;
+	SHFileOperation(&FileOp);
 }
 //查找文件夹中所有相同后缀的文件
 CString FindFileSameExtension(CString strPath,CString strExtension)
@@ -560,6 +622,47 @@ int str_to_hex(char *string, unsigned char *cbuf, int len)
 	}  
 	return 0; 
 }
+int String2Hex(CString str, char *SendOut)
+{
+	int hexdata,lowhexdata; 
+	int hexdatalen=0;
+	int len=str.GetLength();
+	//SendOut.SetSize(len/2);
+	for(int i=0;i<len;)
+	{
+		char lstr,hstr=str[i];
+		if(hstr==' '||hstr=='\r'||hstr=='\n')
+		{
+			i++;
+			continue;
+		}
+		i++;
+		if (i>=len)
+			break;
+		lstr=str[i];
+		hexdata=ConvertHexData(hstr);
+		lowhexdata=ConvertHexData(lstr);
+		if((hexdata==16)||(lowhexdata==16))
+			break;
+		else
+			hexdata=hexdata*16+lowhexdata;
+		i++;
+		SendOut[hexdatalen]=(char)hexdata;
+		hexdatalen++;
+	}
+	//senddata.SetSize(hexdatalen);
+	return hexdatalen;
+}
+char ConvertHexData(char ch)
+{
+	if((ch>='0')&&(ch<='9'))
+		return ch-0x30;
+	if((ch>='A')&&(ch<='F'))
+		return ch-'A'+10;
+	if((ch>='a')&&(ch<='f'))
+		return ch-'a'+10;
+	else return(-1);
+}
 /**************************************************************************** 
 函数名称: hex_to_str 
 函数功能: 十六进制转字符串 
@@ -767,6 +870,22 @@ void ReplaceStr(CString &dynText, CString strFinded, CString strMid)
 		dynText.Format("%s%s%s",strLeft,strMid,strRight);
 		npos = 0;
 	}
+}
+/**************************************************************************** 
+函数名称: CString_to_char 
+函数功能: CString转char
+输入参数: str 输入字符串 ptr输出字符串。 
+输出参数: 无 
+*****************************************************************************/   
+BOOL CString_to_char(CString str,char *ptr,int charlength)
+{
+	if (NULL == ptr || charlength<str.GetLength())
+	{
+		return FALSE;
+	}
+	memset(ptr,0,charlength*sizeof(char));
+	memcpy(ptr,str.GetBuffer(0),charlength*sizeof(char));
+	return TRUE;
 }
 /************************************************************************/
 /*						  字符串常用操作结束						    */
@@ -1061,6 +1180,7 @@ vector<CString> GetresByStlRx(CString word,CString rule)
 #endif
 void WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue)
 {
+
 	if(isWaitForTrue){
 		while(!waitObject)
 		{
@@ -1089,6 +1209,311 @@ void WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue)
 	}
 
 }
+
+BOOL WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue,double waitTimes)
+{
+	LTimeCount tc;
+	tc.Start();	
+	MSG msg;
+	if(isWaitForTrue){
+		while(!waitObject)
+		{
+			Sleep(1);
+			if(PeekMessage(&msg,NULL,0,0,PM_REMOVE))  
+			{  
+				DispatchMessage(&msg);  
+				TranslateMessage(&msg);  
+			} 
+			if (tc.GetUseTime()>waitTimes)
+			{
+				//return ERROR_TIME_OUT;
+				return FALSE;
+			}
+		}
+	}
+	else
+	{
+		while(waitObject)
+		{
+			Sleep(1);
+			MSG msg;
+			if(PeekMessage(&msg,NULL,0,0,PM_REMOVE))  
+			{  
+				DispatchMessage(&msg);  
+				TranslateMessage(&msg);  
+			} 
+			if (tc.GetUseTime()>waitTimes)
+			{
+				//return ERROR_TIME_OUT;
+				return FALSE;
+			}
+
+		}
+	}
+	return TRUE;
+}
+bool CheckInRect(CPoint point,CRect rect)
+{
+	if(point.x > rect.left && point.x < rect.right
+		&& point.y > rect.top && point.y < rect.bottom)
+	{
+		return true;
+	}
+	return false;
+}
+//截屏
+void CutScreen(CDC *pDstDc)
+{
+	if (pDstDc == NULL)
+	{
+		return;
+	}
+	CRect SRect;
+	GetClientRect(pDstDc->GetWindow()->m_hWnd,&SRect);
+	CString strFile;
+	SYSTEMTIME sysTime;
+	GetLocalTime(&sysTime);
+	strFile.Format("%04d%02d%02d%02d%02d%02d.bmp",sysTime.wYear,sysTime.wMonth,sysTime.wDay,sysTime.wHour,sysTime.wMinute,sysTime.wSecond);
+	CFileDialog dlg(FALSE, _T("*.*"), strFile,OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY,_T("image files (*.bmp; *.jpg;*.png) |*.bmp; *.jpg;*.png| All Files (*.*)|*.*||"), NULL);                        // 选项图片的约定
+	dlg.m_ofn.lpstrTitle = _T("Save Image");    // 打开文件对话框的标题名
+	if( dlg.DoModal() != IDOK )                    // 判断是否获得图片
+		return;
+	XWaitTime(0.5);
+	CString strImgPath = dlg.GetPathName();
+	int BitPerPixel = pDstDc->GetDeviceCaps(BITSPIXEL);//获得颜色模式
+	int Width = SRect.Width();
+	int Height = SRect.Height();
+
+	CDC memDC;//内存DC
+	memDC.CreateCompatibleDC(pDstDc);
+
+	CBitmap memBitmap, *oldmemBitmap;//建立和屏幕兼容的bitmap
+	memBitmap.CreateCompatibleBitmap(pDstDc, Width, Height);
+
+	oldmemBitmap = memDC.SelectObject(&memBitmap);//将memBitmap选入内存DC
+	memDC.BitBlt(0, 0, Width, Height, pDstDc, 0, 0, SRCCOPY);//复制屏幕图像到内存DC
+
+	//以下代码保存memDC中的位图到文件
+	BITMAP bmp;
+	memBitmap.GetBitmap(&bmp);//获得位图信息
+
+	FILE *fp = fopen(strImgPath, "w+b");
+
+	BITMAPINFOHEADER bih = {0};//位图信息头
+	bih.biBitCount = bmp.bmBitsPixel;//每个像素字节大小
+	bih.biCompression = BI_RGB;
+	bih.biHeight = bmp.bmHeight;//高度
+	bih.biPlanes = 1;
+	bih.biSize = sizeof(BITMAPINFOHEADER);
+	bih.biSizeImage = bmp.bmWidthBytes * bmp.bmHeight;//图像数据大小
+	bih.biWidth = bmp.bmWidth;//宽度
+
+	BITMAPFILEHEADER bfh = {0};//位图文件头
+	bfh.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);//到位图数据的偏移量
+	bfh.bfSize = bfh.bfOffBits + bmp.bmWidthBytes * bmp.bmHeight;//文件总的大小
+	bfh.bfType = (WORD)0x4d42;
+
+	fwrite(&bfh, 1, sizeof(BITMAPFILEHEADER), fp);//写入位图文件头
+
+	fwrite(&bih, 1, sizeof(BITMAPINFOHEADER), fp);//写入位图信息头
+
+	byte * p = new byte[bmp.bmWidthBytes * bmp.bmHeight];//申请内存保存位图数据
+
+	GetDIBits(memDC.m_hDC, (HBITMAP) memBitmap.m_hObject, 0, Height, p, 
+		(LPBITMAPINFO) &bih, DIB_RGB_COLORS);//获取位图数据
+
+	fwrite(p, 1, bmp.bmWidthBytes * bmp.bmHeight, fp);//写入位图数据
+
+	delete [] p;
+
+	fclose(fp);
+
+	memDC.SelectObject(oldmemBitmap);
+}
+
+BOOL DrawTransparentBitmap(HDC hdcDest,int nXOriginDest, int nYOriginDest, int nWidthDest, int nHeightDest, HDC hdcSrc,
+	int nXOriginSrc, int nYOriginSrc, int nWidthSrc, int nHeightSrc, UINT crTransparent)
+{
+	if (nWidthDest < 1) 
+		return false; 
+	if (nWidthSrc < 1) 
+		return false; 
+	if (nHeightDest < 1) 
+		return false; 
+	if (nHeightSrc < 1) 
+		return false; 
+	HDC dc = CreateCompatibleDC(NULL); 
+	HBITMAP bitmap = CreateBitmap(nWidthSrc, nHeightSrc, 1, GetDeviceCaps(dc, BITSPIXEL), NULL); 
+	if (bitmap == NULL) 
+	{ 
+		DeleteDC(dc); 
+		return false; 
+	} 
+	HBITMAP oldBitmap = (HBITMAP)SelectObject(dc, bitmap); 
+	if (!BitBlt(dc, 0, 0, nWidthSrc, nHeightSrc, hdcSrc, nXOriginSrc, nYOriginSrc, SRCCOPY)) 
+	{ 
+		SelectObject(dc, oldBitmap); 
+		DeleteObject(bitmap); 
+		DeleteDC(dc); 
+		return false; 
+	} 
+	HDC maskDC = CreateCompatibleDC(NULL); 
+	HBITMAP maskBitmap = CreateBitmap(nWidthSrc, nHeightSrc, 1, 1, NULL); 
+	if (maskBitmap == NULL) 
+	{ 
+		SelectObject(dc, oldBitmap); 
+		DeleteObject(bitmap); 
+		DeleteDC(dc); 
+		DeleteDC(maskDC); 
+		return false; 
+	} 
+	HBITMAP oldMask = (HBITMAP)SelectObject(maskDC, maskBitmap); 
+	SetBkColor(maskDC, RGB(0,0,0)); 
+	SetTextColor(maskDC, RGB(255,255,255)); 
+	if (!BitBlt(maskDC, 0,0,nWidthSrc,nHeightSrc,NULL,0,0,BLACKNESS)) 
+	{ 
+		SelectObject(maskDC, oldMask);
+		DeleteObject(maskBitmap); 
+		DeleteDC(maskDC); 
+		SelectObject(dc, oldBitmap); 
+		DeleteObject(bitmap); 
+		DeleteDC(dc); 
+		return false;
+	} 
+	SetBkColor(dc, crTransparent); 
+	BitBlt(maskDC, 0,0,nWidthSrc,nHeightSrc,dc,0,0,SRCINVERT); 
+	SetBkColor(dc, RGB(0,0,0)); 
+	SetTextColor(dc, RGB(255,255,255)); 
+	BitBlt(dc, 0,0,nWidthSrc,nHeightSrc,maskDC,0,0,SRCAND); 
+	HDC newMaskDC = CreateCompatibleDC(NULL); 
+	HBITMAP newMask; 
+	newMask = CreateBitmap(nWidthDest, nHeightDest, 1, GetDeviceCaps(newMaskDC, BITSPIXEL), NULL); 
+	if (newMask == NULL)
+	{
+		SelectObject(dc, oldBitmap); 
+		DeleteDC(dc); 
+		SelectObject(maskDC, oldMask); 
+		DeleteDC(maskDC); 
+		DeleteDC(newMaskDC); 
+		DeleteObject(bitmap);
+		DeleteObject(maskBitmap); 
+		return false; 
+	} 
+	SetStretchBltMode(newMaskDC, COLORONCOLOR); 
+	HBITMAP oldNewMask = (HBITMAP) SelectObject(newMaskDC, newMask); 
+	StretchBlt(newMaskDC, 0, 0, nWidthDest, nHeightDest, maskDC, 0, 0, nWidthSrc, nHeightSrc, SRCCOPY);
+	SelectObject(maskDC, oldMask);
+	DeleteDC(maskDC); 
+	DeleteObject(maskBitmap); 
+	HDC newImageDC = CreateCompatibleDC(NULL); 
+	HBITMAP newImage = CreateBitmap(nWidthDest, nHeightDest, 1, GetDeviceCaps(newMaskDC, BITSPIXEL), NULL); 
+	if (newImage == NULL)
+	{ 
+		SelectObject(dc, oldBitmap); 
+		DeleteDC(dc); 
+		DeleteDC(newMaskDC);
+		DeleteObject(bitmap); 
+		return false; 
+	} 
+	HBITMAP oldNewImage = (HBITMAP)SelectObject(newImageDC, newImage); 
+	StretchBlt(newImageDC, 0, 0, nWidthDest, nHeightDest, dc, 0, 0, nWidthSrc, nHeightSrc, SRCCOPY); 
+	SelectObject(dc, oldBitmap); DeleteDC(dc); DeleteObject(bitmap); 
+	BitBlt( hdcDest, nXOriginDest, nYOriginDest, nWidthDest, nHeightDest, newMaskDC, 0, 0, SRCAND); 
+	BitBlt( hdcDest, nXOriginDest, nYOriginDest, nWidthDest, nHeightDest, newImageDC, 0, 0, SRCPAINT); 
+	SelectObject(newImageDC, oldNewImage); 
+	DeleteDC(newImageDC); 
+	SelectObject(newMaskDC, oldNewMask);
+	DeleteDC(newMaskDC); 
+	DeleteObject(newImage); 
+	DeleteObject(newMask); 
+	return true;
+}
+
+CRect GetRelRoundRect(CPoint *pt,int nPointNum)
+{
+	//		ASSERT(nPointNum>2);
+	//找出最小外包矩形
+	int	nMaxX = 0;	
+	int nMinX = INT_MAX;
+	int nMaxY = 0;
+	int nMinY = INT_MAX;
+	for (int i=0;i<nPointNum;i++)
+	{
+		if (nMaxX<pt[i].x)
+		{
+			nMaxX = pt[i].x;
+		}
+		if (nMinX>pt[i].x)
+		{
+			nMinX = pt[i].x;
+		}
+		if (nMaxY<pt[i].y)
+		{
+			nMaxY = pt[i].y;
+		}
+		if (nMinY>pt[i].y)
+		{
+			nMinY = pt[i].y;
+		}
+	}
+	CRect BoundRect;
+	BoundRect.left = nMinX;
+	BoundRect.top = nMinY;
+	BoundRect.right = BoundRect.left + nMaxX-nMinX;
+	BoundRect.bottom = BoundRect.top + nMaxY-nMinY;
+	return BoundRect;
+}
+CRect GetRoundRect(CPoint *pt,int nPointNum)
+{
+	//		ASSERT(nPointNum>2);
+	//找出最小外包矩形
+	int	nMaxX = 0;	
+	int nMinX = INT_MAX;
+	int nMaxY = 0;
+	int nMinY = INT_MAX;
+	for (int i=0;i<nPointNum;i++)
+	{
+		if (nMaxX<pt[i].x)
+		{
+			nMaxX = pt[i].x;
+		}
+		if (nMinX>pt[i].x)
+		{
+			nMinX = pt[i].x;
+		}
+		if (nMaxY<pt[i].y)
+		{
+			nMaxY = pt[i].y;
+		}
+		if (nMinY>pt[i].y)
+		{
+			nMinY = pt[i].y;
+		}
+	}
+	CRect BoundRect;
+	BoundRect.left = (nMinX/8)*8;
+	BoundRect.top = (nMinY/8)*8;
+	BoundRect.right = BoundRect.left + ((nMaxX-nMinX)/8)*8;
+	BoundRect.bottom = BoundRect.top + ((nMaxY-nMinY)/8)*8;
+	return BoundRect;
+}
+//点在多边形中
+BOOL PtInPolygon(CPoint p, CPoint pt[], int nCount)
+{  
+	int x= p.x;
+	int y = p.y;
+	int   i,j=nCount-1 ;
+	bool  oddNodes = FALSE;
+
+	for (i=0;i<nCount; i++) {
+		if((pt[i].y< y && pt[j].y>=y
+			||   pt[j].y<y && pt[i].y>=y)
+			&& (pt[i].x<=x || pt[j].x<=x)) {
+				oddNodes^=(pt[i].x+(y-pt[i].y)/(pt[j].y-pt[i].y)*(pt[j].x-pt[i].x)<x);}
+		j=i;}
+
+	return oddNodes;		
+} 
 /************************************************************************/
 /*								其它操作结束                             */
 /************************************************************************/
@@ -1244,5 +1669,6 @@ void cvFitPlane(const CvMat* points, float* plane)
 	cvReleaseMat(&V);  
 }  
 #endif
+
 
 
