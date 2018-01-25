@@ -9,7 +9,7 @@
 
 // CWMFCBtn 对话框
 
-IMPLEMENT_DYNAMIC(CWMFCBtn, CDialog)
+IMPLEMENT_DYNAMIC(CWMFCCtlMan, CDialog)
 WCHAR* ToWChar(char *str)  
 {  
 	//在 GDI＋中，有关字符的参数类型全部都是 WCHAR 类型的  
@@ -50,35 +50,35 @@ int GetImageCLSID(const WCHAR *format, CLSID *pCLSID)
 	return FALSE;  
 }  
 
-CWMFCBtn::CWMFCBtn(CWnd* pParent /*=NULL*/)
-	: CDialog(CWMFCBtn::IDD, pParent),
+CWMFCCtlMan::CWMFCCtlMan(CWnd* pParent /*=NULL*/)
+	: CDialog(CWMFCCtlMan::IDD, pParent),
 	m_Bg1(ToWChar("bg1.png")),m_Bg2(ToWChar("bg1.png"))
 {
 
 }
 
-CWMFCBtn::~CWMFCBtn()
+CWMFCCtlMan::~CWMFCCtlMan()
 {
 //	GdiplusShutdown(m_pGdiToken);  
 }
 
-void CWMFCBtn::DoDataExchange(CDataExchange* pDX)
+void CWMFCCtlMan::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_BUTTON_UNNORMAL2, m_btnPng);
 }
 
 
-BEGIN_MESSAGE_MAP(CWMFCBtn, CDialog)
+BEGIN_MESSAGE_MAP(CWMFCCtlMan, CDialog)
 	ON_WM_PAINT()
-	ON_BN_CLICKED(IDC_BUTTON_UNNORMAL2, &CWMFCBtn::OnBnClickedButtonUnnormal2)
+	ON_BN_CLICKED(IDC_BUTTON_UNNORMAL2, &CWMFCCtlMan::OnBnClickedButtonUnnormal2)
 END_MESSAGE_MAP()
 
 
 // CWMFCBtn 消息处理程序
 
 
-BOOL CWMFCBtn::OnInitDialog()
+BOOL CWMFCCtlMan::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 //	GdiplusStartup(&m_pGdiToken,&m_gdiplusStartupInput,NULL);  
@@ -104,7 +104,7 @@ BOOL CWMFCBtn::OnInitDialog()
 }
 
 
-void CWMFCBtn::OnPaint()
+void CWMFCCtlMan::OnPaint()
 {
 	CPaintDC dc(this); // device context for painting
 // 	Graphics graphics(dc);  
@@ -118,8 +118,14 @@ void CWMFCBtn::OnPaint()
 }
 
 
-void CWMFCBtn::OnBnClickedButtonUnnormal2()
+void CWMFCCtlMan::OnBnClickedButtonUnnormal2()
 {
 	//GetDlgItem(IDC_BUTTON_UNNORMAL2)->PostMessage(WM_KILLFOCUS, 0, 0);
 	int a = 0;
+}
+
+void CWMFCCtlMan::OpenTabDlg(int type)
+{
+	m_dlgTab.showtype = type;
+	m_dlgTab.DoModal();
 }

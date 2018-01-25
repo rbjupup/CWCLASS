@@ -3,18 +3,20 @@
 #include "CLASS/MFCCTRL/MemDC.h"
 #include "CLASS/MFCCTRL/CGdiPlusBitmap.h"
 #include "CLASS/MFCCTRL/GdipButton.h"
+#include "CLASS/MFCCTRL/tab/MFCTAB.h"
+#include "resource.h"
 #include "afxbutton.h"
 
 
 // CWMFCBtn 对话框
 
-class CWMFCBtn : public CDialog
+class CWMFCCtlMan : public CDialog
 {
-	DECLARE_DYNAMIC(CWMFCBtn)
+	DECLARE_DYNAMIC(CWMFCCtlMan)
 
 public:
-	CWMFCBtn(CWnd* pParent = NULL);   // 标准构造函数
-	virtual ~CWMFCBtn();
+	CWMFCCtlMan(CWnd* pParent = NULL);   // 标准构造函数
+	virtual ~CWMFCCtlMan();
 
 
 
@@ -29,5 +31,7 @@ public:
 	virtual BOOL OnInitDialog();
 	afx_msg void OnPaint();
 	afx_msg void OnBnClickedButtonUnnormal2();
+	void OpenTabDlg(int type);
 	CGdipButton m_btnPng;
+	CMFCTAB m_dlgTab;
 };

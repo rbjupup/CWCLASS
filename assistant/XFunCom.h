@@ -1,7 +1,7 @@
 #if !defined(AFX_XFUNCOM_H_INCLUDED_)
 #define AFX_XFUNCOM_H_INCLUDED_
 #define USE_OPENCV 1
-//#define USE_EMAIL
+#define USE_EMAIL
 //使用正则之前要先将extern的正则文件覆盖到mfc目录下
 #define USE_STL
 #include <vector>
@@ -185,7 +185,21 @@ typedef struct FloatPoint3D
 	}
 };
 
+typedef struct
+{
+	double xxx;
+	double yyy;
+	double zzz;
+}roiPointDecimal3D;
 
+/*平面方程式：z=r0*x+r1*y+r2*/
+typedef struct
+{
+	double r0;
+	double r1;
+	double r2;
+	double distB;    //used in distance caculating
+}RATIO_Plane;
 
 
 /************************************************************************/
@@ -440,6 +454,7 @@ BOOL SendAEmail(CString sendcount, CString sendPwd, CString receiver, CString se
 // Ax + by + cz = D   拟合一个平面
 void cvFitPlane(const CvMat* points, float* plane);
 #endif
+//冒泡排序
 template<typename T>
 void cwsort(vector<double> &sortBy,vector<T> &data,int startindex,int endindex)
 {
@@ -456,6 +471,9 @@ void cwsort(vector<double> &sortBy,vector<T> &data,int startindex,int endindex)
 		}
 	}
 }
+//深视智能的拟合平面
+int fitPlane3D(const roiPointDecimal3D *point, int pNum, RATIO_Plane *plane3D);
+double pointToPlaneDis3D(roiPointDecimal3D calPt, const RATIO_Plane *plane3D);
 /************************************************************************/
 /*                        数据处理结束                                  */
 /************************************************************************/

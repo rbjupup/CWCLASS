@@ -3,7 +3,7 @@
 #include "afxcmn.h"
 #include "BCGPVisualCtrl.h"
 #include "BCGPChartVisualObject.h"
-
+#include "resource.h"
 
 // ABCGDlg ¶Ô»°¿ò
 #ifdef BCG

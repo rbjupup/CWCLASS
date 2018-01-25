@@ -1670,5 +1670,76 @@ void cvFitPlane(const CvMat* points, float* plane)
 }  
 #endif
 
+int fitPlane3D(const roiPointDecimal3D *point, int pNum, RATIO_Plane *plane3D)
+{
+	double sum_xx = 0;
+	double sum_xy = 0;
+	double sum_yy = 0;
+	double sum_xz = 0;
+	double sum_yz = 0;
+	double sum_x = 0;
+	double sum_y = 0;
+	double sum_z = 0;
+	double mean_xx, mean_yy, mean_xy, mean_yz, mean_xz, mean_x, mean_y, mean_z;
+	double a[4];
+	double b[4];
+	double c[4];
+	double d[4];
 
+	double D1, D2, D3, DD;
+	int i;
+
+	double effSize = 0;
+	for (i = 0; i < pNum; i++)
+	{
+		sum_xx += (double)((point[i].xxx)*(point[i].xxx));
+		sum_xy += (double)((point[i].xxx)*(point[i].yyy));
+		sum_yy += (double)((point[i].yyy)*(point[i].yyy));
+		sum_yz += (double)((point[i].yyy)*(point[i].zzz));
+		sum_xz += (double)((point[i].xxx)*(point[i].zzz));
+		sum_x += (double)((point[i].xxx));
+		sum_y += (double)((point[i].yyy));
+		sum_z += (double)((point[i].zzz));
+		effSize += 1.0;
+	}
+	mean_xx = sum_xx / effSize;
+	mean_xy = sum_xy / effSize;
+	mean_yy = sum_yy / effSize;
+	mean_yz = sum_yz / effSize;
+	mean_xz = sum_xz / effSize;
+	mean_x = sum_x / effSize;
+	mean_y = sum_y / effSize;
+	mean_z = sum_z / effSize;
+	a[1] = sum_xx;
+	a[2] = sum_xy;
+	a[3] = sum_x;
+	b[1] = sum_xy;
+	b[2] = sum_yy;
+	b[3] = sum_y;
+	c[1] = sum_x;
+	c[2] = sum_y;
+	c[3] = effSize;
+	d[1] = sum_xz;
+	d[2] = sum_yz;
+	d[3] = sum_z;
+
+
+	D1 = (b[2] * ((d[1] * c[3]) - (c[1] * d[3]))) + (b[1] * ((c[2] * d[3]) - (d[2] * c[3]))) + (b[3] * ((d[2] * c[1]) - (c[2] * d[1])));
+	D2 = (d[2] * ((a[1] * c[3]) - (c[1] * a[3]))) + (d[1] * ((c[2] * a[3]) - (a[2] * c[3]))) + (d[3] * ((a[2] * c[1]) - (c[2] * a[1])));
+	D3 = (b[2] * ((a[1] * d[3]) - (d[1] * a[3]))) + (b[1] * ((d[2] * a[3]) - (a[2] * d[3]))) + (b[3] * ((a[2] * d[1]) - (d[2] * a[1])));
+
+	DD = (b[2] * ((a[1] * c[3]) - (c[1] * a[3]))) + (b[1] * ((c[2] * a[3]) - (a[2] * c[3]))) + (b[3] * ((a[2] * c[1]) - (c[2] * a[1])));
+
+	plane3D->r0 = D1 / DD;
+	plane3D->r1 = D2 / DD;
+	plane3D->r2 = D3 / DD;
+
+	plane3D->distB = sqrt(plane3D->r0*plane3D->r0 + plane3D->r1*plane3D->r1 + 1.0);
+	return 0;
+}
+
+double pointToPlaneDis3D(roiPointDecimal3D calPt, const RATIO_Plane *plane3D)
+{
+	return (calPt.zzz - calPt.xxx * plane3D->r0 - calPt.yyy * plane3D->r1 - plane3D->r2) / plane3D->distB;
+}
 

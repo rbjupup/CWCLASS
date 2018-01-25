@@ -37,6 +37,9 @@
     <Filter Include="CLASS\RTREE">
       <UniqueIdentifier>{e68025e7-98be-42a2-b2b6-21409734f8d1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CLASS\MFCCTRL\tab">
+      <UniqueIdentifier>{32d6cce9-6d89-4849-b4da-ea64567dbe93}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -156,6 +159,18 @@
     <ClInclude Include="CLASS\CV\CvvImage.h">
       <Filter>CLASS\CV</Filter>
     </ClInclude>
+    <ClInclude Include="CLASS\MFCCTRL\tab\MFCTAB.h">
+      <Filter>CLASS\MFCCTRL\tab</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\MFCCTRL\tab\W.h">
+      <Filter>CLASS\MFCCTRL\tab</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\MFCCTRL\tab\WAONE.h">
+      <Filter>CLASS\MFCCTRL\tab</Filter>
+    </ClInclude>
+    <ClInclude Include="CLASS\MFCCTRL\tab\WATWO.h">
+      <Filter>CLASS\MFCCTRL\tab</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CLASSTEST.cpp">
@@ -235,6 +250,18 @@
     </ClCompile>
     <ClCompile Include="CLASS\CV\CvvImage.cpp">
       <Filter>CLASS\CV</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\MFCCTRL\tab\MFCTAB.cpp">
+      <Filter>CLASS\MFCCTRL\tab</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\MFCCTRL\tab\W.cpp">
+      <Filter>CLASS\MFCCTRL\tab</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\MFCCTRL\tab\WAONE.cpp">
+      <Filter>CLASS\MFCCTRL\tab</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\MFCCTRL\tab\WATWO.cpp">
+      <Filter>CLASS\MFCCTRL\tab</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

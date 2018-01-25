@@ -30,7 +30,7 @@ private:
 	vector<vector<CString>> m_vecSupportFunction;
 	CWBCG     m_cwBcg;						//BCG测试界面
 	CWROBO    m_robo;						//AI类
-	CWMFCBtn m_cwmfcBtn;					//透明按钮对话框
+	CWMFCCtlMan m_cwMfcCtl;					//控件管理类
 	CWmonUrl m_monitor;						//网页监听类
 	CWPowerCV m_powcv;						//opencv二次开发
 };

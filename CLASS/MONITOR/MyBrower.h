@@ -1,5 +1,6 @@
 #pragma once
 #include "explorer1.h"
+#include "resource.h"
 #include "afxwin.h"
 #include <vector>
 using namespace std;

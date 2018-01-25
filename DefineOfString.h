@@ -56,6 +56,8 @@
 #define CLASSNAME7 CString("MFC控件")
 #define MFCBTNFUN1 CString("透明按钮")
 #define HELPMFCBTNFUN1 CString("操作步骤：\r\n1:添加GDI+\r\n2:复制黏贴")
+#define MFCBTNFUN2 CString("Tab操作,多种类")
+#define HELPMFCBTNFUN2 CString("当我们有两种对话框组,想通过一个变量切换tab下面的组,那么可以用这种方式,可拓展性很好\r\n输入1:加载的窗口类型")
 
 
 #define CLASSNAME8 CString("C++爬虫")

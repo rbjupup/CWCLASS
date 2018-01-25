@@ -54,6 +54,7 @@ BOSSCLASS::BOSSCLASS(void)
 
 	vector<CString> MFCBTNClassSupportFunction;
 	MFCBTNClassSupportFunction.push_back(MFCBTNFUN1);
+	MFCBTNClassSupportFunction.push_back(MFCBTNFUN2);
 	m_vecSupportFunction.push_back(MFCBTNClassSupportFunction);
 
 	vector<CString> MFCMONClassSupportFunction;
@@ -160,7 +161,10 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 	if (classname == CLASSNAME7)
 	{
 		if (funname == MFCBTNFUN1){
-			m_cwmfcBtn.DoModal();
+			m_cwMfcCtl.DoModal();
+		}
+		if (funname == MFCBTNFUN2){
+			m_cwMfcCtl.OpenTabDlg(atoi(param[0]));
 		}
 	}
 	if (classname == CLASSNAME8)
@@ -327,6 +331,8 @@ CString BOSSCLASS::GetFunctionHelp(CString classname,CString funname){
 	{
 		if (funname == MFCBTNFUN1)
 			return HELPMFCBTNFUN1;
+		if (funname == MFCBTNFUN2)
+			return HELPMFCBTNFUN2;
 	}
 	if (classname == CLASSNAME8)
 	{
