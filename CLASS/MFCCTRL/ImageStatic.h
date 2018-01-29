@@ -107,83 +107,98 @@ struct DRAWAngleArc//绘圆弧结构体
 };
 class CImageStatic : public CStatic
 {
-// Construction
 public:
-	CFloatPt m_ptAreaCenter;
-	BOOL m_fjd;
-	double *dScalx;
-	double *dScaly; 
-	CRect *m_ptLP;
-	void ChargeImagePt(C3FloatPt &Pt);
-	float m_ClearColorRed;
-	float m_ClearColorGreen;
-	float m_ClearColorBlue;
-	HGLRC m_hRC;
-	CDC* m_pDC;
-	BOOL InitializeOpenGL(void);
-	BOOL SetupPixelFormat(void);
-	void RenderScene(void);
+	CImageStatic();
+	virtual ~CImageStatic();
+	afx_msg void OnPaint();
+	void GetMyHdc();
+protected:
+	DECLARE_MESSAGE_MAP()
+public:
+
+/************************************************************************/
+/*								核心操作	                            */
+/************************************************************************/
+//保存显示的图片用
+	IplImage * m_pImg;
+	//显示一张Iplimage,注意不要析构掉,会导致野指针
+	void ChangeImg(IplImage* img);
+	//显示路径中的图片,注意不要析构掉,会导致野指针
+	void ChangeImg(CString path);
+	//显示照相机里面的图片
+	void ShowImage();
+
 
 	BOOL m_bNoShowBox;
 	BOOL m_bNoShowCoppeArea;
 	BOOL m_bNoShowSheetArea;
-	CPen m_pen[4];
-	BOOL m_bDrawRect[4];
-	CRect m_rtDraw[4];
-	BOOL m_bFlagBox;
-	CPoint m_ptFlagBox[4];
-	BOOL m_bIsShowChipPos;
-	CArray <CFloatPt, CFloatPt> *m_pChipPos;
-	void DrawRectBox(CDC *pMemDC);
-
-	CPoint m_ptFlag;
 	BOOL m_bFlag;
 	BOOL m_bDrawRuler;
-	static BOOL m_bDrawRulerOut;
-	BOOL m_bDrawRuler2;
-	static BOOL m_bDrawRulerOut2;
-//	static BOOL m_bDrawRulerModify;
-	BOOL m_bFist;//
-	static int m_nIndexEnum[4];//0 代表螺丝定位相机 1 代表晶片定位相机 2修正相机
-//	static int m_nDraw;
-	static BOOL DrawDetRect[3];
-	int Camera;
-	CImageStatic();
-	int m_nIndex;//相机下标
-	double ImageScale;
-	double ImageScale2;
-	CWnd * m_pSencondWnd;
-	void DrawRuler(CDC *pMemDC);
-
-	CRect   m_HighARect[10];		//模板区域
-	CRect	m_HighDetRect[10];			//检测区域@whq 2016-5-10，以前是检测区域和模板区域一起，现在分出来
-
-
-	bool	m_bIsDrawHighARect;
+	BOOL m_bDrawRect[CameraNum];
+	BOOL m_bFist;
+	bool m_bIsDrawHighARect;
+	bool m_bIsDrawCenter;
 	//是否是高精度对位对话框
 	bool m_bIsHighTempDlg;
+	BOOL m_bFlagBox;
+	BOOL m_bIsShowChipPos;
+	static BOOL m_bDrawRulerOut;
+	static BOOL m_bDrawRulerOut2;
+	//	static BOOL m_bDrawRulerModify;
+	static BOOL DrawDetRect[3];
+	BOOL m_bDrawRuler2;
+	CWnd * m_pSencondWnd;
+
+
 	CRect m_HighSelectRect;
-	bool m_bIsDrawCenter;
+	CArray <CFloatPt, CFloatPt> *m_pChipPos;
+	CPoint m_ptFlagBox[4];
+	static int m_nIndexEnum[4];//0 代表螺丝定位相机 1 代表晶片定位相机 2修正相机
+	CRect m_rtDraw[4];
+	CPoint m_ptFlag;
+	int m_nIndex;//相机下标
+	CRect   m_HighARect[10];		//模板区域
+	CRect	m_HighDetRect[10];			//检测区域@whq 2016-5-10，以前是检测区域和模板区域一起，现在分出来
 	CPoint m_ptCenterTemp;
 	CPoint m_ptCenter[2];
-	int Is3DView;//0： 2d  1： 3d  3：magnify
+
+
+	CPen m_pen[4];
+	double ImageScale;
 	CCriticalSection m_g_cs;//同步锁
-// Attributes
 
-public:
-	void ShowImage();//显示照相机里面的图片
-	//LT 
-	void GetMyHdc();
-	virtual ~CImageStatic();
 
-	// Generated message map functions
-protected:
-	//{{AFX_MSG(CImageStatic)
-	afx_msg void OnPaint();
-	//}}AFX_MSG
 
-	DECLARE_MESSAGE_MAP()
-public:
+
+
+/************************************************************************/
+/*                          缩放平移选项                                */
+/************************************************************************/
+	//图像放大比例,值越大,视场越小,控件到图像的转化关系变为1/ImageScale2
+	double ImageScale2;
+	//初始缩放倍数,刚刚加载文件的时候得到的
+	double scalx,scaly;
+	//最后图像上面的ROI
+	CDRect m_ROIrect;
+	//记录上次按下的点
+	CPoint m_LDownPt;
+	//记录控件的宽高
+	int Width();
+	int Height();
+	//点的坐标转换,0表示从控件到图像,1反之
+	void PointChange(CFloatPt srcpt,CFloatPt &dstpt,int changeType);
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+/************************************************************************/
+/*                          缩放平移选项结束                            */
+/************************************************************************/
+
+
+/************************************************************************/
+/*                        添加绘制元素                                  */
+/************************************************************************/
 	vector<DRAWRECT> m_Rects[CameraNum]; //区域
 	vector<DRAWLINE> m_Lines[CameraNum]; //直线
 	vector<DRAWRECT> DetRects[CameraNum];//检测区域
@@ -194,31 +209,36 @@ public:
 
 	int myMark(C3FloatPt Pos,int w = 20,int h = 20,COLORREF crColor=/*RGB(207,221,238)*/RGB(0,255,0), int nWidth=1,int nPenStyle=0,BOOL IsDraw = TRUE);
 	int myLine(C3FloatPt Pt1, C3FloatPt Pt2,COLORREF crColor, int nWidth=1,int nPenStyle=0,BOOL IsDraw = TRUE,BOOL IsShow = TRUE);
-	int myLine(CDC *pMemDC,C3FloatPt Pt1,C3FloatPt Pt2,COLORREF crColor, int nWidth=1,int nPenStyle=0,BOOL IsShow = TRUE);
-	int myAngleArc(CDC *pMemDC,C3FloatPt Pt1,C3FloatPt Pt2,C3FloatPt Pt3,COLORREF crColor, int nWidth,int nPenStyle);
 	int myAngleArc(C3FloatPt Pt1,C3FloatPt Pt2,C3FloatPt Pt3,COLORREF crColor = RGB(255,0,0), int nWidth = 1,int nPenStyle = 0);
-
-	int myRectangle(LPCRECT lpRect,COLORREF crColor, int nWidth=1,int nPenStyle=0,BOOL IsDraw = TRUE);
-
 	int myCircle(int m_CircleCX,int m_CircleCY,int m_CircleR,COLORREF crColor=RGB(0,255,0), int nWidth=1,int nPenStyle=0,BOOL IsDraw = TRUE);
-
-	
-	int myRectangle(CDC *pMemDC,LPCRECT lpRect,COLORREF crColor, int nWidth=1,int nPenStyle=0);
-	int myCircle(CDC *pMemDC,int m_CircleCX,int m_CircleCY,int m_CircleR,COLORREF crColor, int nWidth=1,int nPenStyle=0);
-
+	int myRectangle(LPCRECT lpRect,COLORREF crColor, int nWidth=1,int nPenStyle=0,BOOL IsDraw = TRUE);
 	int AddDetDect(LPCRECT lpRect,COLORREF crColor =RGB(255,0,0), int nWidth=1,int nPenStyle=1, BOOL IsDraw = TRUE);
-	int ClearDetDect();
-	int ClearDraw();
-	BOOL Clear;
 	int AddString(CPoint Pt, CString strText ,int nAngle = 0, COLORREF crColor = RGB(255,0,0), 
 		int lfHeight = 20, CString strFont = "宋体",  int nRadius = 1);
+	int ClearDetDect();
+	int ClearDraw();
 	int ClearString();
+/************************************************************************/
+/*                        添加绘制元素完成                              */
+/************************************************************************/
+
+/************************************************************************/
+/*                        绘制元素开始                                  */
+/************************************************************************/
+	int myRectangle(CDC *pMemDC,LPCRECT lpRect,COLORREF crColor, int nWidth=1,int nPenStyle=0);
+	int myCircle(CDC *pMemDC,int m_CircleCX,int m_CircleCY,int m_CircleR,COLORREF crColor, int nWidth=1,int nPenStyle=0);
+	int myLine(CDC *pMemDC,C3FloatPt Pt1,C3FloatPt Pt2,COLORREF crColor, int nWidth=1,int nPenStyle=0,BOOL IsShow = TRUE);
+	int myAngleArc(CDC *pMemDC,C3FloatPt Pt1,C3FloatPt Pt2,C3FloatPt Pt3,COLORREF crColor, int nWidth,int nPenStyle);
 	void Fun(CDC *pMemDC,int x, int y, CString strText, COLORREF crColor, int lfHeight, CString strFont , int nAngle, int nRadius);
-	void ChangeImg(IplImage* img);
-private:
-#ifdef STATIC_CV
-	IplImage * m_pImg;
-#endif
+	void DrawRuler(CDC *pMemDC);
+	void DrawRectBox(CDC *pMemDC);
+
+/************************************************************************/
+/*                        绘制元素完成                                  */
+/************************************************************************/	
+
+
+
 };
 
 

@@ -1090,7 +1090,7 @@ int GetRand(int min,int max)
 	srand((unsigned)time(0));
 	return (int)(rand()*(max-min)/m_nMax+min);
 }
-void WaitProcess(LPTSTR FileName,LPTSTR Param)
+void WaitProcess(LPTSTR FileName,LPTSTR Param,BOOL waitExit)
 {
 	SHELLEXECUTEINFO ShellInfo = {0};
 	ShellInfo.cbSize	= sizeof(SHELLEXECUTEINFO);
@@ -1107,10 +1107,12 @@ void WaitProcess(LPTSTR FileName,LPTSTR Param)
 	//WaitForSingleObject(ShellInfo.hProcess,-1);
 	DWORD dwExitCode;
 	GetExitCodeProcess(ShellInfo.hProcess,&dwExitCode);
-	while (dwExitCode == STILL_ACTIVE)
-	{ 
-		XWaitTime(0.1);
-		GetExitCodeProcess(ShellInfo.hProcess, &dwExitCode);
+	if(waitExit){
+		while (dwExitCode == STILL_ACTIVE)
+		{ 
+			XWaitTime(0.1);
+			GetExitCodeProcess(ShellInfo.hProcess, &dwExitCode);
+		}
 	}
 	CloseHandle(ShellInfo.hProcess); 
 }
@@ -1514,6 +1516,21 @@ BOOL PtInPolygon(CPoint p, CPoint pt[], int nCount)
 
 	return oddNodes;		
 } 
+
+BOOL TranParentToChild(CWnd &cwwnd, CWnd* papa,CPoint &point,int PtType)
+{
+	CRect rect;
+	cwwnd.GetWindowRect(&rect);
+	if(PtType == 0)
+		papa->ScreenToClient(rect);
+	if(PtInRect(rect,point)){
+		point -= rect.TopLeft();
+		return TRUE;
+	}	
+	return FALSE;
+}
+
+
 /************************************************************************/
 /*								其它操作结束                             */
 /************************************************************************/

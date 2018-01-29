@@ -43,6 +43,22 @@ public:
 		return sqrt( (x-fX)* (x-fX) + (y-fY)* (y-fY) );
 	}
 };
+struct CDRect{
+public:
+	double x;
+	double y;
+	double width;
+	double height;
+	CDRect(int x1,int y1,int width1,int height1){
+		x = x1;
+		y = y1;
+		width = width1;
+		height = height1;
+	}
+	CDRect(){
+		x = 0; y = 0; width = 0;height = 0;
+	}
+};
 
 struct DRect
 {

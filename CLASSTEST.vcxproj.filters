@@ -171,6 +171,9 @@
     <ClInclude Include="CLASS\MFCCTRL\tab\WATWO.h">
       <Filter>CLASS\MFCCTRL\tab</Filter>
     </ClInclude>
+    <ClInclude Include="CLASS\MFCCTRL\ManStaticTest.h">
+      <Filter>CLASS\MFCCTRL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CLASSTEST.cpp">
@@ -262,6 +265,9 @@
     </ClCompile>
     <ClCompile Include="CLASS\MFCCTRL\tab\WATWO.cpp">
       <Filter>CLASS\MFCCTRL\tab</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\MFCCTRL\ManStaticTest.cpp">
+      <Filter>CLASS\MFCCTRL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

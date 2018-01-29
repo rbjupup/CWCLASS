@@ -129,3 +129,8 @@ void CWMFCCtlMan::OpenTabDlg(int type)
 	m_dlgTab.showtype = type;
 	m_dlgTab.DoModal();
 }
+
+void CWMFCCtlMan::OpenStaticDlg()
+{
+	m_dlgStaticTest.DoModal();
+}

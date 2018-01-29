@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "ImageStatic.h"
-#include "CLASS/CV/CvvImage.h"
+#include "CLASS\CV\CvvImage.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -22,10 +22,8 @@ CImageStatic::CImageStatic()
 	m_pSencondWnd = NULL;
 	ImageScale = 1;
 	m_bFist = FALSE;
-	Camera = 0;
 	m_bDrawRuler = FALSE;
 	m_bDrawRuler2 = FALSE;
-	Clear = FALSE;
 	m_bFlag = FALSE;
 	m_pChipPos = NULL;
 	m_bIsShowChipPos = FALSE;
@@ -47,15 +45,15 @@ CImageStatic::CImageStatic()
 
 	m_bIsDrawHighARect = FALSE;
 	m_bIsDrawCenter = false;
-	Is3DView = 0;
 	m_bIsHighTempDlg = false;
 
-	m_ptLP = NULL;
-	dScalx = NULL;
-	dScaly = NULL;
 
-	m_fjd = FALSE;
 
+	//缩放平移选项
+	m_ROIrect = CDRect(0,0,0,0);
+	m_LDownPt = CPoint(-1,-1);
+
+	m_nIndex = 0;
 #ifdef STATIC_CV
 	m_pImg = NULL;
 #endif
@@ -73,6 +71,10 @@ CImageStatic::~CImageStatic()
 BEGIN_MESSAGE_MAP(CImageStatic, CStatic)
 	ON_WM_PAINT()
 ON_WM_SIZE()
+ON_WM_LBUTTONDOWN()
+ON_WM_LBUTTONUP()
+ON_WM_MOUSEMOVE()
+ON_WM_MOUSEWHEEL()
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -99,14 +101,20 @@ void CImageStatic::ShowImage()
 	int i  =0;
 #ifdef STATIC_CV
 	if(m_pImg != NULL){
-	  		HDC hdc;
-	 		CDC *MemDC = GetDC();//CDC::FromHandle(hdc);
 	 		CRect rect;
 	 		GetWindowRect(&rect);//获取控件相对于屏幕的位置
 	 		ScreenToClient(rect);
-	 		CRgn Rgn;
-	 		Rgn.CreateRectRgn(rect.left, rect.top, rect.right, rect.bottom);
-	 		MemDC->SelectClipRgn(&Rgn);
+			GetClientRect(&rect);  
+			SetRect(rect,rect.left,rect.top,rect.right,rect.bottom);  
+			CDC *pDC=GetDC();
+			HDC hDC=pDC->GetSafeHdc();
+			//绘制图像
+			CvvImage cimg;  
+			cvResetImageROI(m_pImg);
+			cvSetImageROI(m_pImg,cvRect(m_ROIrect.x,m_ROIrect.y,m_ROIrect.width,m_ROIrect.height));
+			cimg.CopyOf(m_pImg);  
+			cimg.DrawToHDC(hDC,&rect);  
+			//绘制其它
 			m_nIndex = 0;
 	 		if (m_nIndex >=0 &&m_nIndex<CameraNum)
 	 		{	
@@ -114,21 +122,21 @@ void CImageStatic::ShowImage()
 	 			{
 	 				if(m_bNoShowBox == TRUE)
 	 					break;
-	 				myRectangle(MemDC,m_Rects[m_nIndex][i].m_Rect,m_Rects[m_nIndex][i].m_Color,m_Rects[m_nIndex][i].nWidth,m_Rects[m_nIndex][i].nPenStyle);
+	 				myRectangle(pDC,m_Rects[m_nIndex][i].m_Rect,m_Rects[m_nIndex][i].m_Color,m_Rects[m_nIndex][i].nWidth,m_Rects[m_nIndex][i].nPenStyle);
 	 			}
 	 			for (i=0; i<m_Lines[m_nIndex].size(); i++)//绘制所有直线
 	 			{
-	 				myLine(MemDC,m_Lines[m_nIndex][i].Pt1,m_Lines[m_nIndex][i].Pt2,m_Lines[m_nIndex][i].m_Color,m_Lines[m_nIndex][i].nWidth,m_Lines[m_nIndex][i].nPenStyle,m_Lines[m_nIndex][i].IsShow);
+	 				myLine(pDC,m_Lines[m_nIndex][i].Pt1,m_Lines[m_nIndex][i].Pt2,m_Lines[m_nIndex][i].m_Color,m_Lines[m_nIndex][i].nWidth,m_Lines[m_nIndex][i].nPenStyle,m_Lines[m_nIndex][i].IsShow);
 	 			}
 	 			for (i=0; i< DetRects[m_nIndex].size(); i++)//绘制所有检测区域
 	 			{
 	 				if((0 == i && m_bNoShowCoppeArea == TRUE) || (1 == i && m_bNoShowSheetArea == TRUE))
 	 					continue;
-	 				myRectangle(MemDC,DetRects[m_nIndex][i].m_Rect,DetRects[m_nIndex][i].m_Color,DetRects[m_nIndex][i].nWidth,DetRects[m_nIndex][i].nPenStyle);
+	 				myRectangle(pDC,DetRects[m_nIndex][i].m_Rect,DetRects[m_nIndex][i].m_Color,DetRects[m_nIndex][i].nWidth,DetRects[m_nIndex][i].nPenStyle);
 	 			}
 	 			for (i=0; i< m_String[m_nIndex].size(); i++)//绘制文字
 	 			{	
-	 				Fun(MemDC,
+	 				Fun(pDC,
 	 					m_String[m_nIndex][i].Pt.x,
 	 					m_String[m_nIndex][i].Pt.y,
 	 					m_String[m_nIndex][i].strText,
@@ -140,7 +148,7 @@ void CImageStatic::ShowImage()
 	 			}
 	 			for (i=0; i< m_Circle[m_nIndex].size(); i++)//绘制文字
 	 			{	
-	 				myCircle(MemDC,
+	 				myCircle(pDC,
 	 					m_Circle[m_nIndex][i].m_CircleCX,
 	 					m_Circle[m_nIndex][i].m_CircleCY,
 	 					m_Circle[m_nIndex][i].m_CircleR,
@@ -152,7 +160,7 @@ void CImageStatic::ShowImage()
 	 			for (i=0; i< m_AngleArc[m_nIndex].size(); i++)//圆弧
 	 			{	
 	 
-	 				myAngleArc(MemDC,
+	 				myAngleArc(pDC,
 	 					m_AngleArc[m_nIndex][i].Pt1,
 	 					m_AngleArc[m_nIndex][i].Pt2,
 	 					m_AngleArc[m_nIndex][i].Pt3,
@@ -162,19 +170,7 @@ void CImageStatic::ShowImage()
 	 
 	 			}
 	 		}
-	 		ReleaseDC(MemDC);
-	 		m_g_cs.Unlock();//解锁@whq
-	 		Sleep(1);//@whq
-	     GetWindowRect(&rect);//获取控件相对于屏幕的位置
-	 	ScreenToClient(rect);
-		CDC *pDC=GetDC();
-		HDC hDC=pDC->GetSafeHdc();
-		GetClientRect(&rect);  
-		SetRect(rect,rect.left,rect.top,rect.right,rect.bottom);  
-		CvvImage cimg;  
-		cimg.CopyOf(m_pImg);  
-		cimg.DrawToHDC(hDC,&rect);  
-		ReleaseDC(pDC); 
+			ReleaseDC(pDC); 
 
 
 		}
@@ -311,12 +307,7 @@ void CImageStatic::ShowImage()
 //  		int i  = 0;
 //  		i++;
 //  	}
-//  
-//  	if (m_fjd == TRUE)
-//  	{
-//  		int i  = 0;
-//  		i++;
-//  	}
+// 
 //  
 // 	DrawRuler(&MemDC);
 //  	if (m_bDrawRuler == TRUE && m_nIndexEnum[2] == m_nIndex && m_bFist == FALSE)
@@ -711,19 +702,17 @@ void CImageStatic::DrawRuler(CDC *pMemDC)
 }
 int CImageStatic::myCircle(CDC *pMemDC,int m_CircleCX,int m_CircleCY,int m_CircleR,COLORREF crColor, int nWidth,int nPenStyle)
 {
-	if (Is3DView == 1)
-	{
-		return 0;
-	}
 	CPen Pen;//　画笔	
 	CPen *oldPen;
 	Pen.CreatePen(nPenStyle,nWidth,crColor);
 	oldPen = pMemDC->SelectObject(&Pen);
 	pMemDC->SelectStockObject(NULL_BRUSH);
-	m_CircleCX *= ImageScale2; 
-	m_CircleCY *= ImageScale2; 
+	CFloatPt center,cpt2;
+	CFloatPt pt = CFloatPt(m_CircleCX,m_CircleCY);
+	PointChange(pt,center,1);
 	m_CircleR *= ImageScale2; 
-	pMemDC->Ellipse(m_CircleCX - m_CircleR, m_CircleCY - m_CircleR,m_CircleCX + m_CircleR, m_CircleCY + m_CircleR);
+	if(center.x>=0&&center.y>=0)
+	pMemDC->Ellipse(center.x - m_CircleR, center.y - m_CircleR,center.x + m_CircleR, center.y + m_CircleR);
 	pMemDC->SelectObject(oldPen);
 	return 0;
 }
@@ -731,19 +720,11 @@ int CImageStatic::myCircle(CDC *pMemDC,int m_CircleCX,int m_CircleCY,int m_Circl
 
 int CImageStatic::myAngleArc(CDC *pMemDC,C3FloatPt Pt1,C3FloatPt Pt2,C3FloatPt Pt3,COLORREF crColor, int nWidth,int nPenStyle)
 {
-	if (Is3DView == 1)
-	{
-		return 0;
-	}
 	CPen Pen;//　画笔	
 	CPen *oldPen;
 	Pen.CreatePen(nPenStyle,nWidth,crColor);
 	oldPen = pMemDC->SelectObject(&Pen);
 	pMemDC->SelectStockObject(NULL_BRUSH);
-	
-	ChargeImagePt(Pt1);
-	ChargeImagePt(Pt2);
-	ChargeImagePt(Pt3);
 
 	Pt1.y = - Pt1.y;
 	Pt2.y = - Pt2.y;
@@ -832,10 +813,6 @@ int CImageStatic::myAngleArc(CDC *pMemDC,C3FloatPt Pt1,C3FloatPt Pt2,C3FloatPt P
 }
 int CImageStatic::myLine(CDC *pMemDC,C3FloatPt Pt1,C3FloatPt Pt2,COLORREF crColor, int nWidth,int nPenStyle,BOOL IsShow )
 {
-	if (Is3DView == 1)
-	{
-		return 0;
-	}
 
 	if (!IsShow)
 	{
@@ -846,61 +823,32 @@ int CImageStatic::myLine(CDC *pMemDC,C3FloatPt Pt1,C3FloatPt Pt2,COLORREF crColo
 	Pen.CreatePen(nPenStyle,nWidth,crColor);
 	oldPen = pMemDC->SelectObject(&Pen);
 	pMemDC->SelectStockObject(NULL_BRUSH);
-
-	if (Is3DView==0)
-	{
-		Pt1.x *= ImageScale2; 
-		Pt1.y *= ImageScale2; 
-		Pt2.x *= ImageScale2; 
-		Pt2.y *= ImageScale2;
-	}
-	
-	ChargeImagePt(Pt1);
-	ChargeImagePt(Pt2);
-	pMemDC->MoveTo(CPoint(Pt1.x,Pt1.y));
-	pMemDC->LineTo(CPoint(Pt2.x,Pt2.y));
+	CFloatPt pt = CFloatPt(Pt1.x,Pt1.y);
+	CFloatPt cpt1,cpt2;
+	PointChange(pt,cpt1,1);
+	PointChange(pt,cpt2,1);
+	pMemDC->MoveTo(CPoint(cpt1.x,cpt1.y));
+	pMemDC->LineTo(CPoint(cpt2.x,cpt2.y));
 	pMemDC->SelectObject(oldPen);
 	return 0;
 }
 
 
-void CImageStatic::ChargeImagePt(C3FloatPt &Pt)
-{
-	if(m_ptLP == NULL || dScalx == NULL || dScaly == NULL)
-		return ;
-	Pt.x = (Pt.x - m_ptLP->left)*(*dScalx);
-	Pt.y = (Pt.y - m_ptLP->top)*(*dScaly);
-
-
-}
 
 int CImageStatic::myRectangle(CDC *pMemDC,LPCRECT lpRect,COLORREF crColor, int nWidth,int nPenStyle)
 {
-	if (Is3DView == 1)
-	{
-		return 0;
-	}
 	CPen Pen;//　画笔	
 	CPen *oldPen;
 	Pen.CreatePen(nPenStyle,nWidth,crColor);
 	oldPen = pMemDC->SelectObject(&Pen);
 	pMemDC->SelectStockObject(NULL_BRUSH);
 	CRect m_Rect = lpRect;
-	m_Rect.bottom *= ImageScale2; 
-	m_Rect.right *= ImageScale2;
-	m_Rect.top *= ImageScale2;
-	m_Rect.left *= ImageScale2;
-	C3FloatPt pt1, pt2;
-	pt1.x = m_Rect.left;
-	pt1.y = m_Rect.top;
-	pt2.x = m_Rect.right;
-	pt2.y = m_Rect.bottom;
-	ChargeImagePt(pt1);
-	ChargeImagePt(pt2);
-	m_Rect.left		=pt1.x ;
-	m_Rect.top		=pt1.y ;
-	m_Rect.right	=pt2.x ;
-	m_Rect.bottom	=pt2.y ;
+	CFloatPt tpt1,tpt2,tpt3;
+	tpt1 = CFloatPt(((CRect)lpRect).TopLeft());
+	PointChange(tpt1,tpt2,1);
+	tpt1 = CFloatPt(((CRect)lpRect).BottomRight());
+	PointChange(tpt1,tpt3,1);
+	m_Rect = CRect(tpt2.x,tpt2.y,tpt3.x,tpt3.y);
 	pMemDC->Rectangle(m_Rect);
 	pMemDC->SelectObject(oldPen);
 	return 0;
@@ -908,12 +856,6 @@ int CImageStatic::myRectangle(CDC *pMemDC,LPCRECT lpRect,COLORREF crColor, int n
 
 int CImageStatic::myMark(C3FloatPt Pos,int w ,int h ,COLORREF crColor, int nWidth,int nPenStyle,BOOL IsDraw )
 {
-	if (Is3DView ==2)
-	{
-		h =  h/ (*dScaly);
-		w =  w/ (*dScalx);
-	}
-
 
 	C3FloatPt Pt[4];
 	Pt[0].x = Pos.x - w;
@@ -942,12 +884,17 @@ int CImageStatic::myCircle(int m_CircleCX,int m_CircleCY,int m_CircleR,COLORREF 
 		return 0;
 	}
 	DRAWCircle m_DrawCircle;
-	m_DrawCircle.m_CircleCX = m_CircleCX;
-	m_DrawCircle.m_CircleCY = m_CircleCY;
-	m_DrawCircle.m_CircleR = m_CircleR;
+
+	CFloatPt center,cpt2;
+	CFloatPt pt = CFloatPt(m_CircleCX,m_CircleCY);
+	PointChange(pt,center,0);
+
+	m_DrawCircle.m_CircleCX = center.x;
+	m_DrawCircle.m_CircleCY = center.y;
+	m_DrawCircle.m_CircleR = m_CircleR/ImageScale2;
 	m_DrawCircle.m_Color = crColor;
 	m_DrawCircle.nPenStyle = nPenStyle;
-	m_DrawCircle.nWidth = nWidth;
+	m_DrawCircle.nWidth = nWidth/ImageScale2;
 	m_Circle[m_nIndex].push_back(m_DrawCircle);
 	return 0;
 }
@@ -958,15 +905,36 @@ int CImageStatic::myLine(C3FloatPt Pt1,C3FloatPt Pt2,COLORREF crColor, int nWidt
 		return 0;
 	}
 	DRAWLINE m_DrawLine;
-	m_DrawLine.Pt1 = Pt1;
-	m_DrawLine.Pt2 = Pt2;
+	CFloatPt cpt1,cpt2;
+	CFloatPt pt = CFloatPt(Pt1.x,Pt1.y);
+	PointChange(pt,cpt1,0);
+	pt = CFloatPt(Pt2.x,Pt2.y);
+	PointChange(pt,cpt2,0);
+	m_DrawLine.Pt1 = C3FloatPt(cpt1.x,cpt1.y,0);
+	m_DrawLine.Pt2 = C3FloatPt(cpt2.x,cpt2.y,0);
 	m_DrawLine.m_Color = crColor;
 	m_DrawLine.nWidth = nWidth;
 	m_DrawLine.nPenStyle = nPenStyle;
 	m_DrawLine.IsShow = IsShow;
 	m_Lines[m_nIndex].push_back(m_DrawLine);
 }
+void CImageStatic::PointChange(CFloatPt pt,CFloatPt &vpt,int changeType){
+	//假如是cv转crect
+	if(changeType == 1){
+	//减去ROI起始点,获得偏移量
+		double dmovex = (pt.x - m_ROIrect.x);//<0? 0 : (pt.x - m_ROIrect.x);
+		double dmovey = (pt.y - m_ROIrect.y);//<0? 0 : (pt.y - m_ROIrect.y);
+	//计算这段距离等于多少的控件距离
+		vpt.x = dmovex*scalx*ImageScale2;
+		vpt.y = dmovey*scaly*ImageScale2;
+	}else if(changeType == 0){//转cv
+		double width = Width();
+	//计算这段距离等于多少的控件距离
+		vpt.x = pt.x/scalx/ImageScale2 + m_ROIrect.x;
+		vpt.y = pt.y/scaly/ImageScale2 + m_ROIrect.y;
+	}
 
+}
 
 int CImageStatic::myRectangle(LPCRECT lpRect,COLORREF crColor, int nWidth,int nPenStyle,BOOL IsDraw )
 {
@@ -975,7 +943,15 @@ int CImageStatic::myRectangle(LPCRECT lpRect,COLORREF crColor, int nWidth,int nP
 		return 0;
 	}
 	DRAWRECT m_DrawRect;
-	m_DrawRect.m_Rect = lpRect;
+	CFloatPt tmpcvpttl;
+	CFloatPt tmpcvptrb;
+	CFloatPt pt = CFloatPt(((CRect)lpRect).TopLeft());
+	PointChange(pt,tmpcvpttl,0);
+	pt = ((CRect)lpRect).BottomRight();
+	PointChange(pt,tmpcvptrb,0);
+	CRect cvre = CRect(tmpcvpttl.x,tmpcvpttl.y,tmpcvptrb.x,tmpcvptrb.y);
+	
+	m_DrawRect.m_Rect = cvre;
 	m_DrawRect.m_Color = crColor;
 	m_DrawRect.nWidth = nWidth;
 	m_DrawRect.nPenStyle = nPenStyle;
@@ -995,7 +971,6 @@ int CImageStatic::ClearDraw()
 	}
 	m_Rects[m_nIndex].clear();
 	m_Lines[m_nIndex].clear();
-	Clear = TRUE;
 	ClearString();
 	m_Circle[m_nIndex].clear();
 	m_AngleArc[m_nIndex].clear();
@@ -1070,10 +1045,6 @@ void CImageStatic::Fun(CDC *pMemDC,int x, int y, CString strText, COLORREF crCol
 	int lfHeight, CString strFont , int nAngle, int nRadius)
 {
 
-	if (Is3DView == 1)
-	{
-		return ;
-	}
 	x  *= ImageScale2;
 	y  *= ImageScale2;
 	pMemDC->SetBkMode(TRANSPARENT);
@@ -1110,5 +1081,136 @@ void CImageStatic::ChangeImg(IplImage* img)
 	if(m_pImg != NULL)
 		cvReleaseImage(&m_pImg);
 	m_pImg = img;
+	CRect rect;
+	GetClientRect(&rect);
+	scalx = (double)rect.Width()/(double)m_pImg->width;
+	scaly = (double)rect.Height()/(double)m_pImg->height;
+	m_Rects[m_nIndex].clear();
+	m_ROIrect = CDRect(0,0,m_pImg->width,m_pImg->height);
+	ShowImage();
 }
 
+void CImageStatic::ChangeImg(CString path)
+{
+	IplImage *tmp = cvLoadImage(path);
+	if(m_pImg != NULL)
+		cvReleaseImage(&m_pImg);
+	if(tmp != NULL){
+		ChangeImg(tmp);
+	}
+
+
+}
+
+
+
+void CImageStatic::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	m_LDownPt = point;
+	CStatic::OnLButtonDown(nFlags, point);
+}
+
+
+void CImageStatic::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	m_LDownPt = CPoint(-1,-1);
+	CStatic::OnLButtonUp(nFlags, point);
+}
+
+
+void CImageStatic::OnMouseMove(UINT nFlags, CPoint point)
+{
+	if (m_LDownPt.x > 0 && m_LDownPt.y > 0)
+	{
+		int movex = point.x - m_LDownPt.x;
+		int movey = point.y - m_LDownPt.y;
+		//计算新的额ROI
+		double dmovex = -movex/scalx/ImageScale2 + m_ROIrect.x;
+		double dmovey = -movey/scaly/ImageScale2 + m_ROIrect.y;
+		double width = Width()/scalx / ImageScale2;
+		double height = Height()/scaly / ImageScale2;
+		//控件宽高表示的实际长度
+		if(dmovex + width <= m_pImg->width){//图像与右边界比较
+			if (dmovey + height<=m_pImg->height)
+			{
+				if (dmovex >= 0)
+				{
+					if (dmovey >= 0)
+					{
+						m_ROIrect.x = dmovex;
+						m_ROIrect.y = dmovey;
+						m_ROIrect.width = width;
+						m_ROIrect.height = height;
+						ShowImage();
+					}
+				}
+			}
+		}
+		m_LDownPt = point;
+		ShowImage();
+	}
+	CStatic::OnMouseMove(nFlags, point);
+}
+
+
+BOOL CImageStatic::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
+{
+	double tmpscale;
+	if (zDelta >= 120)
+	{
+		tmpscale = ImageScale2 + 0.01;
+	}
+	else if (zDelta <= -120)
+	{
+		tmpscale = ImageScale2 - 0.01;
+	}
+	else
+		return  FALSE;
+	if(tmpscale < 1)
+		return FALSE;
+
+	//计算新的ROI,前半部分表示放大缩小带来的宽度变化带来的图像像素变化
+
+	double movex = -Width()/scalx /2.0/ tmpscale + Width()/scalx /2.0/ImageScale2 + m_ROIrect.x;
+	double movey = -Height()/scaly /2.0/ tmpscale + Height()/scaly /2.0/ImageScale2 + m_ROIrect.y;
+	double width = Width()/scalx / tmpscale;
+	double height = Height()/scaly / tmpscale;
+
+	//控件宽高表示的实际长度
+	if(movex + width <= m_pImg->width){//图像与右边界比较
+		if (movey + height<=m_pImg->height)
+		{
+			if (movex >= 0)
+			{
+				if (movey >= 0)
+				{
+					m_ROIrect.x = movex;
+					m_ROIrect.y = movey;
+					m_ROIrect.width = width;
+					m_ROIrect.height = height;
+					ImageScale2 = tmpscale;
+					ShowImage();
+				}
+			}
+		}
+	}
+
+
+	return CStatic::OnMouseWheel(nFlags, zDelta, pt);
+}
+
+int CImageStatic::Width()
+{
+	CRect m_ShowRC;
+	GetWindowRect(m_ShowRC);
+	ScreenToClient(m_ShowRC);
+	return m_ShowRC.Width();
+}
+
+int CImageStatic::Height()
+{
+	CRect m_ShowRC;
+	GetWindowRect(m_ShowRC);
+	ScreenToClient(m_ShowRC);
+	return m_ShowRC.Height();
+}

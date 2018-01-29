@@ -4,6 +4,7 @@
 #include "CLASS/MFCCTRL/CGdiPlusBitmap.h"
 #include "CLASS/MFCCTRL/GdipButton.h"
 #include "CLASS/MFCCTRL/tab/MFCTAB.h"
+#include "CLASS/MFCCTRL/ManStaticTest.h"
 #include "resource.h"
 #include "afxbutton.h"
 
@@ -32,6 +33,11 @@ public:
 	afx_msg void OnPaint();
 	afx_msg void OnBnClickedButtonUnnormal2();
 	void OpenTabDlg(int type);
+	void OpenStaticDlg();
+
+
+
 	CGdipButton m_btnPng;
 	CMFCTAB m_dlgTab;
+	CManStaticTest m_dlgStaticTest;
 };

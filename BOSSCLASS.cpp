@@ -55,6 +55,7 @@ BOSSCLASS::BOSSCLASS(void)
 	vector<CString> MFCBTNClassSupportFunction;
 	MFCBTNClassSupportFunction.push_back(MFCBTNFUN1);
 	MFCBTNClassSupportFunction.push_back(MFCBTNFUN2);
+	MFCBTNClassSupportFunction.push_back(MFCBTNFUN3);
 	m_vecSupportFunction.push_back(MFCBTNClassSupportFunction);
 
 	vector<CString> MFCMONClassSupportFunction;
@@ -115,6 +116,7 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 	if (classname == CLASSNAME1)
 	{
 		if (funname == CWFUN1){
+			m_cwMfcCtl.OpenStaticDlg();
 		}
 	}
 	if (classname == CLASSNAME4)
@@ -165,6 +167,9 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 		}
 		if (funname == MFCBTNFUN2){
 			m_cwMfcCtl.OpenTabDlg(atoi(param[0]));
+		}
+		if (funname == MFCBTNFUN3){
+			m_cwMfcCtl.OpenStaticDlg();
 		}
 	}
 	if (classname == CLASSNAME8)
@@ -290,10 +295,10 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 			theApp.m_resdlg->m_Show.ShowImage();
 		}
 		if (funname == CVFUN10){
-			m_powcv.testsszn();
+			//m_powcv.testsszn();
 		}
 		if (funname == CVFUN11){
-			m_powcv.FitPlane(param[0],param[1],atoi(param[2]),atoi(param[3]),atoi(param[4]),atoi(param[5]),atoi(param[6]));
+			m_powcv.FitPlane(param[0],param[1],atoi(param[2]),atoi(param[3]),atoi(param[4]),atoi(param[5]),atof(param[6]),param[7]);
 			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]));
 			theApp.m_resdlg->m_Show.ShowImage();
 		}
@@ -333,6 +338,8 @@ CString BOSSCLASS::GetFunctionHelp(CString classname,CString funname){
 			return HELPMFCBTNFUN1;
 		if (funname == MFCBTNFUN2)
 			return HELPMFCBTNFUN2;
+		if (funname == MFCBTNFUN3)
+			return HELPMFCBTNFUN3;
 	}
 	if (classname == CLASSNAME8)
 	{

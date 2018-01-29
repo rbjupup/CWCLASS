@@ -58,6 +58,8 @@
 #define HELPMFCBTNFUN1 CString("操作步骤：\r\n1:添加GDI+\r\n2:复制黏贴")
 #define MFCBTNFUN2 CString("Tab操作,多种类")
 #define HELPMFCBTNFUN2 CString("当我们有两种对话框组,想通过一个变量切换tab下面的组,那么可以用这种方式,可拓展性很好\r\n输入1:加载的窗口类型")
+#define MFCBTNFUN3 CString("图像控件的图像放大缩小平移")
+#define HELPMFCBTNFUN3 CString("测试拓展CStatic类,使它能对图像进行缩放和拖动");
 
 
 #define CLASSNAME8 CString("C++爬虫")

@@ -408,7 +408,7 @@ void SetLogPath(CString savePath);
 //获取一个在最大值到最小值之间的随机数
 int GetRand(int min,int max);
 //调用cmd.exe实现对bat文件的调用,或者直接对其它软件进行调用
-void WaitProcess(LPTSTR FileName,LPTSTR Param);
+void WaitProcess(LPTSTR FileName,LPTSTR Param,BOOL waitExit = TRUE);
 //使用正则表达式进行匹配
 vector<CString> GetresByStlRx(CString word,CString rule);
 //内存整理
@@ -428,6 +428,9 @@ CRect GetRelRoundRect(CPoint *pt,int nPointNum);
 CRect GetRoundRect(CPoint *pt,int nPointNum);
 //点在多边形内
 BOOL PtInPolygon(CPoint p, CPoint pt[], int nCount);
+//坐标转换,转换成控件坐标0表示传入的点以界面左上角为单位,1表示以屏幕为单位
+BOOL TranParentToChild(CWnd &cwwnd, CWnd* papa,CPoint &point,int ptType = 0);
+
 /************************************************************************/
 /*								其它操作结束                             */
 /************************************************************************/
