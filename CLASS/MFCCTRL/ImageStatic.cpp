@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "ImageStatic.h"
-#include "CLASS\CV\CvvImage.h"
+#include "Class\CV\CvvImage.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -32,6 +32,8 @@ CImageStatic::CImageStatic()
 	{
 		m_bDrawRect[i] = FALSE;
 		m_rtDraw[i].top = m_rtDraw[i].left = m_rtDraw[i].bottom = m_rtDraw[i].right= 0;
+		m_nIndex = i;
+		ClearDraw();
 	}
 	m_pen[0].CreatePen(PS_DASH, 1, RGB(255,128,0));
 	m_pen[1].CreatePen(PS_DASH, 1, RGB(0,128,255));
@@ -54,6 +56,7 @@ CImageStatic::CImageStatic()
 	m_LDownPt = CPoint(-1,-1);
 
 	m_nIndex = 0;
+	m_move.m_show = this;
 #ifdef STATIC_CV
 	m_pImg = NULL;
 #endif
@@ -128,9 +131,20 @@ void CImageStatic::ShowImage()
 	 			{
 	 				myLine(pDC,m_Lines[m_nIndex][i].Pt1,m_Lines[m_nIndex][i].Pt2,m_Lines[m_nIndex][i].m_Color,m_Lines[m_nIndex][i].nWidth,m_Lines[m_nIndex][i].nPenStyle,m_Lines[m_nIndex][i].IsShow);
 	 			}
+	 			for (i=0; i< m_Circle[m_nIndex].size(); i++)//绘制文字
+	 			{	
+	 				myCircle(pDC,
+	 					m_Circle[m_nIndex][i].m_CircleCX,
+	 					m_Circle[m_nIndex][i].m_CircleCY,
+	 					m_Circle[m_nIndex][i].m_CircleR,
+	 					m_Circle[m_nIndex][i].m_Color,
+	 					m_Circle[m_nIndex][i].nWidth,
+	 					m_Circle[m_nIndex][i].nPenStyle);
+	 
+	 			}
 	 			for (i=0; i< DetRects[m_nIndex].size(); i++)//绘制所有检测区域
 	 			{
-	 				if((0 == i && m_bNoShowCoppeArea == TRUE) || (1 == i && m_bNoShowSheetArea == TRUE))
+	 				if((m_bNoShowCoppeArea == TRUE) || (m_bNoShowSheetArea == TRUE))
 	 					continue;
 	 				myRectangle(pDC,DetRects[m_nIndex][i].m_Rect,DetRects[m_nIndex][i].m_Color,DetRects[m_nIndex][i].nWidth,DetRects[m_nIndex][i].nPenStyle);
 	 			}
@@ -146,17 +160,6 @@ void CImageStatic::ShowImage()
 	 					m_String[m_nIndex][i].nAngle,
 	 					m_String[m_nIndex][i].nRadius);
 	 			}
-	 			for (i=0; i< m_Circle[m_nIndex].size(); i++)//绘制文字
-	 			{	
-	 				myCircle(pDC,
-	 					m_Circle[m_nIndex][i].m_CircleCX,
-	 					m_Circle[m_nIndex][i].m_CircleCY,
-	 					m_Circle[m_nIndex][i].m_CircleR,
-	 					m_Circle[m_nIndex][i].m_Color,
-	 					m_Circle[m_nIndex][i].nWidth,
-	 					m_Circle[m_nIndex][i].nPenStyle);
-	 
-	 			}
 	 			for (i=0; i< m_AngleArc[m_nIndex].size(); i++)//圆弧
 	 			{	
 	 
@@ -171,8 +174,6 @@ void CImageStatic::ShowImage()
 	 			}
 	 		}
 			ReleaseDC(pDC); 
-
-
 		}
 #endif
 
@@ -826,6 +827,7 @@ int CImageStatic::myLine(CDC *pMemDC,C3FloatPt Pt1,C3FloatPt Pt2,COLORREF crColo
 	CFloatPt pt = CFloatPt(Pt1.x,Pt1.y);
 	CFloatPt cpt1,cpt2;
 	PointChange(pt,cpt1,1);
+	pt = CFloatPt(Pt2.x,Pt2.y);
 	PointChange(pt,cpt2,1);
 	pMemDC->MoveTo(CPoint(cpt1.x,cpt1.y));
 	pMemDC->LineTo(CPoint(cpt2.x,cpt2.y));
@@ -854,9 +856,12 @@ int CImageStatic::myRectangle(CDC *pMemDC,LPCRECT lpRect,COLORREF crColor, int n
 	return 0;
 }
 
-int CImageStatic::myMark(C3FloatPt Pos,int w ,int h ,COLORREF crColor, int nWidth,int nPenStyle,BOOL IsDraw )
+int CImageStatic::ChangingMyMark(C3FloatPt Pos,int w ,int h ,COLORREF crColor, int nWidth,int nPenStyle,BOOL IsDraw )
 {
-
+	if (m_nIndex<0 ||m_nIndex>CameraNum-1)
+	{
+		return 0;
+	}
 	C3FloatPt Pt[4];
 	Pt[0].x = Pos.x - w;
 	Pt[0].y = Pos.y;
@@ -873,8 +878,82 @@ int CImageStatic::myMark(C3FloatPt Pos,int w ,int h ,COLORREF crColor, int nWidt
 	Pt[3].x = Pos.x ;
 	Pt[3].y = Pos.y + h;
 	Pt[3].z = Pos.z;
-	myLine(Pt[0],Pt[1],crColor,nWidth,nPenStyle,IsDraw);
-	myLine(Pt[2],Pt[3],crColor,nWidth,nPenStyle,IsDraw);
+	for(int i = 0; i < 4; i++)
+		PointChange(Pt[i],Pt[i],0);
+
+
+
+	DRAWLINE m_DrawLine;
+	m_DrawLine.Pt1 = Pt[0];
+	m_DrawLine.Pt2 = Pt[1];
+	m_DrawLine.m_Color = crColor;
+	m_DrawLine.nWidth = nWidth;
+	m_DrawLine.nPenStyle = nPenStyle;
+	m_DrawLine.IsShow = IsDraw;
+	m_Lines[m_nIndex][0] = m_DrawLine;
+	m_DrawLine.Pt1 = Pt[2];
+	m_DrawLine.Pt2 = Pt[3];
+	m_Lines[m_nIndex][1] = m_DrawLine;
+	ShowImage();
+	return 0;
+}
+int CImageStatic::myMark(C3FloatPt Pos,int w ,int h ,COLORREF crColor, int nWidth,int nPenStyle,BOOL IsDraw )
+{
+	if (m_nIndex<0 ||m_nIndex>CameraNum-1)
+	{
+		return 0;
+	}
+	C3FloatPt Pt[4];
+	Pt[0].x = Pos.x - w;
+	Pt[0].y = Pos.y;
+	Pt[0].z = Pos.z;
+
+	Pt[1].x = Pos.x + w;
+	Pt[1].y = Pos.y;
+	Pt[1].z = Pos.z;
+
+	Pt[2].x = Pos.x ;
+	Pt[2].y = Pos.y - h;
+	Pt[2].z = Pos.z;
+
+	Pt[3].x = Pos.x ;
+	Pt[3].y = Pos.y + h;
+	Pt[3].z = Pos.z;
+	for(int i = 0; i < 4; i++)
+		PointChange(Pt[i],Pt[i],0);
+	DRAWLINE m_DrawLine;
+	m_DrawLine.Pt1 = Pt[0];
+	m_DrawLine.Pt2 = Pt[1];
+	m_DrawLine.m_Color = crColor;
+	m_DrawLine.nWidth = nWidth;
+	m_DrawLine.nPenStyle = nPenStyle;
+	m_DrawLine.IsShow = IsDraw;
+	m_Lines[m_nIndex].push_back(m_DrawLine);
+	m_DrawLine.Pt1 = Pt[2];
+	m_DrawLine.Pt2 = Pt[3];
+	m_Lines[m_nIndex].push_back(m_DrawLine);
+	ShowImage();
+	return 0;
+}
+int CImageStatic::ChangingMyCircle(int m_CircleCX,int m_CircleCY,int m_CircleR,COLORREF crColor, int nWidth,int nPenStyle,BOOL IsDraw)
+{
+	if (m_nIndex<0 ||m_nIndex>CameraNum-1)
+	{
+		return 0;
+	}
+	DRAWCircle m_DrawCircle;
+
+	CFloatPt center,cpt2;
+	CFloatPt pt = CFloatPt(m_CircleCX,m_CircleCY);
+	PointChange(pt,center,0);
+
+	m_DrawCircle.m_CircleCX = center.x;
+	m_DrawCircle.m_CircleCY = center.y;
+	m_DrawCircle.m_CircleR = m_CircleR/ImageScale2;
+	m_DrawCircle.m_Color = crColor;
+	m_DrawCircle.nPenStyle = nPenStyle;
+	m_DrawCircle.nWidth = nWidth/ImageScale2;
+	m_Circle[m_nIndex][0] = m_DrawCircle;
 	return 0;
 }
 int CImageStatic::myCircle(int m_CircleCX,int m_CircleCY,int m_CircleR,COLORREF crColor, int nWidth,int nPenStyle,BOOL IsDraw)
@@ -918,20 +997,37 @@ int CImageStatic::myLine(C3FloatPt Pt1,C3FloatPt Pt2,COLORREF crColor, int nWidt
 	m_DrawLine.IsShow = IsShow;
 	m_Lines[m_nIndex].push_back(m_DrawLine);
 }
-void CImageStatic::PointChange(CFloatPt pt,CFloatPt &vpt,int changeType){
+void CImageStatic::PointChange(C3FloatPt srcpt,C3FloatPt &dstpt,int changeType){
+	//假如是cv转crect
+	if(changeType == 1){
+		//减去ROI起始点,获得偏移量
+		double dmovex = (srcpt.x - m_ROIrect.x);//<0? 0 : (pt.x - m_ROIrect.x);
+		double dmovey = (srcpt.y - m_ROIrect.y);//<0? 0 : (pt.y - m_ROIrect.y);
+		//计算这段距离等于多少的控件距离
+		dstpt.x = dmovex*scalx*ImageScale2;
+		dstpt.y = dmovey*scaly*ImageScale2;
+	}else if(changeType == 0){//转cv
+		double width = Width();
+		//计算这段距离等于多少的控件距离
+		dstpt.x = srcpt.x/scalx/ImageScale2 + m_ROIrect.x;
+		dstpt.y = srcpt.y/scaly/ImageScale2 + m_ROIrect.y;
+	}
+
+}
+void CImageStatic::PointChange(CFloatPt srcpt,CFloatPt &dstpt,int changeType){
 	//假如是cv转crect
 	if(changeType == 1){
 	//减去ROI起始点,获得偏移量
-		double dmovex = (pt.x - m_ROIrect.x);//<0? 0 : (pt.x - m_ROIrect.x);
-		double dmovey = (pt.y - m_ROIrect.y);//<0? 0 : (pt.y - m_ROIrect.y);
+		double dmovex = (srcpt.x - m_ROIrect.x);//<0? 0 : (pt.x - m_ROIrect.x);
+		double dmovey = (srcpt.y - m_ROIrect.y);//<0? 0 : (pt.y - m_ROIrect.y);
 	//计算这段距离等于多少的控件距离
-		vpt.x = dmovex*scalx*ImageScale2;
-		vpt.y = dmovey*scaly*ImageScale2;
+		dstpt.x = dmovex*scalx*ImageScale2;
+		dstpt.y = dmovey*scaly*ImageScale2;
 	}else if(changeType == 0){//转cv
 		double width = Width();
 	//计算这段距离等于多少的控件距离
-		vpt.x = pt.x/scalx/ImageScale2 + m_ROIrect.x;
-		vpt.y = pt.y/scaly/ImageScale2 + m_ROIrect.y;
+		dstpt.x = srcpt.x/scalx/ImageScale2 + m_ROIrect.x;
+		dstpt.y = srcpt.y/scaly/ImageScale2 + m_ROIrect.y;
 	}
 
 }
@@ -971,9 +1067,15 @@ int CImageStatic::ClearDraw()
 	}
 	m_Rects[m_nIndex].clear();
 	m_Lines[m_nIndex].clear();
-	ClearString();
 	m_Circle[m_nIndex].clear();
 	m_AngleArc[m_nIndex].clear();
+
+	m_Rects[m_nIndex].push_back(DRAWRECT());
+	m_Circle[m_nIndex].push_back(DRAWCircle());
+	m_Lines[m_nIndex].push_back(DRAWLINE());
+	m_Lines[m_nIndex].push_back(DRAWLINE());
+	m_Lines[m_nIndex].push_back(DRAWLINE());
+	ClearString();
 	m_g_cs.Unlock();//解锁@whq
 	//TRACE("cleardraw:index= %d , Unlock:lockcount=%d\n",m_nIndex,m_g_cs.m_sect.LockCount);
 	Sleep(1);//@whq
@@ -1076,27 +1178,38 @@ void CImageStatic::Fun(CDC *pMemDC,int x, int y, CString strText, COLORREF crCol
 	font.DeleteObject ();   
 }
 
-void CImageStatic::ChangeImg(IplImage* img)
+void CImageStatic::ChangeImg(IplImage* img,BOOL bchangescale)
 {
 	if(m_pImg != NULL)
 		cvReleaseImage(&m_pImg);
 	m_pImg = img;
 	CRect rect;
 	GetClientRect(&rect);
-	scalx = (double)rect.Width()/(double)m_pImg->width;
-	scaly = (double)rect.Height()/(double)m_pImg->height;
-	m_Rects[m_nIndex].clear();
-	m_ROIrect = CDRect(0,0,m_pImg->width,m_pImg->height);
+	ImageScale2 = 1;
+	if(bchangescale == FALSE){
+		int roiwidth = min(m_pImg->width,m_pImg->height);
+		m_ROIrect = CDRect(0,0,roiwidth,roiwidth);
+		scalx = (double)rect.Width()/(double)roiwidth;//m_pImg->width;
+		scaly = (double)rect.Height()/(double)roiwidth;//m_pImg->height;
+	}
+	else
+	{
+		m_ROIrect = CDRect(0,0,m_pImg->width,m_pImg->height);
+		scalx = (double)rect.Width()/m_pImg->width;
+		scaly = (double)rect.Height()/m_pImg->height;
+	}
+	ClearDraw();
+	//m_ROIrect = CDRect(0,0,m_pImg->width,m_pImg->height);
 	ShowImage();
 }
 
-void CImageStatic::ChangeImg(CString path)
+void CImageStatic::ChangeImg(CString path,BOOL bchangescale)
 {
 	IplImage *tmp = cvLoadImage(path);
 	if(m_pImg != NULL)
 		cvReleaseImage(&m_pImg);
 	if(tmp != NULL){
-		ChangeImg(tmp);
+		ChangeImg(tmp,bchangescale);
 	}
 
 
@@ -1107,14 +1220,12 @@ void CImageStatic::ChangeImg(CString path)
 void CImageStatic::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	m_LDownPt = point;
-	CStatic::OnLButtonDown(nFlags, point);
 }
 
 
 void CImageStatic::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	m_LDownPt = CPoint(-1,-1);
-	CStatic::OnLButtonUp(nFlags, point);
 }
 
 
@@ -1149,7 +1260,6 @@ void CImageStatic::OnMouseMove(UINT nFlags, CPoint point)
 		m_LDownPt = point;
 		ShowImage();
 	}
-	CStatic::OnMouseMove(nFlags, point);
 }
 
 
@@ -1196,7 +1306,6 @@ BOOL CImageStatic::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	}
 
 
-	return CStatic::OnMouseWheel(nFlags, zDelta, pt);
 }
 
 int CImageStatic::Width()
@@ -1214,3 +1323,169 @@ int CImageStatic::Height()
 	ScreenToClient(m_ShowRC);
 	return m_ShowRC.Height();
 }
+
+void CImageStatic::ChangingInit()
+{
+	m_Rects[m_nIndex][0] = DRAWRECT();
+	m_Circle[m_nIndex][0] = DRAWCircle();
+	m_Lines[m_nIndex][0] = DRAWLINE();
+	m_Lines[m_nIndex][1] = DRAWLINE();
+	m_Lines[m_nIndex][2] = DRAWLINE();
+	ShowImage();
+}
+
+int CImageStatic::ChangingMyLine(C3FloatPt Pt1, C3FloatPt Pt2,COLORREF crColor, int nWidth/*=1*/,int nPenStyle/*=0*/,BOOL IsDraw /*= TRUE*/,BOOL IsShow /*= TRUE*/)
+{
+	if (m_nIndex<0 ||m_nIndex>CameraNum-1)
+	{
+		return 0;
+	}
+	DRAWLINE m_DrawLine;
+	CFloatPt cpt1,cpt2;
+	CFloatPt pt = CFloatPt(Pt1.x,Pt1.y);
+	PointChange(pt,cpt1,0);
+	pt = CFloatPt(Pt2.x,Pt2.y);
+	PointChange(pt,cpt2,0);
+	m_DrawLine.Pt1 = C3FloatPt(cpt1.x,cpt1.y,0);
+	m_DrawLine.Pt2 = C3FloatPt(cpt2.x,cpt2.y,0);
+	m_DrawLine.m_Color = crColor;
+	m_DrawLine.nWidth = nWidth;
+	m_DrawLine.nPenStyle = nPenStyle;
+	m_DrawLine.IsShow = IsShow;
+	m_Lines[m_nIndex][2] = m_DrawLine;
+}
+
+int CImageStatic::ChangingMyRectangle(LPCRECT lpRect,COLORREF crColor, int nWidth/*=1*/,int nPenStyle/*=0*/,BOOL IsDraw /*= TRUE*/)
+{
+	if (m_nIndex<0 ||m_nIndex>CameraNum-1)
+	{
+		return 0;
+	}
+	DRAWRECT m_DrawRect;
+	CFloatPt tmpcvpttl;
+	CFloatPt tmpcvptrb;
+	CFloatPt pt = CFloatPt(((CRect)lpRect).TopLeft());
+	PointChange(pt,tmpcvpttl,0);
+	pt = ((CRect)lpRect).BottomRight();
+	PointChange(pt,tmpcvptrb,0);
+	CRect cvre = CRect(tmpcvpttl.x,tmpcvpttl.y,tmpcvptrb.x,tmpcvptrb.y);
+
+	m_DrawRect.m_Rect = cvre;
+	m_DrawRect.m_Color = crColor;
+	m_DrawRect.nWidth = nWidth;
+	m_DrawRect.nPenStyle = nPenStyle;
+	m_Rects[m_nIndex][0] = m_DrawRect;
+	ShowImage();
+}
+
+void CImageStatic::ChangingStyle(int changingType)
+{
+	m_move.m_bDrawingDeteRC = changingType;
+}
+
+void MovePara::MyLButtonDown(UINT nFlags, CWnd* papa,CPoint point)
+{
+	CRect PicRect;
+	if (m_ShowRC.PtInRect(point))
+	{
+		if(m_bDrawingDeteRC){
+			point.x-=m_ShowRC.left;
+			point.y-=m_ShowRC.top;
+			m_bLbtnDown = TRUE;
+			m_stPt.x=m_endPt.x=point.x;///m_show.ImageScale2+0.5;
+			m_stPt.y=m_endPt.y=point.y;///m_show.ImageScale2+0.5;
+
+			m_show->ShowImage();
+			return;
+		}
+		else if(TranParentToChild(*m_show,papa, point))
+			m_show->OnLButtonDown(nFlags,point);
+
+	} 
+}
+
+void MovePara::MyMouseMove(UINT nFlags, CWnd* papa, CPoint point)
+{
+	int radi = 0;
+	double dislength  = 0;
+	if (m_ShowRC.PtInRect(point))
+	{
+		switch (m_bDrawingDeteRC)
+		{
+		case 0:
+			if(TranParentToChild(*m_show,papa, point)){
+				m_show->OnMouseMove(nFlags,point);
+			}
+			break;
+		case 1:
+			point.x-=m_ShowRC.left;
+			point.y-=m_ShowRC.top;
+			m_endPt.x=point.x;///m_show.ImageScale2+0.5;
+			m_endPt.y=point.y;///m_show.ImageScale2+0.5;
+			m_show->ChangingMyMark(C3FloatPt(m_endPt.x,m_endPt.y,0));
+			//m_show.myRectangle(CRect(m_stPt,m_endPt),RGB(255,255,255));
+			radi = min((m_endPt.x-m_stPt.x)/2.0,(m_endPt.y-m_stPt.y)/2.0);
+			dislength = sqrt(pow((m_endPt.x-m_stPt.x),2.0)+pow((m_endPt.y-m_stPt.y),2.0));
+			if(m_bLbtnDown)
+				m_show->ChangingMyCircle(m_stPt.x,m_stPt.y,dislength);
+				//m_show->ChangingMyCircle(m_stPt.x + radi,m_stPt.y + radi,radi);
+			break;
+		case 2:
+			point.x-=m_ShowRC.left;
+			point.y-=m_ShowRC.top;
+			m_endPt.x=point.x;///m_show.ImageScale2+0.5;
+			m_endPt.y=point.y;///m_show.ImageScale2+0.5;
+			if(m_bLbtnDown)
+				m_show->ChangingMyRectangle(CRect(m_stPt,m_endPt),RGB(255,0,0));
+			break;
+		}
+
+	}
+	else if(m_bLbtnDown){
+		if(TranParentToChild(*m_show,papa, point))
+			m_show->OnLButtonUp(nFlags,point);
+	}
+}
+
+void MovePara::MyLButtonUp(UINT nFlags, CWnd* papa , CPoint point)
+{
+	double radi = 0;
+	if(m_bLbtnDown&&m_bDrawingDeteRC){
+		CRect rect(m_stPt,m_endPt);
+
+		m_show->ChangingInit();
+		switch(m_bDrawingDeteRC){
+		case 0:
+			break;
+		case 1:
+			radi = min((m_endPt.x-m_stPt.x)/2.0,(m_endPt.y-m_stPt.y)/2.0);
+			radi = sqrt(pow((m_endPt.x-m_stPt.x),2.0)+pow((m_endPt.y-m_stPt.y),2.0));
+			m_show->myCircle(m_stPt.x,m_stPt.y,radi);
+			//m_show->myCircle(m_stPt.x + radi,m_stPt.y + radi,radi);
+			break;
+		case 2:
+			m_show->myRectangle(CRect(m_stPt,m_endPt),RGB(255,0,0));
+			break;
+		}
+		m_bLbtnDown = FALSE;
+		m_bDrawingDeteRC = FALSE;
+	}
+
+	if(TranParentToChild(*m_show,papa, point)){
+		m_show->OnLButtonUp(nFlags,point);
+		m_show->ChangingInit();
+	}
+}
+
+BOOL MovePara::MyMouseWheel(UINT nFlags, CWnd* papa , short zDelta, CPoint pt)
+{
+	if(TranParentToChild(*m_show,papa, pt,1))
+		m_show->OnMouseWheel(nFlags, zDelta, pt);
+	return TRUE;
+}
+
+void MovePara::MyInit(CWnd* papa)
+{
+	m_show->GetWindowRect(m_ShowRC);
+	papa->ScreenToClient(m_ShowRC);
+};

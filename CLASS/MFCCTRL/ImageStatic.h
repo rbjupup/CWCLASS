@@ -9,6 +9,7 @@
 #define STATIC_CV
 #include "def.h"
 #include <afxmt.h>
+#include "XFunCom.h"
 #ifdef STATIC_CV
 #include "cv.h"
 #endif
@@ -59,14 +60,37 @@ public:
 #include  <vector>
 using namespace std;
 
-
-
+class CImageStatic;
+struct MovePara{
+	CRect m_ShowRC;
+	BOOL m_bLbtnDown;
+	CPoint m_stPt;
+	CPoint m_endPt;
+	BOOL m_bDrawingDeteRC;
+	CImageStatic* m_show;
+	MovePara(){
+		m_bDrawingDeteRC = FALSE;
+		m_bLbtnDown = FALSE;
+		m_show = NULL;
+	}
+	void MyLButtonDown(UINT nFlags,CWnd* papa, CPoint point);
+	void MyMouseMove(UINT nFlags, CWnd* papa , CPoint point);
+	void MyLButtonUp(UINT nFlags, CWnd* papa , CPoint point);
+	BOOL MyMouseWheel(UINT nFlags, CWnd* papa , short zDelta, CPoint pt);
+	void MyInit(CWnd* papa);
+};
 struct DRAWRECT//绘区域结构体
 {
 	CRect m_Rect;
 	COLORREF m_Color;
 	int nWidth;
 	int nPenStyle;
+	DRAWRECT(){
+		m_Rect = CRect(0,0,0,0);
+		m_Color = RGB(0,0,0);
+		nWidth = 0;
+		nPenStyle = 0;
+	}
 };
 struct DRAWLINE//绘直线结构体
 {
@@ -76,6 +100,14 @@ struct DRAWLINE//绘直线结构体
 	int nWidth;
 	int nPenStyle;
 	BOOL IsShow ;
+	DRAWLINE(){
+		Pt1 = C3FloatPt(0,0,0);
+		Pt2 = C3FloatPt(0,0,0);
+		m_Color = RGB(0,0,0);
+		nWidth = 0;
+		nPenStyle = 0;
+		IsShow = TRUE;
+	}
 };
 struct DRAWCircle//绘圆结构体
 {
@@ -85,6 +117,14 @@ struct DRAWCircle//绘圆结构体
 	COLORREF m_Color;
 	int nWidth;
 	int nPenStyle;
+	DRAWCircle(){
+		m_CircleCX = 0;
+		m_CircleCY = 0;
+		m_CircleR = 0;
+		m_Color = RGB(0,0,0);
+		nWidth = 0;
+		nPenStyle = 0;
+	}
 };
 struct DRAWFont//绘文字结构体
 {
@@ -105,6 +145,7 @@ struct DRAWAngleArc//绘圆弧结构体
 	int nWidth;
 	int nPenStyle;
 };
+
 class CImageStatic : public CStatic
 {
 public:
@@ -122,9 +163,9 @@ public:
 //保存显示的图片用
 	IplImage * m_pImg;
 	//显示一张Iplimage,注意不要析构掉,会导致野指针
-	void ChangeImg(IplImage* img);
+	void ChangeImg(IplImage* img,BOOL bchangescale = FALSE);
 	//显示路径中的图片,注意不要析构掉,会导致野指针
-	void ChangeImg(CString path);
+	void ChangeImg(CString path,BOOL bchangescale = FALSE);
 	//显示照相机里面的图片
 	void ShowImage();
 
@@ -182,11 +223,13 @@ public:
 	CDRect m_ROIrect;
 	//记录上次按下的点
 	CPoint m_LDownPt;
+	MovePara m_move;
 	//记录控件的宽高
 	int Width();
 	int Height();
 	//点的坐标转换,0表示从控件到图像,1反之
 	void PointChange(CFloatPt srcpt,CFloatPt &dstpt,int changeType);
+	void PointChange(C3FloatPt srcpt,C3FloatPt &dstpt,int changeType);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
@@ -206,12 +249,20 @@ public:
 	vector<DRAWCircle> m_Circle[CameraNum];//圆
 	vector<DRAWAngleArc> m_AngleArc[CameraNum];//圆弧
 	vector <DRAWLINE> m_3Ddata;
+	//动态添加,添加的元素再调用一次后会更新
+	void ChangingInit();
+	void ChangingStyle(int changingType);
+	int ChangingMyCircle(int m_CircleCX,int m_CircleCY,int m_CircleR,COLORREF crColor=RGB(0,255,0), int nWidth=1,int nPenStyle=0,BOOL IsDraw = TRUE);
+	int ChangingMyMark(C3FloatPt Pos,int w = 20,int h = 20,COLORREF crColor=/*RGB(207,221,238)*/RGB(0,255,0), int nWidth=1,int nPenStyle=0,BOOL IsDraw = TRUE);
+	int ChangingMyLine(C3FloatPt Pt1, C3FloatPt Pt2,COLORREF crColor, int nWidth=1,int nPenStyle=0,BOOL IsDraw = TRUE,BOOL IsShow = TRUE);
+	int ChangingMyRectangle(LPCRECT lpRect,COLORREF crColor, int nWidth=1,int nPenStyle=0,BOOL IsDraw = TRUE);
+
 
 	int myMark(C3FloatPt Pos,int w = 20,int h = 20,COLORREF crColor=/*RGB(207,221,238)*/RGB(0,255,0), int nWidth=1,int nPenStyle=0,BOOL IsDraw = TRUE);
 	int myLine(C3FloatPt Pt1, C3FloatPt Pt2,COLORREF crColor, int nWidth=1,int nPenStyle=0,BOOL IsDraw = TRUE,BOOL IsShow = TRUE);
-	int myAngleArc(C3FloatPt Pt1,C3FloatPt Pt2,C3FloatPt Pt3,COLORREF crColor = RGB(255,0,0), int nWidth = 1,int nPenStyle = 0);
 	int myCircle(int m_CircleCX,int m_CircleCY,int m_CircleR,COLORREF crColor=RGB(0,255,0), int nWidth=1,int nPenStyle=0,BOOL IsDraw = TRUE);
 	int myRectangle(LPCRECT lpRect,COLORREF crColor, int nWidth=1,int nPenStyle=0,BOOL IsDraw = TRUE);
+	int myAngleArc(C3FloatPt Pt1,C3FloatPt Pt2,C3FloatPt Pt3,COLORREF crColor = RGB(255,0,0), int nWidth = 1,int nPenStyle = 0);
 	int AddDetDect(LPCRECT lpRect,COLORREF crColor =RGB(255,0,0), int nWidth=1,int nPenStyle=1, BOOL IsDraw = TRUE);
 	int AddString(CPoint Pt, CString strText ,int nAngle = 0, COLORREF crColor = RGB(255,0,0), 
 		int lfHeight = 20, CString strFont = "宋体",  int nRadius = 1);
@@ -232,8 +283,7 @@ public:
 	void Fun(CDC *pMemDC,int x, int y, CString strText, COLORREF crColor, int lfHeight, CString strFont , int nAngle, int nRadius);
 	void DrawRuler(CDC *pMemDC);
 	void DrawRectBox(CDC *pMemDC);
-
-/************************************************************************/
+	/************************************************************************/
 /*                        绘制元素完成                                  */
 /************************************************************************/	
 

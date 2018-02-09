@@ -1530,6 +1530,10 @@ BOOL TranParentToChild(CWnd &cwwnd, CWnd* papa,CPoint &point,int PtType)
 	return FALSE;
 }
 
+CvRect ChangeRect(CRect rect)
+{
+	return cvRect(rect.left,rect.top,rect.Width(),rect.Height());
+}
 
 /************************************************************************/
 /*								其它操作结束                             */
@@ -1760,3 +1764,254 @@ double pointToPlaneDis3D(roiPointDecimal3D calPt, const RATIO_Plane *plane3D)
 	return (calPt.zzz - calPt.xxx * plane3D->r0 - calPt.yyy * plane3D->r1 - plane3D->r2) / plane3D->distB;
 }
 
+BOOL fileMapping(CString inputFile)
+{
+	HANDLE hdl = CreateFile(inputFile, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,  
+		NULL,OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN ,NULL);  
+
+	if(INVALID_HANDLE_VALUE == hdl)  
+	{  
+		AfxMessageBox("CreateFile失败");  
+		return FALSE;  
+	}  
+
+	DWORD dwLen = GetFileSize(hdl, NULL);//我设置了文件长度为128KB，即 dwLen = 128 * 1024  
+
+	HANDLE hMap = CreateFileMapping(hdl, NULL, PAGE_READWRITE, 0,0,NULL);  
+	if(!hMap)  
+	{  
+		CloseHandle(hdl);  
+		AfxMessageBox("创建映射对象失败");  
+		return FALSE;  
+	}  
+
+	UCHAR *pMap = (UCHAR *)MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0,dwLen/2,dwLen);//offset == 64KB  
+
+
+	if(!pMap)  
+	{  
+		AfxMessageBox("无法将文件与内存关联");  
+		CloseHandle(hMap);  
+		CloseHandle(hdl);  
+		return FALSE;  
+	}  
+
+	for(int k = 0; k < (dwLen)/4; k++)  
+	{  
+		UCHAR ucTmp = pMap[k];  
+		pMap[k] = pMap[(dwLen)/2 - 1 - k];  
+		pMap[(dwLen)/2 - 1 - k] = ucTmp;  
+	}  
+
+	UnmapViewOfFile(pMap);  
+	CloseHandle(hMap);  
+	CloseHandle(hdl);  
+	return TRUE;
+}
+
+BOOL test_XFunCom()
+{
+	assert(test_Curve2Points());
+	//assert(test_fileMapping());
+	return TRUE;
+}
+
+BOOL test_fileMapping()
+{
+	assert(fileMapping("D:\\test.bmp"));
+	return TRUE;
+}
+
+
+//enlargeFactor表示保留计算的小数点位数,不是cvPoint的话可以考虑使用这个代替上面那个函数
+static void Curve2Points(double Rad, double centerx, double centery, bool ClockWise, float sa, float ea, vector<CFloatPt> &m_contourPt,double enlargeFactor)
+{
+
+	//判断弧线的数量
+	int tmp_case=0;
+	ClockWise = !ClockWise;
+	//角度变化范围是否在一度之内,是的话就直接输出两个点就可以了
+	BOOL bdiffAngInOne = FALSE;
+	if (((0<(ea - sa )&&(ea - sa )< 1) &&!ClockWise)||(0<(sa - ea )&&(sa - ea )< 1)&&ClockWise)
+	{
+		bdiffAngInOne = TRUE;
+	}
+
+	if(sa==360)	sa=0;
+	if(ea==360) ea=0;
+	//第一种情况从开始都结束，第二种情况从开始到360度，从0到结束
+	if (!ClockWise)
+	{
+		if (ea>sa)
+			tmp_case = 1;
+	}else
+	{	
+		if (ea<sa)
+			tmp_case = 1;
+	}
+
+	//由于opencv的画圆函数会将角度四舍五入,导致缺点
+	//所以要先保存首末两点
+
+	CFloatPt firstPt,lastPt;
+	//firstPt.x = Rad * cos(ANG2RAD(sa)) + centerx;
+	firstPt.x = centerx + TRANS2COX(Rad, 0, sa);
+	firstPt.y = centery - TRANS2COX(Rad, 0, 450 -sa);
+
+	lastPt.x = centerx + TRANS2COX(Rad, 0, ea);
+	lastPt.y = centery - TRANS2COX(Rad, 0, 450 - ea);
+	//如果是弧线,第二个点向内收缩
+	if(sa < ea)
+	{
+		if(tmp_case)
+			sa = int(sa+1.0);
+		else
+			sa = int(sa);
+		if(tmp_case)
+			ea = int(ea);
+		else
+			ea = int(ea + 1.0);
+	}
+	else
+	{
+		if(tmp_case)
+			sa = int(sa);
+		else
+			sa = int(sa+1.0);
+		if(tmp_case)
+			ea = int(ea + 1.0);
+		else
+			ea = int(ea);
+	}
+
+	//如果在角度变化在1度以内
+	if (bdiffAngInOne)
+	{
+		m_contourPt.push_back(firstPt);	
+		m_contourPt.push_back(lastPt);	
+		return;
+	}
+
+	int nRadius = Rad*enlargeFactor;
+	//初始化数组来存放转化后的数据
+	CvPoint *tmppointer = new CvPoint[361];
+	CvPoint *tmppointer1 = new CvPoint[361];
+	CFloatPt m_tmpPt;					//将圆弧转化成为直线插入adshape里面
+	CvPoint m_CentePoint;
+	m_CentePoint.x = centerx*enlargeFactor;//太小的时候会造成大误差,圆弧的精度问题
+	m_CentePoint.y = centery*enlargeFactor;
+	CvSize CriSize;
+	CriSize.width = CriSize.height = nRadius;
+	int tmp_num;
+
+	//情况一的话就把终点坐标和tmmpointer里面的坐标比，到了就说明结束、
+	//情况2的画就分两部分
+	//360 - angle is trans the coordinate System
+	m_contourPt.push_back(firstPt);
+	if (tmp_case == 1)
+	{				
+		cvEllipse2Poly(m_CentePoint,CriSize,0,360-sa,360-ea,tmppointer,1);//开始到结束一次旋转一度，算出坐标
+		//获取点个数
+		tmp_num = abs(int(sa)-int(ea));
+
+		if(ClockWise)
+		{		
+			for (int i = 0;i<tmp_num;i++)
+			{
+				m_tmpPt.x = tmppointer[i].x/enlargeFactor;//放大100000倍，缩小回来
+				m_tmpPt.y = tmppointer[i].y/enlargeFactor;
+				m_contourPt.push_back(m_tmpPt);
+
+			}
+
+		}
+		else
+		{
+			for (int i=tmp_num - 1;i >= 0;i--)
+			{
+				m_tmpPt.x = tmppointer[i].x/enlargeFactor;//放大100000倍，缩小回来
+				m_tmpPt.y = tmppointer[i].y/enlargeFactor;
+				m_contourPt.push_back(m_tmpPt);
+			}
+		}
+	}
+	else if(tmp_case == 0)
+	{								
+		cvEllipse2Poly(m_CentePoint,CriSize,0,0,360-(ea>sa?ea:sa),tmppointer,1);//开始到结束一次旋转一度，算出坐标
+		cvEllipse2Poly(m_CentePoint,CriSize,0,360-(ea<sa?ea:sa),360,tmppointer1,1);//开始到结束一次旋转一度，算出坐标
+
+		if(ClockWise)
+		{
+			tmp_num = ea<sa?ea:sa;
+			for (int i=0;i<tmp_num;i++)
+			{
+				m_tmpPt.x = tmppointer1[i].x/enlargeFactor;
+				m_tmpPt.y = tmppointer1[i].y/enlargeFactor;
+				m_contourPt.push_back(m_tmpPt);	
+			}
+			tmp_num = 360 - (ea>sa?ea:sa);
+			for (int i=0;i<tmp_num;i++)
+			{
+				m_tmpPt.x = tmppointer[i].x/enlargeFactor;
+				m_tmpPt.y = tmppointer[i].y/enlargeFactor;
+				m_contourPt.push_back(m_tmpPt);	
+			}	
+		}
+		else
+		{
+			tmp_num = 360-(ea>sa?ea:sa);
+			for (int i=tmp_num;i>=0;i--)
+			{
+				m_tmpPt.x = tmppointer[i].x/enlargeFactor;
+				m_tmpPt.y = tmppointer[i].y/enlargeFactor;
+				m_contourPt.push_back(m_tmpPt);	
+			}
+			tmp_num = ea<sa?ea:sa;
+			for (int i=tmp_num;i>=0;i--)
+			{
+				m_tmpPt.x = tmppointer1[i].x/enlargeFactor;
+				m_tmpPt.y = tmppointer1[i].y/enlargeFactor;
+				m_contourPt.push_back(m_tmpPt);	
+			}
+		}
+
+	}	
+	m_contourPt.push_back(lastPt);	
+	delete []tmppointer;
+	tmppointer = NULL;
+	delete []tmppointer1;
+	tmppointer1 = NULL;
+}
+
+BOOL test_Curve2Points()
+{
+	vector<CFloatPt> m_cur;
+	//测试小角度对不对
+	Curve2Points(2.6,0,0,false,0.6,0.4,m_cur,10000);
+	assert(m_cur.size() == 2);
+
+	m_cur.clear();
+	Curve2Points(2.6,0,0,true,0.4,0.6,m_cur,10000);
+	assert(m_cur.size() == 2);
+	//测试偏移方向对不对
+
+	m_cur.clear();
+	Curve2Points(100,0,0,true,90.1,181.1,m_cur,10000);
+	assert(m_cur[0].y < 100);
+	assert(m_cur[m_cur.size() - 1].x < 100);
+
+	m_cur.clear();
+	Curve2Points(100,0,0,false,90.1,180.1,m_cur,10000);
+	assert(m_cur[0].y < 100);
+	assert(m_cur[m_cur.size() - 1].x < 100);
+
+	m_cur.clear();
+	Curve2Points(100,0,0,true,90.1,179.9,m_cur,10000);
+	assert(m_cur[0].y < 100);
+	assert(m_cur[m_cur.size() - 1].y < 0);
+
+	m_cur.clear();
+	Curve2Points(100,0,0,false,179.9,90.1,m_cur,10000);
+	assert(m_cur[0].x < m_cur[1].x);
+	return TRUE;
+}

@@ -101,3 +101,5 @@
 #define HELPCVFUN10 CString("说明：请先按照点云转灰度图-ROI分割-动态阈值-获取轮廓外包框-深视智能的顺序处理,会得到相应的结果\r\n")
 #define CVFUN11 CString("平面拟合")
 #define HELPCVFUN11 CString("说明：拟合出一个三维平面,会得到相应的结果\r\n")
+#define CVFUN12 CString("平面拟合2")
+#define HELPCVFUN12 CString("说明：拟合出一个三维平面,会得到相应的结果\r\n输入1:灰度图\r\n输入2:背景mask图\r\n输入3:输出的距离图")

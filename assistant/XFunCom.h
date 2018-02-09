@@ -20,6 +20,7 @@
 #ifdef USE_STL
 #include <atlrx.h>
 #endif
+#include "Def.h"
 using namespace std;
 
 
@@ -108,7 +109,15 @@ using namespace std;
 #define Dia2PixArea(fDia,fDPI)			PI*(Mil2Pix(fDia/2,fDPI))*(Mil2Pix(fDia/2,fDPI))							//mil直径转像素面积
 #define random(x) (rand()%x)								//随机数生成器
 
-
+#ifndef TRANS2COX		
+#ifndef PI
+#define					PI								3.141592653			
+#endif
+#define					ANG2RAD(x)						float((x)*PI/180.0)				//角度转弧度
+#define					RAD2ANG(x)						float((x)*180/PI)				//弧度转角度
+#define					TRANS2COX(X,Y,fangle)				float((X)*cos(ANG2RAD(fangle))-(Y)*sin(ANG2RAD(fangle)))//旋转坐标轴
+#define					TRANS2COY(X,Y,fangle)				float((Y)*cos(ANG2RAD(fangle))+(X)*sin(ANG2RAD(fangle)))
+#endif
 #define					Rad2Ang(x)							float(x*180.0/PI)
 #define					Ang2Rad(x)							float(x*PI/180.0)
 // #define EUCLIDEAN	-1
@@ -430,7 +439,8 @@ CRect GetRoundRect(CPoint *pt,int nPointNum);
 BOOL PtInPolygon(CPoint p, CPoint pt[], int nCount);
 //坐标转换,转换成控件坐标0表示传入的点以界面左上角为单位,1表示以屏幕为单位
 BOOL TranParentToChild(CWnd &cwwnd, CWnd* papa,CPoint &point,int ptType = 0);
-
+//CRect转CvRect
+CvRect ChangeRect(CRect rect);
 /************************************************************************/
 /*								其它操作结束                             */
 /************************************************************************/
@@ -480,6 +490,26 @@ double pointToPlaneDis3D(roiPointDecimal3D calPt, const RATIO_Plane *plane3D);
 /************************************************************************/
 /*                        数据处理结束                                  */
 /************************************************************************/
+/************************************************************************/
+/*                        高端操作开始                                  */
+/************************************************************************/
+//文件映射
+BOOL fileMapping(CString inputFile);
+/************************************************************************/
+/*                        高端操作结束                                  */
+/************************************************************************/
 
+/************************************************************************/
+/*                        函数测试开始                                  */
+/************************************************************************/
+//测试函数,在运行软件前加上assert(test_XFunCom());即可
+BOOL test_XFunCom();
+BOOL test_fileMapping();
+BOOL test_Curve2Points();
+static void Curve2Points(double Rad, double centerx, double centery, bool ClockWise, float sa, float ea, vector<CFloatPt> &m_contourPt,double enlargeFactor);
+
+/************************************************************************/
+/*                        函数测试结束                                  */
+/************************************************************************/
 #endif
 

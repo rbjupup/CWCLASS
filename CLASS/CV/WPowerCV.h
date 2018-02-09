@@ -34,6 +34,8 @@ public:
 /************************************************************************/
 	//图像切分
 	BOOL SplitByXYNum(CString InputImgPath,CString OutPutDir,int XNum,int YNum);
+	//点云切分
+	BOOL SplitScvByXYNum(CString InputscvPath,CString OutPutDir,int XNum,int YNum);
 	//阈值分割
 	BOOL SplitByThreshold(CString InputImgPath,CString OutPutPath,int threshold);
 	//ROI分割
@@ -61,6 +63,11 @@ public:
 
 	//三维平面拟合
 	void FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, int width,int height,double boarddis,CString disImgPath);
-
+	void FitPlane(CString InputImgPath,CString backmaskPath,CString disImgPath);
+/************************************************************************/
+/*                       单图操作		                                */
+/************************************************************************/
+	//图像取反
+	BOOL ImgNot(CString InputImgPath,CString OutPutPath);
 };
 

@@ -77,6 +77,7 @@ BOSSCLASS::BOSSCLASS(void)
 	CVClassSupportFunction.push_back(CVFUN9);
 	CVClassSupportFunction.push_back(CVFUN10);
 	CVClassSupportFunction.push_back(CVFUN11);
+	CVClassSupportFunction.push_back(CVFUN12);
 	m_vecSupportFunction.push_back(CVClassSupportFunction);
 }
 
@@ -116,7 +117,7 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 	if (classname == CLASSNAME1)
 	{
 		if (funname == CWFUN1){
-			m_cwMfcCtl.OpenStaticDlg();
+			m_powcv.SplitScvByXYNum(param[0],param[1],atoi(param[2]),atoi(param[3]));
 		}
 	}
 	if (classname == CLASSNAME4)
@@ -268,12 +269,12 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 		}
 		if (funname == CVFUN4){
 			m_powcv.SplitByThreshold(param[0],param[1],atoi(param[2]));
-			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]));
+			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]),TRUE);
 			theApp.m_resdlg->m_Show.ShowImage();
 		}
 		if (funname == CVFUN5){
 			m_powcv.FindContour(param[0],param[1],atoi(param[2]));
-			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]));
+			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]),TRUE);
 			theApp.m_resdlg->m_Show.ShowImage();
 		}
 		if (funname == CVFUN6){
@@ -281,17 +282,17 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 		}
 		if (funname == CVFUN7){
 			m_powcv.SplitByROI(param[0],param[1],atoi(param[2]),atoi(param[3]),atoi(param[4]),atoi(param[5]));
-			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]));
+			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]),TRUE);
 			theApp.m_resdlg->m_Show.ShowImage();
 		}
 		if (funname == CVFUN8){
 			m_powcv.SplitByDirection(param[0],param[1],atoi(param[2]),atoi(param[3]),atoi(param[4]),atoi(param[5]));
-			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]));
+			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]),TRUE);
 			theApp.m_resdlg->m_Show.ShowImage();
 		}
 		if (funname == CVFUN9){
 			m_powcv.GetContour(param[0],param[1],atoi(param[2]));
-			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]));
+			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]),TRUE);
 			theApp.m_resdlg->m_Show.ShowImage();
 		}
 		if (funname == CVFUN10){
@@ -299,7 +300,12 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 		}
 		if (funname == CVFUN11){
 			m_powcv.FitPlane(param[0],param[1],atoi(param[2]),atoi(param[3]),atoi(param[4]),atoi(param[5]),atof(param[6]),param[7]);
-			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]));
+			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[1]),TRUE);
+			theApp.m_resdlg->m_Show.ShowImage();
+		}
+		if (funname == CVFUN12){
+			m_powcv.FitPlane(param[0],param[1],param[2]);
+			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[2]),TRUE);
 			theApp.m_resdlg->m_Show.ShowImage();
 		}
 	}
@@ -376,6 +382,8 @@ CString BOSSCLASS::GetFunctionHelp(CString classname,CString funname){
 			return HELPCVFUN10;
 		if (funname == CVFUN11)
 			return HELPCVFUN11;
+		if (funname == CVFUN12)
+			return HELPCVFUN12;
 	}
 	return totalhelp;
 }

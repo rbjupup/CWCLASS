@@ -45,6 +45,148 @@ BOOL CWPowerCV::SplitByXYNum(CString InputImgPath,CString OutPutDir,int XNum,int
 	cvReleaseImage(&src);
 	return TRUE;
 }
+struct paraseThreadData{
+	int startindex;
+	int endindex;
+	vector<CString> *path;
+	CvMat *datapath;
+	BOOL DealFinish;
+	void parase(){
+		for(int i = startindex ; i < endindex;i++)
+		{
+			vector<CString> aline;
+			splitStr((*path)[i].GetBuffer(0),",",aline);
+			for (int j = 0; j < aline.size();j++)
+			{
+				cvmSet( datapath, j, i, atof(aline[j]) );
+			}
+		}
+		DealFinish = TRUE;
+	}
+	void Init(){
+		startindex = 0;
+		endindex = 0;
+		path = NULL;
+		datapath = NULL;
+		DealFinish = FALSE;
+	}
+};
+UINT ParseThread(LPVOID pParam)
+{
+	///CLHomePara *pPara = (CLHomePara *)pParam;
+	paraseThreadData *pFrame = (paraseThreadData *)pParam;
+	pFrame->parase();
+	return 1;
+}
+BOOL CWPowerCV::SplitScvByXYNum(CString InputscvPath,CString OutPutDir,int XNum,int YNum)
+{
+	//读取到数组
+	vector<CString> alinepts;
+	vector<float>	falinepts;
+	vector<CString> ptsdata;
+	vector<vector<float>> fpts;
+	CString tmpSavePath("");
+	GetDataFromFile(InputscvPath,ptsdata);
+	if(ptsdata.size() < 1)
+		return FALSE;
+	splitStr(ptsdata[0].GetBuffer(0),",",alinepts);
+
+
+	m_matHeightdata = cvCreateMat( alinepts.size(), ptsdata.size(), CV_32FC1);
+	cvZero(m_matHeightdata);
+	int row = alinepts.size();
+	int col = ptsdata.size();
+
+	BOOL usemuliteThread = TRUE;
+	if(!usemuliteThread)
+	{	
+		for (int i = 0; i < ptsdata.size();i++)
+		{
+			vector<CString> alineptsnew;
+			splitStr(ptsdata[i].GetBuffer(0),",",alineptsnew);
+			for (int j =0; j < alineptsnew.size();j++){
+				cvmSet( m_matHeightdata, j, i, atof(alineptsnew[j]) );
+			}
+		}
+
+	}
+	else{
+		int threadnum = 15;
+		paraseThreadData threaddata[20];
+		int linesize = ptsdata.size();
+		int linewidth = ptsdata.size()/threadnum;
+		if(ptsdata.size()%threadnum != 0)
+			linewidth++;
+		for (int i = 0; i < linesize;i++)
+		{
+			vector<float> tmpfpts;
+			fpts.push_back(tmpfpts);
+		}
+		for (int i = 0; i < threadnum ;i ++)
+		{ 
+			threaddata[i].Init();
+			threaddata[i].startindex = i*linewidth;
+			int endindex = (i*linewidth +linewidth);
+			threaddata[i].endindex = endindex>linesize?linesize:endindex;
+			threaddata[i].path = &ptsdata;
+			threaddata[i].datapath = m_matHeightdata;
+			AfxBeginThread(ParseThread,&threaddata[i],THREAD_PRIORITY_NORMAL,0,0,NULL);
+		}
+		while(1){
+			BOOL finish = TRUE;
+			for (int i = 0; i < threadnum; i++)
+			{
+				finish = finish && threaddata[i].DealFinish;
+			}
+			if (finish)
+				break;
+			MSG msg;
+			if(PeekMessage(&msg,NULL,0,0,PM_REMOVE))  
+			{  
+				DispatchMessage(&msg);  
+				TranslateMessage(&msg);  
+			} 
+		}
+	}
+
+	//加载图像
+	int picwidth = m_matHeightdata->rows;
+	int picHeight = m_matHeightdata->cols;
+	//循环更新ROI并保存
+	int stepWidth = picwidth/XNum;
+	int stepHeight = picHeight/YNum;
+	CString tmpstr;
+	for (int ix = 0; ix < XNum;ix++)
+	{
+		for (int iy = 0; iy < YNum;iy++)
+		{
+			vector<CString> newfile;
+			for (int stepy = iy*stepHeight ;stepy < (iy+1)*stepHeight;stepy++)
+			{
+				CString aline;
+				for (int stepx = ix*stepWidth ;stepx < (ix+1)*stepWidth;stepx++)
+				{
+					CString strdata;
+					strdata.Format("%.4f",cvmGet(m_matHeightdata,stepx,stepy));
+					if(stepy == (iy+1)*stepHeight - 1)
+					{
+						aline =  aline + strdata;
+					}
+					else
+					{
+						aline =  aline + strdata + ",";
+					}	
+				}
+				newfile.push_back(aline);
+			}
+			tmpSavePath.Format("%s\\newscv_x%d_y%d.csv",OutPutDir,ix,iy);
+			WriteDataToFile(tmpSavePath,newfile);
+			
+		}
+	}
+	return TRUE;
+}
+
 //两张图像进行计算
 //0表示相加1表示相减其它的等需要了再写
 BOOL CWPowerCV::ImgCal(CString srcfirst,CString srcsecond,CString savePath,int XMove,int YMove,int CalType /*= 0*/,BOOL bDir)
@@ -100,39 +242,7 @@ BOOL CWPowerCV::ImgCal(CString srcfirst,CString srcsecond,CString savePath,int X
 	return TRUE;
 
 }
-struct paraseThreadData{
-	int startindex;
-	int endindex;
-	vector<CString> *path;
-	CvMat *datapath;
-	BOOL DealFinish;
-	void parase(){
-		for(int i = startindex ; i < endindex;i++)
-		{
-			vector<CString> aline;
-			splitStr((*path)[i].GetBuffer(0),",",aline);
-			for (int j = 0; j < aline.size();j++)
-			{
-				cvmSet( datapath, j, i, atof(aline[j]) );
-			}
-		}
-		DealFinish = TRUE;
-	}
-	void Init(){
-		startindex = 0;
-		endindex = 0;
-		path = NULL;
-		datapath = NULL;
-		DealFinish = FALSE;
-	}
-};
-UINT ParseThread(LPVOID pParam)
-{
-	///CLHomePara *pPara = (CLHomePara *)pParam;
-	paraseThreadData *pFrame = (paraseThreadData *)pParam;
-	pFrame->parase();
-	return 1;
-}
+
 BOOL CWPowerCV::ParsePtSet(CString inputPath,CString OutPutPath,int type,double *co)
 {
 	//读取到数组
@@ -756,6 +866,61 @@ void CWPowerCV::FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, in
 	cvReleaseImage(&pImgDis);
 
 }
+void CWPowerCV::FitPlane(CString InputImgPath,CString backmaskPath,CString disImgPath)
+{
+	double cwx = 0,cwy = 0.0,cwz = 0.0;
+	
+	
+	InputImgPath.Replace("\\","/");
+	IplImage* pImg = cvLoadImage(InputImgPath,0);
+	backmaskPath.Replace("\\","/");
+	IplImage* pBackMaskImg = cvLoadImage(backmaskPath,0);
+	IplImage* pImgDis = cvCloneImage(pImg);
+
+	m_matDis=Mat::zeros(pImg->width,pImg->height,CV_32FC1);
+	m_matDisSide=Mat::zeros(pImg->width,pImg->height,CV_32FC1);
+	vector<roiPointDecimal3D> t3dpt;
+	roiPointDecimal3D t3dptsingal;
+	RATIO_Plane plane3D;
+	for(int i = 0; i< pBackMaskImg->width;i++){
+		for (int j =0 ;j < pBackMaskImg->height;j++)
+		{
+			if(cvGet2D(pBackMaskImg,j,i).val[0] == 255){
+				if(GetRand(-3,3)>0)
+					continue;
+			double val1 = cvmGet( m_matHeightdata, i+m_ROIGray.x, j+m_ROIGray.y);//*ssznpic.co1+ssznpic.co0;//cvGet2D(pImg,j,i).val[0];
+			t3dptsingal.xxx = i;
+			t3dptsingal.yyy = j;
+			t3dptsingal.zzz = val1;
+
+			t3dpt.push_back(t3dptsingal);
+			}
+
+			  
+		}
+	}
+	if(t3dpt.size() > 2)
+		fitPlane3D(&t3dpt[0],t3dpt.size(),&plane3D);
+
+	for (int i =0 ; i < pImg->width;i++)
+	{
+		for (int j = 0; j < pImg->height;j++)
+		{
+			cwx = i;cwy = j;cwz = cvmGet( m_matHeightdata, i+m_ROIGray.x, j+m_ROIGray.y);//*ssznpic.co1+ssznpic.co0;//cvGet2D(pImg,j,i).val[0];
+			t3dptsingal.xxx = i;t3dptsingal.yyy = j;t3dptsingal.zzz = cwz;
+			double sd = pointToPlaneDis3D(t3dptsingal, &plane3D) ;
+			cvSet2D(pImgDis,j,i,cvScalarAll(abs(sd)));
+			m_matDis.at<float>(i,j) = (float)sd;
+ 			m_matDisSide.at<float>(i,j) = (float)sd;
+		}
+	}
+
+	cvSaveImage(disImgPath,pImgDis);
+	cvReleaseImage(&pImg);
+	cvReleaseImage(&pImgDis);
+	cvReleaseImage(&pBackMaskImg);
+}
+
 
 void CWPowerCV::sortByXY(int numrows)
 {
@@ -774,3 +939,15 @@ void CWPowerCV::sortByXY(int numrows)
 		cwsort(sotrby,ssznpic.hole,k*numrows,(k*numrows+numrows)>ssznpic.hole.size()?ssznpic.hole.size():(k*numrows+numrows));
 	}
 }
+
+BOOL CWPowerCV::ImgNot(CString InputImgPath,CString OutPutPath)
+{
+	IplImage* psrcimg = cvLoadImage(InputImgPath,0);
+	IplImage* pdstimg = cvCloneImage(psrcimg);
+	cvNot(psrcimg,pdstimg);
+	cvSaveImage(OutPutPath,pdstimg);
+	cvReleaseImage(&psrcimg);
+	cvReleaseImage(&pdstimg);
+	return TRUE;
+}
+

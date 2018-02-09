@@ -23,11 +23,6 @@ protected:
 public:
 	afx_msg void OnBnClickedButton1();
 	CImageStatic m_show;
-	CRect m_ShowRC;
-	BOOL m_bLbtnDown;
-	CPoint m_stPt;
-	CPoint m_endPt;
-	BOOL m_bDrawingDeteRC;
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
