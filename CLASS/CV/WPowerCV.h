@@ -70,37 +70,65 @@ public:
 	//阈值分割
 	BOOL SplitByThreshold(CString InputImgPath,CString OutPutPath,int threshold);
 	//ROI分割
-	BOOL SplitByROI(CString InputImgPath,CString OutPutPath,int x,int y, int width,int height);
+	BOOL SplitByROI(CString InputImgPath,CString OutPutPath,int x,int y, int width,
+		int height);
 	//某个方向上的动态阈值
-	BOOL SplitByDirection(CString InputImgPath,CString OutPutPath,int diedaiwidth,int boardwidth,int direction,int seedThreshold);;
+	BOOL SplitByDirection(CString InputImgPath,CString OutPutPath,int diedaiwidth,
+		int boardwidth,int direction,int seedThreshold);
 /************************************************************************/
 /*                             图像分割结束                             */
 /************************************************************************/
+/************************************************************************/
+/*                             图像常用操作开始                         */
+/************************************************************************/
 	//图像加减
-	BOOL ImgCal(CString srcfirst,CString srcsecond,CString savePath,int XMove,int YMove,int CalType = 0,BOOL bDir = FALSE);
+	BOOL ImgCal(CString srcfirst,CString srcsecond,CString savePath,int XMove,
+		int YMove,int CalType = 0,BOOL bDir = FALSE);
+	//图像取反
+	BOOL ImgNot(CString InputImgPath,CString OutPutPath);
+	//提取255的轮廓
+	void GetContour(CString InputImgPath,CString OutPutPath,int minval);
+	//索贝尔找轮廓
+	void FindContour(CString inputPath,CString OutPutPath,int method);
+	//漫水填充
+	void FillFloodFill(CString InpuPath);
+	//图像匹配
+	BOOL MatchImage(CString inputPath,CString TemplatePath,CString OutPutPath);
+	//归一化(将值投射到一个区间)
+	BOOL Normalize(Mat *srcdata, double lownum,double highnum);
+/************************************************************************/
+/*                             图像常用操作结束                         */
+/************************************************************************/
+
+/************************************************************************/
+/*                       For3D相机操作开始                              */
+/************************************************************************/
+	//三维平面拟合
+	void FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, int width,
+		int height,double boarddis,CString disImgPath);
+	void FitPlane(CString backmaskPath);
+	//深视智能测试
+	void testsszn(CString pathColorTemper,SSZNDATA &data);
+	//排序3D相机的孔
+	void sortByXY(int numrows);
 	//解析csv点集，绘制灰度图
 	BOOL ParsePtSet(CString inputPath,CString OutPutPath,int type,double *co = NULL);
 	//刷新深度图
 	BOOL RenewHeightPic(double * co, CString OutPutPath,int type = 1);
 	BOOL PRenewHeightPic(double * co, IplImage* pImg,int nInputType = 1);
-	//找轮廓
-	void FindContour(CString inputPath,CString OutPutPath,int method);
-	//漫水填充测试
-	void FillFloodFillTest(CString InpuPath);
-	//提取255的轮廓
-	void GetContour(CString InputImgPath,CString OutPutPath,int minval);
-	//深视智能测试
-	void testsszn(CString pathColorTemper,SSZNDATA &data);
-
-	void sortByXY(int numrows);
-
-	//三维平面拟合
-	void FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, int width,int height,double boarddis,CString disImgPath);
-	void FitPlane(CString backmaskPath);
 /************************************************************************/
-/*                       单图操作		                                */
+/*                       For3D相机操作结束                              */
 /************************************************************************/
-	//图像取反
-	BOOL ImgNot(CString InputImgPath,CString OutPutPath);
+/************************************************************************/
+/*                       测试开始                                       */
+/************************************************************************/
+	BOOL test_cwcv();
+	BOOL test_cwcvEdge();
+	BOOL test_cwcvFront();
+	BOOL test_cwcvBack();
+	BOOL test_match();
+/************************************************************************/
+/*                       测试结束                                       */
+/************************************************************************/
 };
 

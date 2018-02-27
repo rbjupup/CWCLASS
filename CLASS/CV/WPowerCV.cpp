@@ -490,7 +490,7 @@ void onmouse(int event, int x, int y, int flags, void *param)
 
 	}  
 }  
-void CWPowerCV::FillFloodFillTest(CString InpuPath)
+void CWPowerCV::FillFloodFill(CString InpuPath)
 {
 	InpuPath.Replace("\\","/");
 	src = cvLoadImage(InpuPath,1);  
@@ -1096,5 +1096,116 @@ BOOL CWPowerCV::ImgNot(CString InputImgPath,CString OutPutPath)
 	cvReleaseImage(&psrcimg);
 	cvReleaseImage(&pdstimg);
 	return TRUE;
+}
+
+BOOL CWPowerCV::MatchImage(CString inputPath,CString TemplatePath,CString OutPutPath)
+{
+	IplImage *src = NULL, *templ = NULL, *ftmp[6] = {NULL};
+	int i = 0 ;
+	src = cvLoadImage(inputPath,0);
+	if(src == NULL)
+	{
+		return FALSE;
+	}
+	templ = cvLoadImage(TemplatePath,0);
+	if(templ == NULL)
+	{
+		return FALSE;
+	}
+	int iwidth = src->width - templ->width + 1;
+	int iheight = src->height - templ->height + 1;
+	for (i = 0; i < 6 ; i++)
+	{
+		ftmp[i] = cvCreateImage(cvSize(iwidth,iheight),32,1);
+	}
+	for (i = 0 ; i < 6 ; i++)
+	{
+		LTimeCount mtime;
+		mtime.Start();
+		cvMatchTemplate(src,templ,ftmp[i],i);
+		cvNormalize(ftmp[i],ftmp[i],1,0,CV_MINMAX);
+		mtime.End();
+		TRACE("第%d种方法,耗时为%.4f\n",i,mtime.GetUseTime());
+		double minValue, maxValue;  
+		CvPoint minLoc, maxLoc;  
+		cvMinMaxLoc(ftmp[i],&minValue,&maxValue,&minLoc,&maxLoc);
+		cvCircle(src,minLoc,3,cvScalarAll(255));
+		cvCircle(src,maxLoc,3,cvScalarAll(255));
+		cvRectangle(src,minLoc,cvPoint(minLoc.x+templ->width,minLoc.y+templ->height),cvScalarAll(255),1);
+		cvRectangle(src,maxLoc,cvPoint(maxLoc.x+templ->width,maxLoc.y+templ->height),cvScalarAll(255),1);
+		CString saveName; 
+		saveName.Format("D:\\test%d.bmp",i);
+		cvSaveImage(saveName,src);
+
+	}
+	cvShowImage("0",ftmp[0]);
+	cvShowImage("1",ftmp[1]);
+	cvShowImage("2",ftmp[2]);
+	cvShowImage("3",ftmp[3]);
+	cvShowImage("4",ftmp[4]);
+	cvShowImage("5",ftmp[5]);
+
+}
+
+BOOL CWPowerCV::Normalize(Mat *srcdata, double lownum,double highnum)
+{
+
+	return TRUE;
+}
+
+BOOL CWPowerCV::test_cwcv()
+{
+	try
+	{
+		assert(test_cwcvFront());
+		assert(test_cwcvEdge());
+		assert(test_cwcvBack());
+		assert(test_match());
+	}
+	catch (CMemoryException* e)
+	{
+
+	}
+	catch (CFileException* e)
+	{
+	}
+	catch (CException* e)
+	{
+	}
+	catch (cv::Exception e)
+	{
+		int a = 0;
+	}
+	return TRUE;
+}
+
+BOOL CWPowerCV::test_cwcvEdge()
+{
+	return TRUE;
+}
+
+BOOL CWPowerCV::test_cwcvFront()
+{
+	return TRUE;
+}
+
+BOOL CWPowerCV::test_cwcvBack()
+{
+	return TRUE;
+}
+
+BOOL CWPowerCV::test_match()
+{
+	BOOL res = TRUE;
+	try
+	{
+		res = MatchImage("F:\\TMP\\a01.bmp","F:\\TMP\\Height0.bmp","D:\\tmp\\match.bmp");
+
+	}
+	catch (cv::Exception e)
+	{
+		AfxMessageBox(e.err.c_str());
+	}
+	return res;
 }
 
