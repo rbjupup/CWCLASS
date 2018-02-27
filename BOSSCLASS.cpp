@@ -79,6 +79,7 @@ BOSSCLASS::BOSSCLASS(void)
 	CVClassSupportFunction.push_back(CVFUN11);
 	CVClassSupportFunction.push_back(CVFUN12);
 	m_vecSupportFunction.push_back(CVClassSupportFunction);
+	assert(m_powcv.test_cwcv());
 }
 
 
@@ -278,7 +279,7 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 			theApp.m_resdlg->m_Show.ShowImage();
 		}
 		if (funname == CVFUN6){
-			m_powcv.FillFloodFillTest(param[0]);
+			m_powcv.FillFloodFill(param[0]);
 		}
 		if (funname == CVFUN7){
 			m_powcv.SplitByROI(param[0],param[1],atoi(param[2]),atoi(param[3]),atoi(param[4]),atoi(param[5]));
