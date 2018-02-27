@@ -304,7 +304,7 @@ bool BOSSCLASS::CallFunction( CString classname,CString funname ,vector<CString>
 			theApp.m_resdlg->m_Show.ShowImage();
 		}
 		if (funname == CVFUN12){
-			m_powcv.FitPlane(param[0],param[1],param[2]);
+			m_powcv.FitPlane(param[0]);
 			theApp.m_resdlg->m_Show.ChangeImg(cvLoadImage(param[2]),TRUE);
 			theApp.m_resdlg->m_Show.ShowImage();
 		}

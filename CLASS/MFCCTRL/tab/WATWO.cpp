@@ -2,7 +2,7 @@
 //
 
 #include "stdafx.h"
-#include "D:\app\rbj\now\CWCLASS\CLASS\MFCCTRL\tab\WATWO.h"
+#include "CLASS\MFCCTRL\tab\WATWO.h"
 #include "afxdialogex.h"
 
 

@@ -245,7 +245,9 @@ vector<CString> CWmonUrl::GetDataByUrl(CString urlpath,vector<CString> filterFro
 			tmp.Format("数据%d:%s,数据类型为%d\r\n",i,dlg.m_resTotal[i],dlg.m_resTotalType[i]);
 			senddata += tmp;
 		}
+#ifdef USE_EMAIL
 		SendAEmail(sendcount, sendPwd, receiver, senddata,"亲爱的宝宝!");
+#endif
 
 	}
 

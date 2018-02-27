@@ -1811,8 +1811,8 @@ BOOL fileMapping(CString inputFile)
 
 BOOL test_XFunCom()
 {
-	assert(test_Curve2Points());
 	//assert(test_fileMapping());
+	assert(test_mergeSort());
 	return TRUE;
 }
 
@@ -1822,6 +1822,75 @@ BOOL test_fileMapping()
 	return TRUE;
 }
 
+BOOL test_mergeSort()
+{
+	vector<double> sortdata;
+	sortdata.push_back(0.08);
+	sortdata.push_back(0.34);
+	sortdata.push_back(0.52);
+	sortdata.push_back(0.13);
+	sortdata.push_back(0.68);
+	sortdata.push_back(0.78);
+	vector<double> res = cwsortMerge(sortdata,sortdata);
+	assert(res[0] < res[res.size() - 1]);
+	sortdata.push_back(0.88);
+	vector<double> res1 = cwsortMerge(sortdata,sortdata);
+	assert(res1[0] < res1[res1.size() - 1]);
+	return TRUE;
+}
+
+vector<mergedata> mergetwo(vector<mergedata> L1,vector<mergedata> L2)
+{
+	int cwi = 0; 
+	int cwj = 0;
+	int isize = L1.size();
+	int jsize = L2.size();
+	vector<mergedata> result;
+	while (cwi != isize && cwj != jsize)
+	{
+		if(L1[cwi].m_data <= L2[cwj].m_data)
+		{
+			result.push_back(L1[cwi]);
+			cwi++;
+		}
+		else
+		{
+			result.push_back(L2[cwj]);
+			cwj++;
+		}
+	}
+	//将剩下的元素加到结尾
+	for (int i = cwi; i < L1.size();i++)
+	{
+		result.push_back(L1[i]);
+	}
+	for (int i = cwj; i < L2.size();i++)
+	{
+		result.push_back(L2[i]);
+	}
+	return result;
+}
+//获取最小值
+double GetMin(vector<double> &srcdata)
+{
+	double min = INT_MAX;
+	for (int i = 0; i < srcdata.size();i++)
+	{
+		if(srcdata[i]<min)
+			min = srcdata[i];
+	}
+	return min;
+}
+//获取平均值
+double GetAvg(vector<double> &srcdata)
+{
+	double sum = 0;
+	for (int i = 0; i < srcdata.size();i++)
+	{
+		sum += srcdata[i];
+	}
+	return sum / (double)srcdata.size();
+}
 
 //enlargeFactor表示保留计算的小数点位数,不是cvPoint的话可以考虑使用这个代替上面那个函数
 static void Curve2Points(double Rad, double centerx, double centery, bool ClockWise, float sa, float ea, vector<CFloatPt> &m_contourPt,double enlargeFactor)
@@ -2015,3 +2084,4 @@ BOOL test_Curve2Points()
 	assert(m_cur[0].x < m_cur[1].x);
 	return TRUE;
 }
+

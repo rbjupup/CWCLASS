@@ -19,15 +19,46 @@ struct SSZNDATA{
 	int m_rownum;				//孔阵列的行数
 	double m_dThresholdDeep;	//最小深度阈值
 };
+//采集图像过程中间需要同时获取的参数
+struct SSZNPRPJECT{
+	//gray =（val - min）*（255/（max - min）） = val *255/（max - min） - min*255 /（max - min）
+	//     = val*co1+co0
+	double co0,co1;
+	//最后获得的孔的位置分布
+	vector<CvRect> hole;
+	//灰度图路径
+	CString graypath;
+	//灰度图ROI
+	CvRect m_ROIGray;
+	//ROI 路径
+	CString roipath;
+	//孔路径
+	CString holepath;
+	//存放所有点到平面的距离的矩阵
+	Mat m_matDis;
+	//存放所有用来拟合的点到平面距离的矩阵
+	Mat m_matDisSide;
+	//读取到的原始深度数据
+	CvMat *m_matHeightdata;
+	//读取到的原始深度数据
+	Mat m_matTrueGray;
+	SSZNPRPJECT()
+	{
+		co0 = 0;
+		co1 = 0;
+		m_matHeightdata = NULL;
+		m_ROIGray = cvRect(0,0,1,1);
+	}
+} ;
 class CWPowerCV
 {
 public:
 	CWPowerCV(void);
 	~CWPowerCV(void);
-	Mat m_matDis;
-	Mat m_matDisSide;
-	CvMat *m_matHeightdata;
-	CvRect m_ROIGray;
+	SSZNPRPJECT	m_ssznpic;
+	//定义轮廓和层次结构
+	vector<vector<cv::Point> > contours;
+	vector<Vec4i> hierarchy;
 public:
 /************************************************************************/
 /*                             图像分割开始                             */
@@ -49,7 +80,9 @@ public:
 	BOOL ImgCal(CString srcfirst,CString srcsecond,CString savePath,int XMove,int YMove,int CalType = 0,BOOL bDir = FALSE);
 	//解析csv点集，绘制灰度图
 	BOOL ParsePtSet(CString inputPath,CString OutPutPath,int type,double *co = NULL);
-	void OutPutGrayPic(double * co, CString OutPutPath);
+	//刷新深度图
+	BOOL RenewHeightPic(double * co, CString OutPutPath,int type = 1);
+	BOOL PRenewHeightPic(double * co, IplImage* pImg,int nInputType = 1);
 	//找轮廓
 	void FindContour(CString inputPath,CString OutPutPath,int method);
 	//漫水填充测试
@@ -63,7 +96,7 @@ public:
 
 	//三维平面拟合
 	void FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, int width,int height,double boarddis,CString disImgPath);
-	void FitPlane(CString InputImgPath,CString backmaskPath,CString disImgPath);
+	void FitPlane(CString backmaskPath);
 /************************************************************************/
 /*                       单图操作		                                */
 /************************************************************************/

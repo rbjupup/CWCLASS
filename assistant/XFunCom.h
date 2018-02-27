@@ -1,7 +1,7 @@
 #if !defined(AFX_XFUNCOM_H_INCLUDED_)
 #define AFX_XFUNCOM_H_INCLUDED_
 #define USE_OPENCV 1
-#define USE_EMAIL
+//#define USE_EMAIL
 //使用正则之前要先将extern的正则文件覆盖到mfc目录下
 #define USE_STL
 #include <vector>
@@ -10,6 +10,7 @@
 #include <afxcmn.h>
 #include <stdlib.h>
 #include <afxmt.h>
+#include "Def.h"
 #ifdef USE_OPENCV
 #include "cv.h"
 #include "minmax.h"
@@ -20,7 +21,6 @@
 #ifdef USE_STL
 #include <atlrx.h>
 #endif
-#include "Def.h"
 using namespace std;
 
 
@@ -76,6 +76,8 @@ using namespace std;
 网络----发送一封Email
 
 数据处理
+求容器均值
+求容器最小值
 拟合平面
 */
 
@@ -97,6 +99,10 @@ using namespace std;
 
 #ifndef YX_BYTE_R//8 - bit 3 - channel
 #define YX_BYTE_R(img,y,x) ((BYTE*)(img->imageData + (y)*img->widthStep))[x*3+2]
+#endif
+
+#ifndef YX_BYTE_1ARRAY//8 - bit 1 - channel 
+#define YX_BYTE_1ARRAY(img, uNo) ((BYTE*)(img->imageData))[uNo]
 #endif
 
 #ifndef COUNT_DIS
@@ -352,6 +358,8 @@ void DrawImageOnMemDc(IplImage *Img,CDC *pMemDC,CBitmap *bmp,float fImageScale);
 /*	   参数：Img 目标图像 pt目标位置 nLength 十字线线长 rgb颜色         */
 /************************************************************************/
 void DrawCrossOnImage(IplImage *Img,CvPoint pt,int nLength,CvScalar rgb);
+//将圆弧转换成圆上面的点集
+static void Curve2Points(double Rad, double centerx, double centery, bool ClockWise, float sa, float ea, vector<CFloatPt> &m_contourPt,double enlargeFactor);
 #endif
 /************************************************************************/
 /*								图像操作结束                             */
@@ -467,6 +475,11 @@ BOOL SendAEmail(CString sendcount, CString sendPwd, CString receiver, CString se
 // Ax + by + cz = D   拟合一个平面
 void cvFitPlane(const CvMat* points, float* plane);
 #endif
+//求最小值
+double GetMin(vector<double> &srcdata);
+//求平均值
+double GetAvg(vector<double> &srcdata);
+
 //冒泡排序
 template<typename T>
 void cwsort(vector<double> &sortBy,vector<T> &data,int startindex,int endindex)
@@ -484,6 +497,61 @@ void cwsort(vector<double> &sortBy,vector<T> &data,int startindex,int endindex)
 		}
 	}
 }
+//合并排序
+struct  mergedata
+{
+	double m_data;
+	int m_index;
+	mergedata()
+	{
+
+	}
+	mergedata(double data,int index)
+	{
+		m_data = data;
+		m_index  = index;
+	}
+};
+    //合并两个数组
+vector<mergedata> mergetwo(vector<mergedata> L1,vector<mergedata> L2);
+	//合并排序
+template<typename T>
+vector<T> cwsortMerge(vector<double> &sortBy,const vector<T> &data)
+{
+	vector<vector<mergedata>> vecResult;
+	vecResult.reserve(data.size());
+	vector<vector<mergedata>> vecTmp;
+	vecTmp.reserve(data.size());
+	vector<T> vecRes;
+	vecRes.reserve(data.size());
+	for (int i = 0;i < sortBy.size();i++)
+	{
+		mergedata tmpmergeData = mergedata(sortBy[i],i);
+		vector<mergedata> vectmpmergeData;
+		vectmpmergeData.push_back(tmpmergeData);
+		vecResult.push_back(vectmpmergeData);
+	}
+	while(vecResult.size() != 1)
+	{
+		for (int i = 0; i < (int)(vecResult.size()/2);i++)
+		{
+			vecTmp.push_back(mergetwo(vecResult[i],vecResult[vecResult.size() - 1 - i]));
+		}
+		if(vecResult.size() % 2 != 0)
+		{
+			vecTmp.push_back(vecResult[int(vecResult.size()/2)]);
+		}
+		vecResult.swap(vecTmp);
+		vecTmp.clear();
+	}
+	for (int i = 0; i <vecResult[0].size();i++)
+	{
+		vecRes.push_back(data[vecResult[0][i].m_index]);
+	}
+	return vecRes;
+}
+
+
 //深视智能的拟合平面
 int fitPlane3D(const roiPointDecimal3D *point, int pNum, RATIO_Plane *plane3D);
 double pointToPlaneDis3D(roiPointDecimal3D calPt, const RATIO_Plane *plane3D);
@@ -505,9 +573,8 @@ BOOL fileMapping(CString inputFile);
 //测试函数,在运行软件前加上assert(test_XFunCom());即可
 BOOL test_XFunCom();
 BOOL test_fileMapping();
+BOOL test_mergeSort();
 BOOL test_Curve2Points();
-static void Curve2Points(double Rad, double centerx, double centery, bool ClockWise, float sa, float ea, vector<CFloatPt> &m_contourPt,double enlargeFactor);
-
 /************************************************************************/
 /*                        函数测试结束                                  */
 /************************************************************************/
