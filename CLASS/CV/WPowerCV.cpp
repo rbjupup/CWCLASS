@@ -607,18 +607,13 @@ BOOL CWPowerCV::SplitByDirection(CString InputImgPath,CString OutPutPath,int die
 	TRACE(opencverr);
 	return FALSE;}
 }
-
-void CWPowerCV::testsszn(CString pathColorTemper,SSZNDATA &sszndata)
+BOOL CWPowerCV::GetHoleDeep(IplImage* pImghole,CString pathColorTemper,SSZNDATA &sszndata)
 {
-	if(m_ssznpic.m_matDis.data == NULL||m_ssznpic.m_matHeightdata == NULL||!FileExist(m_ssznpic.holepath))
+	if(m_ssznpic.m_matDis.data == NULL||m_ssznpic.m_matHeightdata == NULL)
 	{
 		AfxMessageBox("数据处理流程输入数据无效");
-		return;
+		return FALSE;
 	}
-	//对数据进行处理
-	m_ssznpic.roipath.Replace("\\","/");
-	IplImage* pImg = cvLoadImage(m_ssznpic.roipath,0);
-	IplImage* pImghole = cvLoadImage(m_ssznpic.holepath,0);
 	sortByXY(sszndata.m_rownum);
 
 	//提取孔距离数据和非孔距离数据开始
@@ -637,12 +632,11 @@ void CWPowerCV::testsszn(CString pathColorTemper,SSZNDATA &sszndata)
 				//获取是不是孔
 				int valhole = YX_BYTE(pImghole,cwy,cwx);
 				if(valhole == 0){
-					if(val != 0)
+					if(val != -100)
 						boarddata.push_back(val);
 					continue;
 				}
 				if(val == -100)
-
 					continue;
 				aholedata.push_back(val);
 			}
@@ -650,19 +644,21 @@ void CWPowerCV::testsszn(CString pathColorTemper,SSZNDATA &sszndata)
 		data.push_back(aholedata);
 	}
 	//提取孔距离数据和非孔距离数据结束
-	
+
 
 
 
 	//色温图绘制
-	double nonval = sszndata.m_dThresholdDeep;
-	double minval = nonval;
-	double maxval = 0.050;
-	Mat dstImage = Mat::zeros( m_ssznpic.m_matDis.cols,m_ssznpic.m_matDis.rows, CV_8UC3);
-	for (int i = 0; i < dstImage.cols;i++)
+	if(pathColorTemper != _T(" "))
 	{
-		for (int j = 0; j < dstImage.rows;j++)
+		double nonval = sszndata.m_dThresholdDeep;
+		double minval = nonval;
+		double maxval = 0.050;
+		Mat dstImage = Mat::zeros( m_ssznpic.m_matDis.cols,m_ssznpic.m_matDis.rows, CV_8UC3);
+		for (int i = 0; i < dstImage.cols;i++)
 		{
+			for (int j = 0; j < dstImage.rows;j++)
+			{
 				double val = m_ssznpic.m_matDis.ptr<float>(i)[j];
 				if(val == -100)
 					continue;
@@ -673,17 +669,20 @@ void CWPowerCV::testsszn(CString pathColorTemper,SSZNDATA &sszndata)
 					dstImage.at<Vec3b>(j,i)[1] = 255 - newval;
 					dstImage.at<Vec3b>(j,i)[2] = newval;
 				}
+			}
 		}
+		imwrite(pathColorTemper.GetBuffer(),dstImage);
 	}
-	imwrite(pathColorTemper.GetBuffer(),dstImage);
 	//色温图绘制结束
 
+
 	//板数据提取开始
-	
-	if(1024 < m_ssznpic.hole.size())
+
+	if(m_ssznpic.hole.size()> 0)
 	{
 		//计算孔的外框
-		CRect holerect[1024];
+		CRect *grouprect = new CRect[m_ssznpic.hole.size()];
+		CRect *holerect = &grouprect[0];
 		for (int k = 0; k < m_ssznpic.hole.size();k++)
 		{
 			holerect[k] = CRect(m_ssznpic.hole[k].x + m_ssznpic.m_ROIGray.x,m_ssznpic.hole[k].y 
@@ -736,19 +735,20 @@ void CWPowerCV::testsszn(CString pathColorTemper,SSZNDATA &sszndata)
 		TRACE("铜面点数\t距离和\t平均距离\t板面上点数\t板面上平均距离\t板面下点数\t板面下点数平均距离\n%d\t%.4f\t%.4f\t%d\t%.4f\t%d\t%.4f\n",
 			boarddata.size(),total,total/(double)boarddata.size(),num[0],ave[0],num[1],ave[1]);
 		sszndata.m_dis = total/(double)boarddata.size();
+		delete [] grouprect;
 	}
 
 	//板数据提取结束
 
 	//孔数据提取开始
-	CString index;
-	for (int i = 0; i < m_ssznpic.hole.size();i++)
-	{
-		CvRect pt = m_ssznpic.hole[i];
-		index.Format("%d",i+1);
-		putText(dstImage, index.GetBuffer(), cv::Point(pt.x,pt.y), FONT_HERSHEY_SIMPLEX, 1, Scalar(255));
-		rectangle(dstImage,cv::Point(pt.x,pt.y),cv::Point(pt.x+ pt.width,pt.y + pt.height),CV_RGB(255,255, 255));
-	}
+// 	CString index;
+// 	for (int i = 0; i < m_ssznpic.hole.size();i++)
+// 	{
+// 		CvRect pt = m_ssznpic.hole[i];
+// 		index.Format("%d",i+1);
+// 		putText(dstImage, index.GetBuffer(), cv::Point(pt.x,pt.y), FONT_HERSHEY_SIMPLEX, 1, Scalar(255));
+// 		rectangle(dstImage,cv::Point(pt.x,pt.y),cv::Point(pt.x+ pt.width,pt.y + pt.height),CV_RGB(255,255, 255));
+// 	}
 	TRACE("平均深度\t最大深度\t均方差\t铜面上点个数\t铜面上的平均距离\t铜面下点个数\t铜面下的平均距离\tROI图上坐标\n");
 
 	double totalg[2] = {0,0};//板上点总数
@@ -793,39 +793,165 @@ void CWPowerCV::testsszn(CString pathColorTemper,SSZNDATA &sszndata)
 		sszndata.m_vecindex.push_back(i);
 	}
 	//孔数据提取结束
+
+	return TRUE;
+}
+void CWPowerCV::testsszn(CString pathColorTemper,SSZNDATA &data)
+{
+	//对数据进行处理
+	if(!FileExist(m_ssznpic.holepath))
+	{
+		return;
+	}
+	IplImage* pImghole = cvLoadImage(m_ssznpic.holepath,0);
+	GetHoleDeep(pImghole,pathColorTemper,data);
+	cvReleaseImage(&pImghole);
+	pImghole = NULL;
 }
 
 
 
-void CWPowerCV::GetContour(CString InputImgPath,CString OutPutPath,int minval)
+BOOL CWPowerCV::GetContour(CString InputImgPath,CString OutPutPath,int minval)
 {
-	InputImgPath.Replace("\\","/");
-	//载入原始图，且必须以二值图模式载入
-	m_ssznpic.holepath = InputImgPath;
-	Mat srcImage = imread(InputImgPath.GetBuffer(), 0);
-	Mat element = getStructuringElement(MORPH_RECT,Size(2*1+1,2*1+1),Point(1,1));
-	erode(srcImage,srcImage,element);
-	dilate(srcImage,srcImage,element);
-	//初始化结果图
-	Mat dstImage = Mat::zeros(srcImage.rows, srcImage.cols, CV_8UC3);
-	//查找轮廓
-	findContours(srcImage, contours, hierarchy,
-		CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
-	//遍历所有顶层的轮廓， 以随机颜色绘制出每个连接组件颜色
-	int index = 0;
-	m_ssznpic.hole.clear();
-	for (; index >= 0; index = hierarchy[index][0])
-	{
-		Scalar color(rand() & 255, rand() & 255, rand() & 255);
-		drawContours(dstImage, contours, index, color, CV_FILLED, 8, hierarchy);
-		CvRect rect = boundingRect(contours[index]);
-		if(contourArea(contours[index]) < minval)
-			continue;
-		m_ssznpic.hole.push_back(rect);
-		rectangle(dstImage,cv::Point(rect.x,rect.y),cv::Point(rect.x + rect.width,rect.y + rect.height),CV_RGB(255,255, 255));
-		//cvRectangle(dstImage, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(255,255, 255), 1, 8, 0);
+// 	InputImgPath.Replace("\\","/");
+// 	//载入原始图，且必须以二值图模式载入
+// 	m_ssznpic.holepath = InputImgPath;
+// 	Mat srcImage = imread(InputImgPath.GetBuffer(), 0);
+// 	//初始化结果图
+// 	Mat dstImage = Mat::zeros(srcImage.rows, srcImage.cols, CV_8UC3);
+// 
+// 	Mat element = getStructuringElement(MORPH_RECT,Size(2*1+1,2*1+1),Point(1,1));
+// 	erode(srcImage,srcImage,element);
+// 	dilate(srcImage,srcImage,element);
+// 
+// 	//查找轮廓
+// 	findContours(srcImage, contours, hierarchy,
+// 		CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+// 	//遍历所有顶层的轮廓， 以随机颜色绘制出每个连接组件颜色
+// 	int index = 0;
+// 	m_ssznpic.hole.clear();
+// 	for (; index >= 0; index = hierarchy[index][0])
+// 	{
+// 		Scalar color(rand() & 255, rand() & 255, rand() & 255);
+// 		drawContours(dstImage, contours, index, color, CV_FILLED, 8, hierarchy);
+// 		CvRect rect = boundingRect(contours[index]);
+// 		if(contourArea(contours[index]) < minval)
+// 			continue;
+// 		m_ssznpic.hole.push_back(rect);
+// 		rectangle(dstImage,cv::Point(rect.x,rect.y),cv::Point(rect.x + rect.width,rect.y + rect.height),CV_RGB(255,255, 255));
+// 		//cvRectangle(dstImage, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(255,255, 255), 1, 8, 0);
+// 	}
+// 	imwrite(OutPutPath.GetBuffer(),dstImage);
+
+	double dConArea;     
+	CvSeq *pContour = NULL;     
+	CvSeq *pConInner = NULL;     
+	CvMemStorage *pStorage = NULL;  
+	BOOL showTestPic = TRUE;
+	IplImage* pBinary = cvLoadImage(InputImgPath,0);
+	IplImage* pdst = cvCloneImage(pBinary);
+	cvZero(pdst);
+	// 执行条件     
+	if (pBinary)     
+	{     
+		// 查找所有轮廓     
+		pStorage = cvCreateMemStorage(0);     
+		cvFindContours(pBinary, pStorage, &pContour, sizeof(CvContour), CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);     
+		// 填充所有轮廓     
+		cvDrawContours(pdst, pContour, CV_RGB(255, 255, 255), CV_RGB(255, 255, 255), 2, CV_FILLED, 8, cvPoint(0, 0));    
+		// 外轮廓循环     
+		int wai = 0;    
+		int nei = 0;    
+		for (; pContour != NULL; pContour = pContour->h_next)     
+		{     
+			wai++;    
+// 			// 内轮廓循环     
+// 			for (pConInner = pContour->v_next; pConInner != NULL; pConInner = pConInner->h_next)     
+// 			{     
+// 				nei++;    
+// 				// 内轮廓面积     
+// 				dConArea = fabs(cvContourArea(pConInner, CV_WHOLE_SEQ)); 
+// 			}    
+			dConArea = fabs(cvContourArea(pContour, CV_WHOLE_SEQ)); 
+			if(dConArea < minval)
+				continue;
+			CvRect rect = cvBoundingRect(pContour,0);
+			m_ssznpic.hole.push_back(rect);
+			cvRectangle(pdst, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(255,255, 255), 1, 8, 0);  
+		}       
+		cvReleaseMemStorage(&pStorage);     
+		pStorage = NULL;     
 	}
-	imwrite(OutPutPath.GetBuffer(),dstImage);
+	else
+	{
+		return FALSE;
+	}
+	cvSaveImage(OutPutPath,pdst);
+	cvReleaseImage(&pBinary);
+	cvReleaseImage(&pdst);
+	return TRUE;
+}
+
+BOOL CWPowerCV::GetContour(IplImage* pBinary, double dAreaThre)
+{    
+	double dConArea;     
+	CvSeq *pContour = NULL;     
+	CvSeq *pConInner = NULL;     
+	CvMemStorage *pStorage = NULL;  
+	BOOL showTestPic = TRUE;
+	IplImage* ptest = NULL;
+	if (showTestPic)
+	{
+		ptest = cvCloneImage(pBinary);
+	}
+	// 执行条件     
+	if (pBinary)     
+	{     
+		// 查找所有轮廓     
+		pStorage = cvCreateMemStorage(0);     
+		cvFindContours(pBinary, pStorage, &pContour, sizeof(CvContour), CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);     
+		// 填充所有轮廓     
+		if (showTestPic)
+			cvDrawContours(ptest, pContour, CV_RGB(255, 255, 255), CV_RGB(255, 255, 255), 2, CV_FILLED, 8, cvPoint(0, 0));    
+		// 外轮廓循环     
+		int wai = 0;    
+		int nei = 0;    
+		for (; pContour != NULL; pContour = pContour->h_next)     
+		{     
+			wai++;    
+// 			// 内轮廓循环     
+// 			for (pConInner = pContour->v_next; pConInner != NULL; pConInner = pConInner->h_next)     
+// 			{     
+// 				nei++;    
+// 				// 内轮廓面积     
+// 				dConArea = fabs(cvContourArea(pConInner, CV_WHOLE_SEQ)); 
+// 			}    
+
+			dConArea = fabs(cvContourArea(pContour, CV_WHOLE_SEQ)); 
+			if(dConArea < dAreaThre)
+				continue;
+
+			CvRect rect = cvBoundingRect(pContour,0);
+			m_ssznpic.hole.push_back(rect);
+			if (showTestPic)
+				cvRectangle(ptest, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(255,255, 255), 1, 8, 0);  
+		}       
+		cvReleaseMemStorage(&pStorage);     
+		pStorage = NULL;     
+	}
+	else
+	{
+		return FALSE;
+	}
+	if (showTestPic)
+	{
+		cvSaveImage("D:\\test.bmp",ptest);
+		cvReleaseImage(&ptest);
+		ptest = NULL;
+	}
+
+
+	return TRUE;
 }
 
 void CWPowerCV::FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, int width,int height,double boarddis,CString disImgPath)
@@ -1130,21 +1256,15 @@ BOOL CWPowerCV::MatchImage(CString inputPath,CString TemplatePath,CString OutPut
 		CvPoint minLoc, maxLoc;  
 		cvMinMaxLoc(ftmp[i],&minValue,&maxValue,&minLoc,&maxLoc);
 		cvCircle(src,minLoc,3,cvScalarAll(255));
-		cvCircle(src,maxLoc,3,cvScalarAll(255));
+		//cvCircle(src,maxLoc,3,cvScalarAll(255));
 		cvRectangle(src,minLoc,cvPoint(minLoc.x+templ->width,minLoc.y+templ->height),cvScalarAll(255),1);
-		cvRectangle(src,maxLoc,cvPoint(maxLoc.x+templ->width,maxLoc.y+templ->height),cvScalarAll(255),1);
+		//cvRectangle(src,maxLoc,cvPoint(maxLoc.x+templ->width,maxLoc.y+templ->height),cvScalarAll(255),1);
 		CString saveName; 
 		saveName.Format("D:\\test%d.bmp",i);
 		cvSaveImage(saveName,src);
-
+		src = cvLoadImage(inputPath,0);
 	}
-	cvShowImage("0",ftmp[0]);
-	cvShowImage("1",ftmp[1]);
-	cvShowImage("2",ftmp[2]);
-	cvShowImage("3",ftmp[3]);
-	cvShowImage("4",ftmp[4]);
-	cvShowImage("5",ftmp[5]);
-
+	return TRUE;
 }
 
 BOOL CWPowerCV::Normalize(Mat *srcdata, double lownum,double highnum)
@@ -1160,7 +1280,8 @@ BOOL CWPowerCV::test_cwcv()
 		assert(test_cwcvFront());
 		assert(test_cwcvEdge());
 		assert(test_cwcvBack());
-		assert(test_match());
+		//assert(test_match());
+		assert(test_Contour());
 	}
 	catch (CMemoryException* e)
 	{
@@ -1192,6 +1313,22 @@ BOOL CWPowerCV::test_cwcvFront()
 BOOL CWPowerCV::test_cwcvBack()
 {
 	return TRUE;
+}
+
+BOOL CWPowerCV::test_Contour()
+{
+	BOOL res = TRUE;
+	try
+	{
+		IplImage* psrc = cvLoadImage("F:\\TMP\\Height0.bmp",0);
+		res = GetContour(psrc,2.0);
+
+	}
+	catch (cv::Exception e)
+	{
+		AfxMessageBox(e.err.c_str());
+	}
+	return res;
 }
 
 BOOL CWPowerCV::test_match()

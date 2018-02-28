@@ -86,8 +86,6 @@ public:
 		int YMove,int CalType = 0,BOOL bDir = FALSE);
 	//图像取反
 	BOOL ImgNot(CString InputImgPath,CString OutPutPath);
-	//提取255的轮廓
-	void GetContour(CString InputImgPath,CString OutPutPath,int minval);
 	//索贝尔找轮廓
 	void FindContour(CString inputPath,CString OutPutPath,int method);
 	//漫水填充
@@ -111,11 +109,16 @@ public:
 	void testsszn(CString pathColorTemper,SSZNDATA &data);
 	//排序3D相机的孔
 	void sortByXY(int numrows);
+	//提取255的轮廓,并更新到hole[]里面
+	BOOL GetContour(CString InputImgPath,CString OutPutPath,int minval);
+	BOOL GetContour(IplImage* pImg,double areath);
 	//解析csv点集，绘制灰度图
 	BOOL ParsePtSet(CString inputPath,CString OutPutPath,int type,double *co = NULL);
 	//刷新深度图
 	BOOL RenewHeightPic(double * co, CString OutPutPath,int type = 1);
 	BOOL PRenewHeightPic(double * co, IplImage* pImg,int nInputType = 1);
+	//获取最终结果
+	BOOL GetHoleDeep(IplImage* pImghole,CString pathColorTemper,SSZNDATA &sszndata);
 /************************************************************************/
 /*                       For3D相机操作结束                              */
 /************************************************************************/
@@ -127,8 +130,8 @@ public:
 	BOOL test_cwcvFront();
 	BOOL test_cwcvBack();
 	BOOL test_match();
-/************************************************************************/
+	BOOL test_Contour();
+	/************************************************************************/
 /*                       测试结束                                       */
 /************************************************************************/
 };
-
