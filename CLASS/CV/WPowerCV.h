@@ -94,6 +94,11 @@ public:
 	BOOL MatchImage(CString inputPath,CString TemplatePath,CString OutPutPath);
 	//归一化(将值投射到一个区间)
 	BOOL Normalize(Mat *srcdata, double lownum,double highnum);
+	//仿射变换
+	BOOL CwWarp(vector<CvPoint2D32f> realCenterPt,vector<CvPoint2D32f> stdCenterPt,CvMat* resmatrix);
+	//仿射变换Mat
+	BOOL CwWarpMat(vector<CvPoint2D32f> RealCenterPt,vector<CvPoint2D32f> StdCenterPt ,double *m_AffinePrjPara,double* m_AffinePrjParaInv);
+
 /************************************************************************/
 /*                             图像常用操作结束                         */
 /************************************************************************/
@@ -102,9 +107,11 @@ public:
 /*                       For3D相机操作开始                              */
 /************************************************************************/
 	//三维平面拟合
-	void FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, int width,
-		int height,double boarddis,CString disImgPath);
+	void FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, int width,int height,double boarddis,CString disImgPath);
 	void FitPlane(CString backmaskPath);
+
+	void FitPlane(IplImage* pBackMaskImg);
+
 	//深视智能测试
 	void testsszn(CString pathColorTemper,SSZNDATA &data);
 	//排序3D相机的孔
@@ -131,7 +138,8 @@ public:
 	BOOL test_cwcvBack();
 	BOOL test_match();
 	BOOL test_Contour();
-	/************************************************************************/
+	BOOL test_CwWarp();
+/************************************************************************/
 /*                       测试结束                                       */
 /************************************************************************/
 };

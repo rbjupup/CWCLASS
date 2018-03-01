@@ -1068,24 +1068,14 @@ void CWPowerCV::FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, in
 
 void CWPowerCV::FitPlane(CString backmaskPath)
 {
-	CvMat *matHeight = m_ssznpic.m_matHeightdata;
 	BOOL buseMask = TRUE;
-	if(_T(" ")== backmaskPath)
+	if(_T(" ")== backmaskPath||!FileExist(backmaskPath))
 	{
 		buseMask = FALSE;
-	}
-	//假如用户进入这里的时候,对相机的设置与界面设置不一致
-	//会导致两图片大小不一,导致崩溃
-	if(matHeight == NULL || matHeight->height == 0)
-	{
-		return;
-	}
-
-	double cwx = 0,cwy = 0.0,cwz = 0.0;
-	
+	}	
 	//加载背景图
 	IplImage* pBackMaskImg = NULL;
-	if(_T(" ") != backmaskPath)
+	if(_T(" ") != backmaskPath&&FileExist(backmaskPath))
 	{
 		backmaskPath.Replace("\\","/");
 		pBackMaskImg = cvLoadImage(backmaskPath,0);
@@ -1094,6 +1084,27 @@ void CWPowerCV::FitPlane(CString backmaskPath)
 			buseMask = FALSE;
 		}
 	}
+	FitPlane(buseMask?pBackMaskImg:NULL);
+	cvReleaseImage(&pBackMaskImg);
+	pBackMaskImg = NULL;
+}
+
+void CWPowerCV::FitPlane(IplImage* pBackMaskImg)
+{
+	CvMat *matHeight = m_ssznpic.m_matHeightdata;
+	BOOL buseMask = TRUE;
+	if(pBackMaskImg == NULL)
+		buseMask = FALSE;
+	//假如用户进入这里的时候,对相机的设置与界面设置不一致
+	//会导致两图片大小不一,导致崩溃
+	if(matHeight == NULL || matHeight->height == 0)
+	{
+		return;
+	}
+
+	double cwx = 0,cwy = 0.0,cwz = 0.0;
+
+
 	//初始化距离矩阵和铜面距离矩阵
 	m_ssznpic.m_matDis=Mat::zeros(matHeight->height,matHeight->width,CV_32FC1);
 	m_ssznpic.m_matDisSide=Mat::zeros(matHeight->height,matHeight->width,CV_32FC1);
@@ -1103,32 +1114,31 @@ void CWPowerCV::FitPlane(CString backmaskPath)
 	RATIO_Plane plane3D;
 
 
-	int nMminWidth = matHeight->height; 
-	int nMminHeight = matHeight->width; 
+	int nMminWidth = matHeight->height-m_ssznpic.m_ROIGray.width; 
+	int nMminHeight = matHeight->width-m_ssznpic.m_ROIGray.height; 
 	for(int i = 0; i< nMminWidth;i++){
 		for (int j =0 ;j < nMminHeight;j++)
 		{
 			if(!buseMask||cvGet2D(pBackMaskImg,j,i).val[0] == 255){
-// 				if(GetRand(-3,3)>0)
-// 					continue;
-			double val1 = cvmGet( matHeight, i+m_ssznpic.m_ROIGray.x, j+m_ssznpic.m_ROIGray.y);//*ssznpic.co1+ssznpic.co0;//cvGet2D(pImg,j,i).val[0];
-			t3dptsingal.xxx = i;
-			t3dptsingal.yyy = j;
-			t3dptsingal.zzz = val1;
-			if(val1 != -100)
-			{
-				t3dpt.push_back(t3dptsingal);
-			}
-				
+				// 				if(GetRand(-3,3)>0)
+				// 					continue;
+				double val1 = cvmGet( matHeight, i+m_ssznpic.m_ROIGray.x, j+m_ssznpic.m_ROIGray.y);//*ssznpic.co1+ssznpic.co0;//cvGet2D(pImg,j,i).val[0];
+				t3dptsingal.xxx = i;
+				t3dptsingal.yyy = j;
+				t3dptsingal.zzz = val1;
+				if(val1 != -100)
+				{
+					t3dpt.push_back(t3dptsingal);
+				}
+
 			}
 
-			  
+
 		}
 	}
 	if(t3dpt.size() > 2)
 		fitPlane3D(&t3dpt[0],t3dpt.size(),&plane3D);
 
-	//假如使用的是全部点集,那么我们将点到面的距离进行排序后,将前50的点再拟合一次平面并求出新的距离
 	if(!buseMask)
 	{
 		t3dpt.clear();
@@ -1154,7 +1164,7 @@ void CWPowerCV::FitPlane(CString backmaskPath)
 		}
 		double avgHeight = GetAvg(vecSortBy);
 		vector<roiPointDecimal3D> newt3dpt;
-
+		//使用低于平均距离的点重新拟合平面
 		for (int i = 0;i < t3dpt.size();i++)
 		{
 			if(vecSortBy[i]<avgHeight)
@@ -1186,12 +1196,10 @@ void CWPowerCV::FitPlane(CString backmaskPath)
 			m_ssznpic.m_matDis.at<float>(i,j) = (float)sd;
 			if(!buseMask||YX_BYTE(pBackMaskImg,j,i) == 255)
 			{
- 				m_ssznpic.m_matDisSide.at<float>(i,j) = (float)sd;
+				m_ssznpic.m_matDisSide.at<float>(i,j) = (float)sd;
 			}
 		}
 	}
-
-	cvReleaseImage(&pBackMaskImg);
 }
 
 
@@ -1281,7 +1289,8 @@ BOOL CWPowerCV::test_cwcv()
 		assert(test_cwcvEdge());
 		assert(test_cwcvBack());
 		//assert(test_match());
-		assert(test_Contour());
+		//assert(test_Contour());
+		assert(test_CwWarp());
 	}
 	catch (CMemoryException* e)
 	{
@@ -1295,7 +1304,7 @@ BOOL CWPowerCV::test_cwcv()
 	}
 	catch (cv::Exception e)
 	{
-		int a = 0;
+		AfxMessageBox(e.err.c_str());
 	}
 	return TRUE;
 }
@@ -1344,5 +1353,132 @@ BOOL CWPowerCV::test_match()
 		AfxMessageBox(e.err.c_str());
 	}
 	return res;
+}
+//缺点:只能处理3个点
+BOOL CWPowerCV::CwWarp(vector<CvPoint2D32f> RealCenterPt,vector<CvPoint2D32f> StdCenterPt,CvMat* warp_mat)
+{
+	cvGetAffineTransform(&RealCenterPt[0],&StdCenterPt[0],warp_mat);
+	return TRUE;
+}
+BOOL CWPowerCV::CwWarpMat(vector<CvPoint2D32f> RealCenterPt,vector<CvPoint2D32f> StdCenterPt
+	,double *m_AffinePrjPara,double *m_AffinePrjParaInv)
+{
+	int nTotalNum = StdCenterPt.size();
+	//通过对应中心计算变换系数
+	CvMat PrjPara_mat,PrjParaInv_mat;
+	cvInitMatHeader(&PrjPara_mat,3,3,CV_64FC1,m_AffinePrjPara);
+	cvInitMatHeader(&PrjParaInv_mat,3,3,CV_64FC1,m_AffinePrjParaInv);
+	CvMat *A,*b;
+	CvMat X;
+	cvInitMatHeader(&X,6,1,CV_64FC1,m_AffinePrjPara);
+	if (nTotalNum<4)
+	{
+		m_AffinePrjPara[0] = 1;
+		m_AffinePrjPara[1] = 0;
+		m_AffinePrjPara[2] = 0;
+		m_AffinePrjPara[3] = 0;
+		m_AffinePrjPara[4] = 1;
+		m_AffinePrjPara[5] = 0;
+		m_AffinePrjPara[6]=m_AffinePrjPara[7]=0;
+		m_AffinePrjPara[8]=1;
+		cvInvert(&PrjPara_mat,&PrjParaInv_mat);
+		// 		//轮廓转换
+		// 		AffineTransformRealToStd();
+		return false;
+	}
+	A=cvCreateMat(nTotalNum*2,6,CV_64FC1);
+	b=cvCreateMat(nTotalNum*2,1,CV_64FC1);
+	cvZero(A);
+
+	for(int i=0;i<nTotalNum;i++){
+		A->data.db[6*i+0]=RealCenterPt[i].x;
+		A->data.db[6*i+1]=RealCenterPt[i].y;
+		A->data.db[6*i+2]=1;
+		b->data.db[i]=StdCenterPt[i].x;
+
+		A->data.db[6*(nTotalNum+i)+3]=RealCenterPt[i].x;
+		A->data.db[6*(nTotalNum+i)+4]=RealCenterPt[i].y;
+		A->data.db[6*(nTotalNum+i)+5]=1;
+		b->data.db[nTotalNum+i]=StdCenterPt[i].y;
+	}
+	cvSolve(A,b,&X,CV_SVD);
+	m_AffinePrjPara[6]=m_AffinePrjPara[7]=0;
+	m_AffinePrjPara[8]=1;
+	cvReleaseMat(&A);
+	cvReleaseMat(&b);
+	RealCenterPt.swap(vector<CvPoint2D32f>(0));
+	StdCenterPt.swap(vector<CvPoint2D32f>(0));
+	//RealCenterPt.clear();
+	//StdCenterPt.clear();
+	cvInvert(&PrjPara_mat,&PrjParaInv_mat);
+
+	return TRUE;
+}
+
+BOOL CWPowerCV::test_CwWarp()
+{
+	vector<CvPoint2D32f> RealCenterPt;
+	vector<CvPoint2D32f> StdCenterPt;
+	vector<CvPoint2D32f> AfterPt;
+	RealCenterPt.push_back(cvPoint2D32f(5.0,15.0));
+	RealCenterPt.push_back(cvPoint2D32f(10.0,10.0));
+	RealCenterPt.push_back(cvPoint2D32f(19.0,8.0));
+	RealCenterPt.push_back(cvPoint2D32f(16.0,15.0));
+	StdCenterPt.push_back(cvPoint2D32f(5.0,15.0));
+	StdCenterPt.push_back(cvPoint2D32f(10.0,10.0));
+	StdCenterPt.push_back(cvPoint2D32f(20.0,10.0));
+	StdCenterPt.push_back(cvPoint2D32f(15.0,15.0));
+	IplImage *prealImg = cvCreateImage(cvSize(100,100),8,3);
+	IplImage *pstdImg = cvCreateImage(cvSize(100,100),8,3);
+	for (int i = 0; i < RealCenterPt.size();i++)
+	{
+		cvLine(prealImg,cvPoint(RealCenterPt[i].x,RealCenterPt[i].y),
+			cvPoint(RealCenterPt[(i+1)%RealCenterPt.size()].x,RealCenterPt[(i+1)%RealCenterPt.size()].y),
+			cvScalar(255,0,0));
+	}
+	for (int i = 0; i < StdCenterPt.size();i++)
+	{
+		cvLine(pstdImg,cvPoint(StdCenterPt[i].x,StdCenterPt[i].y),
+			cvPoint(StdCenterPt[(i+1)%StdCenterPt.size()].x,StdCenterPt[(i+1)%StdCenterPt.size()].y),
+			cvScalar(255,0,0));
+	}
+	cvSaveImage("D:\\tmp\\real.bmp",prealImg);
+	cvSaveImage("D:\\tmp\\std.bmp",pstdImg);
+
+ 	CvMat* warp_mat=cvCreateMat(2,3,CV_32FC1);
+ 	CwWarp(RealCenterPt,StdCenterPt,warp_mat);
+	cvWarpAffine(prealImg,pstdImg,warp_mat);
+	cvSaveImage("D:\\tmp\\stdrot.bmp",pstdImg);
+	cvReleaseMat(&warp_mat);
+
+	double m_AffinePrjPara[9] = {0};
+	double m_AffinePrjParaInv[9] = {0};
+	CwWarpMat(RealCenterPt,StdCenterPt,m_AffinePrjPara,m_AffinePrjParaInv);
+	double diffx = 0;
+	double diffy = 0;
+	
+	for (int i = 0; i < RealCenterPt.size();i++)
+	{
+		diffx = m_AffinePrjPara[0]*RealCenterPt[i].x+m_AffinePrjPara[1]*RealCenterPt[i].y+
+			m_AffinePrjPara[2];
+		diffy = m_AffinePrjPara[3]*RealCenterPt[i].x+m_AffinePrjPara[4]*RealCenterPt[i].y+
+			m_AffinePrjPara[5];
+		TRACE("第%d个点为(%.4f,%.4f)\n",i,diffx,diffy);
+		AfterPt.push_back(cvPoint2D32f(diffx,diffy));
+	}
+	cvZero(pstdImg);
+	for (int i = 0; i < AfterPt.size();i++)
+	{
+		cvLine(pstdImg,cvPoint(AfterPt[i].x,AfterPt[i].y),
+			cvPoint(AfterPt[(i+1)%AfterPt.size()].x,AfterPt[(i+1)%AfterPt.size()].y),
+			cvScalar(255,0,0));
+	}
+	cvSaveImage("D:\\tmp\\stdrotmat.bmp",pstdImg);
+	
+	cvReleaseImage(&pstdImg);
+	cvReleaseImage(&prealImg);
+	pstdImg = NULL;
+	prealImg = NULL;
+	return TRUE;
 }
 
