@@ -5,7 +5,7 @@
  #pragma comment(lib,"winhttp.lib")
 /*
 图灵机器人 C++实现
-
+]
 极简版
 几乎没有界面（废话，毕竟是控制台）
 

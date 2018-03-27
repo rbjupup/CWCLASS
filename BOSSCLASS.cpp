@@ -79,6 +79,7 @@ BOSSCLASS::BOSSCLASS(void)
 	CVClassSupportFunction.push_back(CVFUN11);
 	CVClassSupportFunction.push_back(CVFUN12);
 	m_vecSupportFunction.push_back(CVClassSupportFunction);
+	assert(test_XFunCom());
 	assert(m_powcv.test_cwcv());
 }
 

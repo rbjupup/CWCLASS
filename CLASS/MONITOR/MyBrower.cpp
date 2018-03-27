@@ -9,6 +9,7 @@ CComModule _Module;
 #include <atlwin.h>
 #include <windows.h>
 #include <vector>
+#include "XFunCom.h"
 using namespace std;
 #pragma comment(lib,"atl")
 #pragma comment(lib,"User32.lib")

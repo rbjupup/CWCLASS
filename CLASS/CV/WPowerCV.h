@@ -6,18 +6,27 @@
 using namespace cv;
 #define CVTRYSTART try{
 #define CVTRYEND 	}catch(cv::Exception err){\
-CString opencverr;\
-opencverr.Format("%s",err.msg);\
-TRACE(opencverr);\
-return FALSE;}
+	CString opencverr;\
+	opencverr.Format("%s",err.msg);\
+	TRACE(opencverr);\
+	return FALSE;}
 struct SSZNDATA{
 	vector<int> m_vecindex;		//孔编号
 	vector<double> m_veca;		//平均值
 	vector<double> m_max;		//最大值
 	vector<double> m_diff;		//均方差
+	vector<CvRect> m_center;		//孔中心
 	double m_dis;				//铜面的方差
 	int m_rownum;				//孔阵列的行数
 	double m_dThresholdDeep;	//最小深度阈值
+	double m_dthresholdeff;		//最小有效深度
+	SSZNDATA()
+	{
+		m_dis = 0.01;
+		m_rownum = 1;
+		m_dThresholdDeep = 0;
+		m_dthresholdeff = 0;
+	}
 };
 //采集图像过程中间需要同时获取的参数
 struct SSZNPRPJECT{
@@ -47,7 +56,16 @@ struct SSZNPRPJECT{
 		co0 = 0;
 		co1 = 0;
 		m_matHeightdata = NULL;
-		m_ROIGray = cvRect(0,0,1,1);
+		m_ROIGray = cvRect(0,0,0,0);
+	}
+	~SSZNPRPJECT()
+	{
+		if(m_matHeightdata != NULL)
+		{
+			cvReleaseMat(&m_matHeightdata);
+			m_matHeightdata = NULL;
+		}
+
 	}
 } ;
 class CWPowerCV
@@ -59,10 +77,12 @@ public:
 	//定义轮廓和层次结构
 	vector<vector<cv::Point> > contours;
 	vector<Vec4i> hierarchy;
+	//是否显示中间结果
+	BOOL m_bShowTmp;
 public:
-/************************************************************************/
-/*                             图像分割开始                             */
-/************************************************************************/
+	/************************************************************************/
+	/*                             图像分割开始                             */
+	/************************************************************************/
 	//图像切分
 	BOOL SplitByXYNum(CString InputImgPath,CString OutPutDir,int XNum,int YNum);
 	//点云切分
@@ -75,12 +95,12 @@ public:
 	//某个方向上的动态阈值
 	BOOL SplitByDirection(CString InputImgPath,CString OutPutPath,int diedaiwidth,
 		int boardwidth,int direction,int seedThreshold);
-/************************************************************************/
-/*                             图像分割结束                             */
-/************************************************************************/
-/************************************************************************/
-/*                             图像常用操作开始                         */
-/************************************************************************/
+	/************************************************************************/
+	/*                             图像分割结束                             */
+	/************************************************************************/
+	/************************************************************************/
+	/*                             图像常用操作开始                         */
+	/************************************************************************/
 	//图像加减
 	BOOL ImgCal(CString srcfirst,CString srcsecond,CString savePath,int XMove,
 		int YMove,int CalType = 0,BOOL bDir = FALSE);
@@ -95,17 +115,21 @@ public:
 	//归一化(将值投射到一个区间)
 	BOOL Normalize(Mat *srcdata, double lownum,double highnum);
 	//仿射变换
-	BOOL CwWarp(vector<CvPoint2D32f> realCenterPt,vector<CvPoint2D32f> stdCenterPt,CvMat* resmatrix);
+	BOOL CwWarp(vector<CvPoint2D32f> &realCenterPt,vector<CvPoint2D32f> &stdCenterPt,CvMat* resmatrix);
 	//仿射变换Mat
-	BOOL CwWarpMat(vector<CvPoint2D32f> RealCenterPt,vector<CvPoint2D32f> StdCenterPt ,double *m_AffinePrjPara,double* m_AffinePrjParaInv);
+	BOOL CwWarpMat(vector<CvPoint2D32f> &RealCenterPt,vector<CvPoint2D32f> &StdCenterPt ,double *m_AffinePrjPara,double* m_AffinePrjParaInv);
+	//cv->FIle()x测试,使用xml和序列化测试
+	BOOL CvToFile(Mat&mat,CString savePath,int type = 1);
+	BOOL FileToCv(Mat&mat,CString LoadPath,int type = 1);
+	BOOL GetContour(IplImage* pImg,double areath,vector<CvRect> &boundrect);
+	BOOL GetContour(IplImage* pImg,double areath,vector<CRect> &boundrect);
+	/************************************************************************/
+	/*                             图像常用操作结束                         */
+	/************************************************************************/
 
-/************************************************************************/
-/*                             图像常用操作结束                         */
-/************************************************************************/
-
-/************************************************************************/
-/*                       For3D相机操作开始                              */
-/************************************************************************/
+	/************************************************************************/
+	/*                       For3D相机操作开始                              */
+	/************************************************************************/
 	//三维平面拟合
 	void FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, int width,int height,double boarddis,CString disImgPath);
 	void FitPlane(CString backmaskPath);
@@ -126,12 +150,13 @@ public:
 	BOOL PRenewHeightPic(double * co, IplImage* pImg,int nInputType = 1);
 	//获取最终结果
 	BOOL GetHoleDeep(IplImage* pImghole,CString pathColorTemper,SSZNDATA &sszndata);
-/************************************************************************/
-/*                       For3D相机操作结束                              */
-/************************************************************************/
-/************************************************************************/
-/*                       测试开始                                       */
-/************************************************************************/
+	BOOL MatchByContour(IplImage * src,IplImage* templ,IplImage* resImg);
+	/************************************************************************/
+	/*                       For3D相机操作结束                              */
+	/************************************************************************/
+	/************************************************************************/
+	/*                       测试开始                                       */
+	/************************************************************************/
 	BOOL test_cwcv();
 	BOOL test_cwcvEdge();
 	BOOL test_cwcvFront();
@@ -139,7 +164,9 @@ public:
 	BOOL test_match();
 	BOOL test_Contour();
 	BOOL test_CwWarp();
-/************************************************************************/
-/*                       测试结束                                       */
-/************************************************************************/
-};
+	BOOL test_cvline();
+	BOOL test_matchContour();
+	/************************************************************************/
+	/*                       测试结束                                       */
+	/************************************************************************/
+}; 

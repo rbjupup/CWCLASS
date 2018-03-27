@@ -3,6 +3,7 @@
 #include "XFunCom.h"
 CWPowerCV::CWPowerCV(void)
 {
+	m_bShowTmp =  TRUE;
 }
 
 
@@ -44,14 +45,16 @@ struct paraseThreadData{
 	vector<CString> *path;
 	CvMat *datapath;
 	BOOL DealFinish;
+	CString strTmpSplite;
 	void parase(){
 		for(int i = startindex ; i < endindex;i++)
 		{
 			vector<CString> aline;
-			splitStr((*path)[i].GetBuffer(0),",",aline);
+			strTmpSplite.Format("%s",(*path)[i]);
+			splitStr(strTmpSplite.GetBuffer(0),",",aline);
 			for (int j = 0; j < aline.size();j++)
 			{
-				cvmSet( datapath, j, i, atof(aline[j]) );
+				YX_32F_CVMAT( datapath, i, j) =  atof(aline[j]) ;
 			}
 		}
 		DealFinish = TRUE;
@@ -86,7 +89,7 @@ BOOL CWPowerCV::SplitScvByXYNum(CString InputscvPath,CString OutPutDir,int XNum,
 	splitStr(ptsdata[0].GetBuffer(0),",",alinepts);
 
 
-	matHeight = cvCreateMat( alinepts.size(), ptsdata.size(), CV_32FC1);
+	matHeight = cvCreateMat( ptsdata.size(),alinepts.size(), CV_32F);
 	cvZero(matHeight);
 	int row = alinepts.size();
 	int col = ptsdata.size();
@@ -99,7 +102,7 @@ BOOL CWPowerCV::SplitScvByXYNum(CString InputscvPath,CString OutPutDir,int XNum,
 			vector<CString> alineptsnew;
 			splitStr(ptsdata[i].GetBuffer(0),",",alineptsnew);
 			for (int j =0; j < alineptsnew.size();j++){
-				cvmSet( matHeight, j, i, atof(alineptsnew[j]) );
+				YX_32F_CVMAT( matHeight, i,j) =  atof(alineptsnew[j]) ;
 			}
 		}
 
@@ -144,8 +147,8 @@ BOOL CWPowerCV::SplitScvByXYNum(CString InputscvPath,CString OutPutDir,int XNum,
 	}
 
 	//加载图像
-	int picwidth = matHeight->rows;
-	int picHeight = matHeight->cols;
+	int picwidth = matHeight->cols;
+	int picHeight = matHeight->rows;
 	//循环更新ROI并保存
 	int stepWidth = picwidth/XNum;
 	int stepHeight = picHeight/YNum;
@@ -161,7 +164,7 @@ BOOL CWPowerCV::SplitScvByXYNum(CString InputscvPath,CString OutPutDir,int XNum,
 				for (int stepx = ix*stepWidth ;stepx < (ix+1)*stepWidth;stepx++)
 				{
 					CString strdata;
-					strdata.Format("%.4f",cvmGet(matHeight,stepx,stepy));
+					strdata.Format("%.4f",YX_32F_CVMAT(matHeight,stepy,stepx));
 					if(stepy == (iy+1)*stepHeight - 1)
 					{
 						aline =  aline + strdata;
@@ -254,23 +257,23 @@ BOOL CWPowerCV::ParsePtSet(CString inputPath,CString OutPutPath,int type,double 
 	if(ptsdata.size() < 1)
 		return FALSE;
 	CVTRYSTART
-	splitStr(ptsdata[0].GetBuffer(0),",",alinepts);
+	CString strTmpSplite;
+	strTmpSplite.Format("%s",ptsdata[0]);
+	splitStr(strTmpSplite.GetBuffer(0),",",alinepts);
 
 
-	matHeight = cvCreateMat( alinepts.size(), ptsdata.size(), CV_32FC1);
+	matHeight = cvCreateMat( ptsdata.size(),alinepts.size(),  CV_32F);
 	cvZero(matHeight);
-	int row = alinepts.size();
-	int col = ptsdata.size();
-
 	BOOL usemuliteThread = TRUE;
 	if(!usemuliteThread)
 	{	
 		for (int i = 0; i < ptsdata.size();i++)
 		{
 			vector<CString> alineptsnew;
-			splitStr(ptsdata[i].GetBuffer(0),",",alineptsnew);
+			strTmpSplite.Format("%s",ptsdata[i]);
+			splitStr(strTmpSplite.GetBuffer(0),",",alineptsnew);
 			for (int j =0; j < alineptsnew.size();j++){
-				cvmSet( matHeight, j, i, atof(alineptsnew[j]) );
+				YX_32F_CVMAT( matHeight, i, j ) = atof(alineptsnew[j]) ;
 			}
 		}
 
@@ -354,7 +357,7 @@ BOOL CWPowerCV::PRenewHeightPic(double * co, IplImage* pImg,int nInputType)
 	{
 		for (int j = 0; j < pmatHeight->cols; j++)
 		{
-			float val = cvmGet(pmatHeight,i,j);
+			float val = YX_32F_CVMAT(pmatHeight,i,j);
 			if(val == -100){
 				veci.push_back(i);
 				vecj.push_back(j);
@@ -376,10 +379,6 @@ BOOL CWPowerCV::PRenewHeightPic(double * co, IplImage* pImg,int nInputType)
 		AfxMessageBox("3D数据无效,请重新采集");
 		return FALSE;
 	}
-	// 	for (int num = 0; num < veci.size();num++)
-	// 	{
-	// 		cvmSet( matHeight,veci[num] , vecj[num],MinValue);
-	// 	}
 	double co0 = - MinValue*255.0/(MaxValue - MinValue);
 	double co1 = 255.0/(MaxValue - MinValue);
 	m_ssznpic.co0 = co0;
@@ -403,25 +402,23 @@ BOOL CWPowerCV::PRenewHeightPic(double * co, IplImage* pImg,int nInputType)
 	{
 		for (int j = 0; j < pmatHeight->cols; j++)
 		{
-			float val = cvmGet(pmatHeight,i,j)*co1 + co0;
-			//cvSet2D(pImg,j,i,cvScalarAll(val));
-			//YX_BYTE(pImg,i,j) = val;
-			int nPos = fImgPointer[j] + i;
-			val = val<0?0:val;
-			YX_BYTE_1ARRAY(pImg,nPos) = val;
+			float val = YX_32F_CVMAT(pmatHeight,i,j)*co1 + co0;
+ 			val = val<0?0:val;
+// 			YX_BYTE(pImg,i,j) = val;
+ 			int nPos = fImgPointer[i] + j;
+ 			YX_BYTE_1ARRAY(pImg,nPos) = val;
 		}
 	}
 	delete []fImgPointer;
 	fImgPointer = NULL;
 	timer1.End();
-	TRACE("耗时%.4f",timer1.GetUseTime());
 	return TRUE;
 }
 BOOL CWPowerCV::RenewHeightPic(double * co, CString OutPutPath,int nInputType)
 {
 	if(m_ssznpic.m_matHeightdata == NULL||m_ssznpic.m_matHeightdata->cols == 0)
 		return FALSE;
-	IplImage* pImg = cvCreateImage(cvSize(m_ssznpic.m_matHeightdata->rows,m_ssznpic.m_matHeightdata->cols),8,1);
+	IplImage* pImg = cvCreateImage(cvSize(m_ssznpic.m_matHeightdata->cols,m_ssznpic.m_matHeightdata->rows),8,1);
 	//将图像加载到pImg中
 	BOOL res = PRenewHeightPic(co,pImg,nInputType);
 	if(!res)
@@ -614,9 +611,24 @@ BOOL CWPowerCV::GetHoleDeep(IplImage* pImghole,CString pathColorTemper,SSZNDATA 
 		AfxMessageBox("数据处理流程输入数据无效");
 		return FALSE;
 	}
-	sortByXY(sszndata.m_rownum);
+
+	BOOL bShowTmp = m_bShowTmp;
+	BOOL bNeedSort = TRUE;
+	BOOL bNeedBoard = FALSE;
+	BOOL bNeedTemper = TRUE;
+	//孔位置排序
+	if(bNeedSort)
+	{
+		CWTS(TIMSORTHOLE)
+		sortByXY(sszndata.m_rownum);
+		if (bShowTmp)
+		{
+			CWTE(TIMSORTHOLE,"获取孔深_孔排序耗时%.4f\n")
+		}
+	}
 
 	//提取孔距离数据和非孔距离数据开始
+	CWTS(TIMGETDATA)
 	vector<vector<float>> data;
 	vector<double> boarddata;
 	for (int i = 0; i < m_ssznpic.hole.size();i++)
@@ -624,17 +636,20 @@ BOOL CWPowerCV::GetHoleDeep(IplImage* pImghole,CString pathColorTemper,SSZNDATA 
 		vector<float> aholedata;
 		for (int cwx = m_ssznpic.hole[i].x;cwx< m_ssznpic.hole[i].x + m_ssznpic.hole[i].width;cwx++)
 		{
-			const float* pData = m_ssznpic.m_matDis.ptr<float>(cwx);   //第i+1行的所有元素  
 			for (int cwy = m_ssznpic.hole[i].y;cwy< m_ssznpic.hole[i].y + m_ssznpic.hole[i].height;cwy++)
 			{
 				//获取深度
-				double val = pData[cwy];
-				//获取是不是孔
+				double val = YX_32F_MAT(m_ssznpic.m_matDis,cwy,cwx);
+				//插入到数组
 				int valhole = YX_BYTE(pImghole,cwy,cwx);
-				if(valhole == 0){
-					if(val != -100)
-						boarddata.push_back(val);
-					continue;
+				if(bNeedBoard)//不是孔的话就插入板数据中
+				{
+					if(valhole == 0||valhole < sszndata.m_dthresholdeff)
+					{
+						if(val != -100)
+							boarddata.push_back(val);
+						continue;
+					}
 				}
 				if(val == -100)
 					continue;
@@ -643,32 +658,49 @@ BOOL CWPowerCV::GetHoleDeep(IplImage* pImghole,CString pathColorTemper,SSZNDATA 
 		}
 		data.push_back(aholedata);
 	}
+	if (bShowTmp)
+	{
+		CWTE(TIMGETDATA,"获取孔深_获取孔数据耗时%.4f\n")	//孔数据提取开始
+	}
 	//提取孔距离数据和非孔距离数据结束
 
 
 
 
 	//色温图绘制
-	if(pathColorTemper != _T(" "))
+	Mat dstImage = Mat::zeros( m_ssznpic.m_matDis.rows,m_ssznpic.m_matDis.cols, CV_8UC3);
+	if(bNeedTemper&&pathColorTemper != _T(" "))
 	{
+		CWTS(TIMTEMPER)
 		double nonval = sszndata.m_dThresholdDeep;
 		double minval = nonval;
 		double maxval = 0.050;
-		Mat dstImage = Mat::zeros( m_ssznpic.m_matDis.cols,m_ssznpic.m_matDis.rows, CV_8UC3);
 		for (int i = 0; i < dstImage.cols;i++)
 		{
 			for (int j = 0; j < dstImage.rows;j++)
 			{
-				double val = m_ssznpic.m_matDis.ptr<float>(i)[j];
+				double val = YX_32F_MAT(m_ssznpic.m_matDis,j,i);//.ptr<float>(i)[j];
 				if(val == -100)
 					continue;
-				if(val > minval){
-					//转到 0 - 255
-					int newval = abs(val/maxval*255) - 255 > 0 ? 255:(abs(val/maxval)*255.0); 
-					dstImage.at<Vec3b>(j,i)[0] = 0;
-					dstImage.at<Vec3b>(j,i)[1] = 255 - newval;
-					dstImage.at<Vec3b>(j,i)[2] = newval;
-				}
+				//if(val > minval){
+				//转到 0 - 255
+				int newval = abs(val/maxval*255) - 255 > 0 ? 255:(abs(val/maxval)*255.0); 
+				((BYTE*)(dstImage.data +3*(j)*(dstImage.cols)))[3*i] = 0;
+				((BYTE*)(dstImage.data +3*(j)*(dstImage.cols)))[3*i+1] = 255 - newval;
+				((BYTE*)(dstImage.data +3*(j)*(dstImage.cols)))[3*i+2] = newval;
+				//}
+			}
+		}
+		if (bShowTmp)
+		{
+			CWTE(TIMTEMPER,"获取孔深_绘制色温图耗时%.4f\n")		
+			CString index;
+			for (int i = 0; i < m_ssznpic.hole.size();i++)
+			{
+				CvRect pt = m_ssznpic.hole[i];
+				index.Format("%d",i+1);
+				putText(dstImage, index.GetBuffer(), cv::Point(pt.x,pt.y), FONT_HERSHEY_SIMPLEX, 1, Scalar(255));
+				rectangle(dstImage,cv::Point(pt.x,pt.y),cv::Point(pt.x+ pt.width,pt.y + pt.height),CV_RGB(255,255, 255));
 			}
 		}
 		imwrite(pathColorTemper.GetBuffer(),dstImage);
@@ -678,8 +710,9 @@ BOOL CWPowerCV::GetHoleDeep(IplImage* pImghole,CString pathColorTemper,SSZNDATA 
 
 	//板数据提取开始
 
-	if(m_ssznpic.hole.size()> 0)
+	if(bNeedBoard&&m_ssznpic.hole.size()> 0)
 	{
+		CWTS(TIMGETBOARD)
 		//计算孔的外框
 		CRect *grouprect = new CRect[m_ssznpic.hole.size()];
 		CRect *holerect = &grouprect[0];
@@ -732,29 +765,31 @@ BOOL CWPowerCV::GetHoleDeep(IplImage* pImghole,CString pathColorTemper,SSZNDATA 
 		}
 		ave[0] = totalg[0]/num[0];
 		ave[1] = totalg[1]/num[1];
-		TRACE("铜面点数\t距离和\t平均距离\t板面上点数\t板面上平均距离\t板面下点数\t板面下点数平均距离\n%d\t%.4f\t%.4f\t%d\t%.4f\t%d\t%.4f\n",
-			boarddata.size(),total,total/(double)boarddata.size(),num[0],ave[0],num[1],ave[1]);
 		sszndata.m_dis = total/(double)boarddata.size();
 		delete [] grouprect;
+		if (bShowTmp)
+		{
+			TRACE("铜面点数\t距离和\t平均距离\t板面上点数\t板面上平均距离\t板面下点数\t板面下点数平均距离\n%d\t%.4f\t%.4f\t%d\t%.4f\t%d\t%.4f\n",
+				boarddata.size(),total,total/(double)boarddata.size(),num[0],ave[0],num[1],ave[1]);
+			CWTE(TIMGETBOARD,"获取孔深_提取计算板数据耗时%.4f\n")
+			TRACE("平均深度\t最大深度\t均方差\t铜面上点个数\t铜面上的平均距离\t铜面下点个数\t铜面下的平均距离\tROI图上坐标\n");
+
+		}
 	}
 
 	//板数据提取结束
 
-	//孔数据提取开始
-// 	CString index;
-// 	for (int i = 0; i < m_ssznpic.hole.size();i++)
-// 	{
-// 		CvRect pt = m_ssznpic.hole[i];
-// 		index.Format("%d",i+1);
-// 		putText(dstImage, index.GetBuffer(), cv::Point(pt.x,pt.y), FONT_HERSHEY_SIMPLEX, 1, Scalar(255));
-// 		rectangle(dstImage,cv::Point(pt.x,pt.y),cv::Point(pt.x+ pt.width,pt.y + pt.height),CV_RGB(255,255, 255));
-// 	}
-	TRACE("平均深度\t最大深度\t均方差\t铜面上点个数\t铜面上的平均距离\t铜面下点个数\t铜面下的平均距离\tROI图上坐标\n");
 
+	//孔数据计算开始
+	CWTS(TIMHOLECAL)
 	double totalg[2] = {0,0};//板上点总数
 	int num[2] = {0,0};//板下点总数
 	for (int i = 0; i < data.size();i++)
 	{
+		if(data[i].size() == 0)
+		{
+			continue;
+		}
 		totalg[0] = 0;totalg[1] = 0;num[0] = 0; num[1] = 0;
 		double total = 0; 
 		double maxhole = -100;
@@ -785,12 +820,31 @@ BOOL CWPowerCV::GetHoleDeep(IplImage* pImghole,CString pathColorTemper,SSZNDATA 
 		for(int j=0; j<data[i].size(); j++)
 			s +=abs(abs(data[i][j]) - average);
 		double ss = s/data[i].size(); //求均方差
-		TRACE("%.4f\t%.4f\t%.4f\t%d\t%.4f\t%d\t%.4f\t(%d,%d)\n",
-			average,maxhole,ss,num[0],avetop,num[1],avebottom,m_ssznpic.hole[i].x,m_ssznpic.hole[i].y);
 		sszndata.m_diff.push_back(ss);
 		sszndata.m_max.push_back(maxhole);
 		sszndata.m_veca.push_back(average);
 		sszndata.m_vecindex.push_back(i);
+		sszndata.m_center.push_back(m_ssznpic.hole[i]);
+		if(bShowTmp)
+		{
+			TRACE("%.4f\t%.4f\t%.4f\t%d\t%.4f\t%d\t%.4f\t(%d,%d)\n",
+				average,maxhole,ss,num[0],avetop,num[1],avebottom,m_ssznpic.hole[i].x,m_ssznpic.hole[i].y);
+		}
+		if (bShowTmp)
+		{
+			if (bShowTmp)
+			{
+				CString index;
+				CvRect pt = m_ssznpic.hole[i];
+				index.Format("%.4f",average);
+				putText(dstImage, index.GetBuffer(), cv::Point(pt.x+90,pt.y), FONT_HERSHEY_SIMPLEX, 1, Scalar(255));
+			}
+			imwrite(pathColorTemper.GetBuffer(),dstImage);
+		}
+	}
+	if (bShowTmp)
+	{
+		CWTE(TIMHOLECAL,"获取孔深_计算孔数据耗时%.4f\n")
 	}
 	//孔数据提取结束
 
@@ -813,36 +867,6 @@ void CWPowerCV::testsszn(CString pathColorTemper,SSZNDATA &data)
 
 BOOL CWPowerCV::GetContour(CString InputImgPath,CString OutPutPath,int minval)
 {
-// 	InputImgPath.Replace("\\","/");
-// 	//载入原始图，且必须以二值图模式载入
-// 	m_ssznpic.holepath = InputImgPath;
-// 	Mat srcImage = imread(InputImgPath.GetBuffer(), 0);
-// 	//初始化结果图
-// 	Mat dstImage = Mat::zeros(srcImage.rows, srcImage.cols, CV_8UC3);
-// 
-// 	Mat element = getStructuringElement(MORPH_RECT,Size(2*1+1,2*1+1),Point(1,1));
-// 	erode(srcImage,srcImage,element);
-// 	dilate(srcImage,srcImage,element);
-// 
-// 	//查找轮廓
-// 	findContours(srcImage, contours, hierarchy,
-// 		CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
-// 	//遍历所有顶层的轮廓， 以随机颜色绘制出每个连接组件颜色
-// 	int index = 0;
-// 	m_ssznpic.hole.clear();
-// 	for (; index >= 0; index = hierarchy[index][0])
-// 	{
-// 		Scalar color(rand() & 255, rand() & 255, rand() & 255);
-// 		drawContours(dstImage, contours, index, color, CV_FILLED, 8, hierarchy);
-// 		CvRect rect = boundingRect(contours[index]);
-// 		if(contourArea(contours[index]) < minval)
-// 			continue;
-// 		m_ssznpic.hole.push_back(rect);
-// 		rectangle(dstImage,cv::Point(rect.x,rect.y),cv::Point(rect.x + rect.width,rect.y + rect.height),CV_RGB(255,255, 255));
-// 		//cvRectangle(dstImage, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(255,255, 255), 1, 8, 0);
-// 	}
-// 	imwrite(OutPutPath.GetBuffer(),dstImage);
-
 	double dConArea;     
 	CvSeq *pContour = NULL;     
 	CvSeq *pConInner = NULL;     
@@ -892,17 +916,197 @@ BOOL CWPowerCV::GetContour(CString InputImgPath,CString OutPutPath,int minval)
 	return TRUE;
 }
 
+
+BOOL CWPowerCV::CvToFile(Mat&mat,CString savePath,int type)
+{
+	BOOL bshowTmp = TRUE;
+	CWTS(TIM1)
+		if(type == 1)
+		{
+			CvMat cvmat;
+			CvTranPointerType(IplImage(),mat,cvmat,FALSE,MAT_CVMAT);
+			cvSave(savePath,&cvmat);
+		}
+		if(type == 2)
+		{
+			CFile file(savePath,CFile::modeCreate|CFile::modeWrite);
+			file.Write(mat.data,mat.cols*mat.rows*sizeof(float));
+			file.Close();
+
+		}
+		if(type == 3)
+		{
+			vector<float> fdata;
+			fdata.reserve(mat.cols*mat.rows);
+			for (int j = 0; j < mat.rows;j++)
+			{
+				for (int i = 0; i < mat.cols;i++)
+				{
+					fdata.push_back(YX_32F_MAT(mat,j,i));
+				}
+			}
+			FileStorage fw(savePath.GetBuffer(0), FileStorage::WRITE);//做输出
+			fw << "vector" << fdata;//通过输出流写文件，给定MAT标签
+			fw.release();//释放文件流对象 	Mat mat;
+
+		}
+		if(bshowTmp)
+		{
+			CWTE(TIM1,"保存到文件 耗时为%.4f\n");
+		}
+		return TRUE;
+}
+
+BOOL CWPowerCV::FileToCv(Mat&mat,CString LoadPath,int type)
+{
+	BOOL bshowTmp = TRUE;
+	CWTS(TIM1)
+		if(type == 1)
+		{
+			CvMat* cvmat;
+			cvmat = (CvMat*)cvLoad(LoadPath);
+			CvTranPointerType(IplImage(),mat,*cvmat,FALSE,CVMAT_MAT);
+		}
+		if(type == 2)
+		{
+			CFile file(LoadPath,CFile::modeCreate|CFile::modeRead);
+			file.Read(mat.data,mat.cols*mat.rows*sizeof(float));
+			file.Close();
+
+		}
+		if(type == 3)
+		{
+			vector<float> fdata;
+			fdata.reserve(mat.cols*mat.rows);
+			FileStorage fw(LoadPath.GetBuffer(0), FileStorage::READ);//做输出
+			fw [ "vector"] >> fdata;//通过输出流写文件，给定MAT标签
+			fw.release();//释放文件流对象 	Mat mat;
+			for (int j = 0; j < mat.rows;j++)
+			{
+				for (int i = 0; i < mat.cols;i++)
+				{
+					YX_32F_MAT(mat,j,i) = fdata[i*mat.rows+j];
+				}
+			}
+
+		}
+		if(bshowTmp)
+		{
+			CWTE(TIM1,"保存到文件 耗时为%.4f\n");
+		}
+		return TRUE;
+}
+BOOL CWPowerCV::GetContour(IplImage* pBinary,double dAreaThre,vector<CvRect> &boundrect)
+{
+	double dConArea;     
+	CvSeq *pContour = NULL;     
+	CvSeq *pConInner = NULL;     
+	CvMemStorage *pStorage = NULL;  
+	BOOL showTestPic = FALSE;
+	IplImage* ptest = NULL;
+	if (showTestPic)
+	{
+		ptest = cvCloneImage(pBinary);
+		cvZero(ptest);
+	}
+	// 执行条件     
+	if (pBinary)     
+	{     
+		// 查找所有轮廓     
+		pStorage = cvCreateMemStorage(0);     
+		cvFindContours(pBinary, pStorage, &pContour, sizeof(CvContour), CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);     
+		// 填充所有轮廓     
+		if (showTestPic)
+			cvDrawContours(ptest, pContour, CV_RGB(255, 255, 255), CV_RGB(255, 255, 255), 2, CV_FILLED, 8, cvPoint(0, 0));    
+		// 外轮廓循环     
+		int wai = 0;    
+		int nei = 0;    
+		for (; pContour != NULL; pContour = pContour->h_next)     
+		{     
+			wai++;    
+			// 			// 内轮廓循环     
+			// 			for (pConInner = pContour->v_next; pConInner != NULL; pConInner = pConInner->h_next)     
+			// 			{     
+			// 				nei++;    
+			// 				// 内轮廓面积     
+			// 				dConArea = fabs(cvContourArea(pConInner, CV_WHOLE_SEQ)); 
+			// 			}    
+
+			dConArea = fabs(cvContourArea(pContour, CV_WHOLE_SEQ)); 
+			if(dConArea < dAreaThre)
+				continue;
+
+			CvRect rect = cvBoundingRect(pContour,0);
+			boundrect.push_back(rect);
+			if (showTestPic)
+				cvRectangle(ptest, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(255,255, 255), 1, 8, 0);  
+		}       
+		cvReleaseMemStorage(&pStorage);     
+		pStorage = NULL;     
+	}
+	else
+	{
+		return FALSE;
+	}
+	if (showTestPic)
+	{
+		cvSaveImage("D:\\test.bmp",ptest);
+		cvReleaseImage(&ptest);
+		ptest = NULL;
+	}
+
+
+	return TRUE;
+}
+
+BOOL CWPowerCV::GetContour(IplImage* pBinary,double dAreaThre,vector<CRect> &boundrect)
+{
+	double dConArea;     
+	CvSeq *pContour = NULL;     
+	CvSeq *pConInner = NULL;     
+	CvMemStorage *pStorage = NULL;  
+	// 执行条件     
+	if (pBinary)     
+	{     
+		// 查找所有轮廓     
+		pStorage = cvCreateMemStorage(0);     
+		cvFindContours(pBinary, pStorage, &pContour, sizeof(CvContour), CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);      
+		// 外轮廓循环     
+		int wai = 0;    
+		int nei = 0;    
+		for (; pContour != NULL; pContour = pContour->h_next)     
+		{     
+			wai++;    
+			dConArea = fabs(cvContourArea(pContour, CV_WHOLE_SEQ)); 
+			if(dConArea < dAreaThre)
+				continue;
+
+			CvRect rect = cvBoundingRect(pContour,0);
+			boundrect.push_back(CRect(CPoint(rect.x,rect.y),CPoint(rect.x+rect.width,rect.y+rect.height)));
+		}       
+		cvReleaseMemStorage(&pStorage);     
+		pStorage = NULL;     
+	}
+	else
+	{
+		return FALSE;
+	}
+
+
+	return TRUE;
+}
 BOOL CWPowerCV::GetContour(IplImage* pBinary, double dAreaThre)
 {    
 	double dConArea;     
 	CvSeq *pContour = NULL;     
 	CvSeq *pConInner = NULL;     
 	CvMemStorage *pStorage = NULL;  
-	BOOL showTestPic = TRUE;
+	BOOL showTestPic = FALSE;
 	IplImage* ptest = NULL;
 	if (showTestPic)
 	{
 		ptest = cvCloneImage(pBinary);
+		cvZero(ptest);
 	}
 	// 执行条件     
 	if (pBinary)     
@@ -954,6 +1158,8 @@ BOOL CWPowerCV::GetContour(IplImage* pBinary, double dAreaThre)
 	return TRUE;
 }
 
+
+
 void CWPowerCV::FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, int width,int height,double boarddis,CString disImgPath)
 {
 	if (width == 0||height == 0)
@@ -971,11 +1177,15 @@ void CWPowerCV::FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, in
 	CvRect rect = cvRect(x,y,width,height);
 	InputImgPath.Replace("\\","/");
 	IplImage* pImg = cvLoadImage(InputImgPath,0);
+	if (NULL == pImg)
+	{
+		return;
+	}
 	IplImage* pImgNew = cvCloneImage(pImg);
 	IplImage* pImgDis = cvCloneImage(pImg);
 
-	m_ssznpic.m_matDis=Mat::zeros(pImg->width,pImg->height,CV_32FC1);
-	m_ssznpic.m_matDisSide=Mat::zeros(pImg->width,pImg->height,CV_32FC1);
+	m_ssznpic.m_matDis=Mat::zeros(pImg->height,pImg->width,CV_32F);
+	m_ssznpic.m_matDisSide=Mat::zeros(pImg->height,pImg->width,CV_32F);
 	vector<roiPointDecimal3D> t3dpt;
 	roiPointDecimal3D t3dptsingal;
 	RATIO_Plane plane3D;
@@ -985,7 +1195,7 @@ void CWPowerCV::FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, in
 		{
 			X_vector.push_back(i);
 			Y_vector.push_back(j);
-			double val1 = cvmGet( matHeight, i+m_ssznpic.m_ROIGray.x, j+m_ssznpic.m_ROIGray.y);//*ssznpic.co1+ssznpic.co0;//cvGet2D(pImg,j,i).val[0];
+			double val1 = YX_32F_CVMAT( matHeight, j+m_ssznpic.m_ROIGray.y , i+m_ssznpic.m_ROIGray.x);//*ssznpic.co1+ssznpic.co0;//cvGet2D(pImg,j,i).val[0];
 			Z_vector.push_back(val1);
 			t3dptsingal.xxx = i;
 			t3dptsingal.yyy = j;
@@ -1006,7 +1216,7 @@ void CWPowerCV::FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, in
 		TRACE("最大差值为%.4f\n",maxdiff);
 	int totaltimes = 3;
 	for(int diedaitimes = 0;diedaitimes < totaltimes;diedaitimes++){
-		CvMat*points_mat = cvCreateMat(X_vector.size(), 3, CV_32FC1);//定义用来存储需要拟合点的矩阵   
+		CvMat*points_mat = cvCreateMat(X_vector.size(), 3, CV_32F);//定义用来存储需要拟合点的矩阵   
 		for (int i=0;i < X_vector.size(); ++i)  
 		{  
 			points_mat->data.fl[i*3+0] = X_vector[i];//矩阵的值进行初始化   X的坐标值  
@@ -1024,34 +1234,34 @@ void CWPowerCV::FitPlane(CString InputImgPath,CString OutPutPath,int x,int y, in
 		double cwz = 0;
 		double co0 = sqrt(plane12[0]*plane12[0]+plane12[1]*plane12[1]+plane12[2]*plane12[2]);
 		X_vector.clear();Y_vector.clear();Z_vector.clear();
-
+		for (int j = 0; j < pImg->height;j++)
+		{
 			for (int i =0 ; i < pImg->width;i++)
 			{
-				for (int j = 0; j < pImg->height;j++)
-				{
-					cwx = i;cwy = j;cwz = cvmGet( matHeight, i+m_ssznpic.m_ROIGray.x, j+m_ssznpic.m_ROIGray.y);//*ssznpic.co1+ssznpic.co0;//cvGet2D(pImg,j,i).val[0];
-					t3dptsingal.xxx = i;t3dptsingal.yyy = j;t3dptsingal.zzz = cwz;
-					double sd = pointToPlaneDis3D(t3dptsingal, &plane3D) ;
-					double d = (plane12[0]*(float)cwx + plane12[1]*(float)cwy  + plane12[2]*(float)cwz - plane12[3]) /co0;
-					double diff = sd - d;
-					if(planeType == 1)
-						d = sd;
-					//TRACE("diff = %.5f\n",diff);
-					if (abs(d) < boarddis)
-					{
-						X_vector.push_back(i);Y_vector.push_back(j);Z_vector.push_back(cwz);
-						if(diedaitimes == totaltimes - 1){
-							cvSet2D(pImgNew,j,i,cvScalarAll(0));
-						}
-					}
-					if(diedaitimes == totaltimes - 1){
-						cvSet2D(pImgDis,j,i,cvScalarAll(abs(d)));
-						m_ssznpic.m_matDis.at<float>(i,j) = (float)d;
-					}
- 					if (abs(d) < boarddis&&(diedaitimes == totaltimes - 2))
- 						m_ssznpic.m_matDisSide.at<float>(i,j) = (float)d;
 
+				cwx = i;cwy = j;cwz = YX_32F_CVMAT( matHeight, j+m_ssznpic.m_ROIGray.y, i+m_ssznpic.m_ROIGray.x);//*ssznpic.co1+ssznpic.co0;//cvGet2D(pImg,j,i).val[0];
+				t3dptsingal.xxx = i;t3dptsingal.yyy = j;t3dptsingal.zzz = cwz;
+				double sd = pointToPlaneDis3D(t3dptsingal, &plane3D) ;
+				double d = (plane12[0]*(float)cwx + plane12[1]*(float)cwy  + plane12[2]*(float)cwz - plane12[3]) /co0;
+				double diff = sd - d;
+				if(planeType == 1)
+					d = sd;
+				//TRACE("diff = %.5f\n",diff);
+				if (abs(d) < boarddis)
+				{
+					X_vector.push_back(i);Y_vector.push_back(j);Z_vector.push_back(cwz);
+					if(diedaitimes == totaltimes - 1){
+						YX_BYTE(pImgNew,j,i) = 0;
+					}
 				}
+				if(diedaitimes == totaltimes - 1){
+					YX_BYTE(pImgDis,j,i) = abs(d);
+					YX_32F_MAT(m_ssznpic.m_matDis,j,i)  = (float)d;
+				}
+				if (abs(d) < boarddis&&(diedaitimes == totaltimes - 2))
+					YX_32F_MAT(m_ssznpic.m_matDisSide,j,i)  = (float)d;
+
+			}
 			}
 	}
 	cvThreshold(pImgNew,pImgNew,1,255,CV_THRESH_BINARY);
@@ -1083,6 +1293,7 @@ void CWPowerCV::FitPlane(CString backmaskPath)
 		{
 			buseMask = FALSE;
 		}
+		buseMask = TRUE;
 	}
 	FitPlane(buseMask?pBackMaskImg:NULL);
 	cvReleaseImage(&pBackMaskImg);
@@ -1093,6 +1304,10 @@ void CWPowerCV::FitPlane(IplImage* pBackMaskImg)
 {
 	CvMat *matHeight = m_ssznpic.m_matHeightdata;
 	BOOL buseMask = TRUE;
+	BOOL bSaveBack = TRUE;
+
+	BOOL bShowTmp = m_bShowTmp;
+
 	if(pBackMaskImg == NULL)
 		buseMask = FALSE;
 	//假如用户进入这里的时候,对相机的设置与界面设置不一致
@@ -1106,64 +1321,65 @@ void CWPowerCV::FitPlane(IplImage* pBackMaskImg)
 
 
 	//初始化距离矩阵和铜面距离矩阵
-	m_ssznpic.m_matDis=Mat::zeros(matHeight->height,matHeight->width,CV_32FC1);
-	m_ssznpic.m_matDisSide=Mat::zeros(matHeight->height,matHeight->width,CV_32FC1);
+	m_ssznpic.m_matDis=Mat::zeros(matHeight->height,matHeight->width,CV_32F);
+	m_ssznpic.m_matDisSide=Mat::zeros(matHeight->height,matHeight->width,CV_32F);
 
 	vector<roiPointDecimal3D> t3dpt;
+	t3dpt.reserve(matHeight->height*matHeight->width);
 	roiPointDecimal3D t3dptsingal;
 	RATIO_Plane plane3D;
 
-
-	int nMminWidth = matHeight->height-m_ssznpic.m_ROIGray.width; 
-	int nMminHeight = matHeight->width-m_ssznpic.m_ROIGray.height; 
-	for(int i = 0; i< nMminWidth;i++){
-		for (int j =0 ;j < nMminHeight;j++)
+	//提取点集拟合平面
+	CWTS(TIMGETPT)
+	int nMminWidth = matHeight->width-m_ssznpic.m_ROIGray.width; 
+	int nMminHeight = matHeight->height-m_ssznpic.m_ROIGray.height; 
+	for (int j =0 ;j < nMminHeight;j++)
+	{
+		for(int i = 0; i< nMminWidth;i++)
 		{
-			if(!buseMask||cvGet2D(pBackMaskImg,j,i).val[0] == 255){
-				// 				if(GetRand(-3,3)>0)
-				// 					continue;
-				double val1 = cvmGet( matHeight, i+m_ssznpic.m_ROIGray.x, j+m_ssznpic.m_ROIGray.y);//*ssznpic.co1+ssznpic.co0;//cvGet2D(pImg,j,i).val[0];
+
+			int valgray = 255;
+			if(buseMask == 1)
+				valgray = (int)YX_BYTE(pBackMaskImg,j,i);
+			if(!buseMask||valgray == 255){
 				t3dptsingal.xxx = i;
 				t3dptsingal.yyy = j;
-				t3dptsingal.zzz = val1;
-				if(val1 != -100)
+				t3dptsingal.zzz = YX_32F_CVMAT(matHeight,j,i);
+				if(t3dptsingal.zzz != -100)
 				{
 					t3dpt.push_back(t3dptsingal);
 				}
 
 			}
-
-
 		}
 	}
+	if(bShowTmp)
+	{
+		CWTE(TIMGETPT,"平面拟合_提取用来拟合平面的点耗时为%.4f\n")
+	}
+	CWTS(TIMFitP)
 	if(t3dpt.size() > 2)
 		fitPlane3D(&t3dpt[0],t3dpt.size(),&plane3D);
-
-	if(!buseMask)
+	if(bShowTmp)
 	{
-		t3dpt.clear();
+		CWTE(TIMFitP,"平面拟合_初步拟合拟合平面耗时为%.4f\n")
+	}
+	if(!buseMask)//如果不使用背景图,那么使用全部点初次拟合的平面进行二次拟合
+	{
+		CWTS(TIMTWICE)
+		//t3dpt.clear();
 		vector<double> vecSortBy;
-
-		for (int i =0 ; i < nMminWidth;i++)
+		vecSortBy.reserve(t3dpt.size());
+		for (int i = 0; i < t3dpt.size();i++)
 		{
-			for (int j = 0; j < nMminHeight;j++)
-			{
-				cwx = i;
-				cwy = j;
-				cwz = cvmGet( matHeight, i+m_ssznpic.m_ROIGray.x, j+m_ssznpic.m_ROIGray.y);//*ssznpic.co1+ssznpic.co0;//cvGet2D(pImg,j,i).val[0];
-				if(cwz == -100)
-				{
-					continue;
-				}
-				t3dptsingal.xxx = i;t3dptsingal.yyy = j;t3dptsingal.zzz = cwz;
-				double sd = pointToPlaneDis3D(t3dptsingal, &plane3D) ;
-				m_ssznpic.m_matDis.at<float>(i,j) = (float)sd;
-				t3dpt.push_back(t3dptsingal);
-				vecSortBy.push_back(abs(sd));
-			}
+			double sd = pointToPlaneDis3D(t3dpt[i], &plane3D) ;
+			vecSortBy.push_back(abs(sd));
 		}
+
 		double avgHeight = GetAvg(vecSortBy);
 		vector<roiPointDecimal3D> newt3dpt;
+
+		newt3dpt.reserve(vecSortBy.size());
 		//使用低于平均距离的点重新拟合平面
 		for (int i = 0;i < t3dpt.size();i++)
 		{
@@ -1172,33 +1388,50 @@ void CWPowerCV::FitPlane(IplImage* pBackMaskImg)
 		}
 		if(newt3dpt.size() > 3)
 			fitPlane3D(&newt3dpt[0],newt3dpt.size(),&plane3D);
+		if(bShowTmp)
+		{
+			CWTE(TIMTWICE,"平面拟合_二次拟合拟合平面耗时为%.4f\n")
+		}
 
 	}
+
+	//计算背景距离矩阵和距离矩阵
+	CWTS(TIMDIS)
 	for (int i =0 ; i < nMminWidth;i++)
 	{
 		for (int j = 0; j < nMminHeight;j++)
 		{
 			cwx = i;
 			cwy = j;
-			cwz = cvmGet( matHeight, i+m_ssznpic.m_ROIGray.x, j+m_ssznpic.m_ROIGray.y);//*ssznpic.co1+ssznpic.co0;//cvGet2D(pImg,j,i).val[0];
+			cwz = YX_32F_CVMAT( matHeight, j+m_ssznpic.m_ROIGray.y, i+m_ssznpic.m_ROIGray.x);
 			if(cwz == -100)
 			{
 				//无效数据点,在平面上用-100表示
-				m_ssznpic.m_matDis.at<float>(i,j) = (float)-100;
-				if(!buseMask||YX_BYTE(pBackMaskImg,j,i) == 255)
+				YX_32F_MAT(m_ssznpic.m_matDis,j,i)= (float)-100;			
+				int valgray = 255;
+				if(buseMask == 1)
+					valgray = (int)YX_BYTE(pBackMaskImg,j,i);
+				if((!buseMask||valgray == 255)&&bSaveBack)
 				{
-					m_ssznpic.m_matDisSide.at<float>(i,j) = (float)-100;
+					YX_32F_MAT(m_ssznpic.m_matDisSide,j,i) = (float)-100;
 				}
 				continue;
 			}
 			t3dptsingal.xxx = i;t3dptsingal.yyy = j;t3dptsingal.zzz = cwz;
 			double sd = pointToPlaneDis3D(t3dptsingal, &plane3D) ;
-			m_ssznpic.m_matDis.at<float>(i,j) = (float)sd;
-			if(!buseMask||YX_BYTE(pBackMaskImg,j,i) == 255)
+			YX_32F_MAT(m_ssznpic.m_matDis,j,i) = (float)sd;
+			int valgray = 255;
+			if(buseMask == 1)
+				valgray = (int)YX_BYTE(pBackMaskImg,j,i);
+			if((!buseMask||valgray == 255)&&bSaveBack)
 			{
-				m_ssznpic.m_matDisSide.at<float>(i,j) = (float)sd;
+				YX_32F_MAT(m_ssznpic.m_matDisSide,j,i) = (float)sd;
 			}
 		}
+	}
+	if(bShowTmp)
+	{
+		CWTE(TIMDIS,"平面拟合_计算距离矩阵耗时为%.4f\n")
 	}
 }
 
@@ -1254,8 +1487,7 @@ BOOL CWPowerCV::MatchImage(CString inputPath,CString TemplatePath,CString OutPut
 	}
 	for (i = 0 ; i < 6 ; i++)
 	{
-		LTimeCount mtime;
-		mtime.Start();
+		CWTS(mtime)
 		cvMatchTemplate(src,templ,ftmp[i],i);
 		cvNormalize(ftmp[i],ftmp[i],1,0,CV_MINMAX);
 		mtime.End();
@@ -1285,12 +1517,13 @@ BOOL CWPowerCV::test_cwcv()
 {
 	try
 	{
-		assert(test_cwcvFront());
-		assert(test_cwcvEdge());
-		assert(test_cwcvBack());
+		//assert(test_cwcvFront());
+		//assert(test_cwcvEdge());
+		//assert(test_cwcvBack());
 		//assert(test_match());
 		//assert(test_Contour());
-		assert(test_CwWarp());
+		//assert(test_cvline());
+		assert(test_matchContour());
 	}
 	catch (CMemoryException* e)
 	{
@@ -1355,12 +1588,12 @@ BOOL CWPowerCV::test_match()
 	return res;
 }
 //缺点:只能处理3个点
-BOOL CWPowerCV::CwWarp(vector<CvPoint2D32f> RealCenterPt,vector<CvPoint2D32f> StdCenterPt,CvMat* warp_mat)
+BOOL CWPowerCV::CwWarp(vector<CvPoint2D32f> &RealCenterPt,vector<CvPoint2D32f> &StdCenterPt,CvMat* warp_mat)
 {
 	cvGetAffineTransform(&RealCenterPt[0],&StdCenterPt[0],warp_mat);
 	return TRUE;
 }
-BOOL CWPowerCV::CwWarpMat(vector<CvPoint2D32f> RealCenterPt,vector<CvPoint2D32f> StdCenterPt
+BOOL CWPowerCV::CwWarpMat(vector<CvPoint2D32f> &RealCenterPt,vector<CvPoint2D32f> &StdCenterPt
 	,double *m_AffinePrjPara,double *m_AffinePrjParaInv)
 {
 	int nTotalNum = StdCenterPt.size();
@@ -1445,7 +1678,7 @@ BOOL CWPowerCV::test_CwWarp()
 	cvSaveImage("D:\\tmp\\real.bmp",prealImg);
 	cvSaveImage("D:\\tmp\\std.bmp",pstdImg);
 
- 	CvMat* warp_mat=cvCreateMat(2,3,CV_32FC1);
+ 	CvMat* warp_mat=cvCreateMat(2,3,CV_32F);
  	CwWarp(RealCenterPt,StdCenterPt,warp_mat);
 	cvWarpAffine(prealImg,pstdImg,warp_mat);
 	cvSaveImage("D:\\tmp\\stdrot.bmp",pstdImg);
@@ -1479,6 +1712,193 @@ BOOL CWPowerCV::test_CwWarp()
 	cvReleaseImage(&prealImg);
 	pstdImg = NULL;
 	prealImg = NULL;
+	return TRUE;
+}
+
+BOOL CWPowerCV::test_cvline()
+{
+	IplImage *pimg = cvCreateImage(cvSize(3000,3000),8,1);
+	cvLine(pimg,cvPoint(1969.9060,504.9450),cvPoint(2138.0223,504.9450),cvScalarAll(255),7,8,1);
+	cvSaveImage("D:\\tmp\\testline.bmp",pimg);
+	return TRUE;
+}
+
+BOOL CWPowerCV::MatchByContour(IplImage * src,IplImage* templ,IplImage* resImg)
+{
+
+	if(src == NULL|| templ == NULL|| resImg == NULL)
+		return FALSE;
+	if(resImg->depth != 32)
+	{
+		AfxMessageBox("please input a depth 32 resImg pic ");
+		return FALSE;
+	}
+	BOOL bShowTmp = TRUE;
+	BOOL buseRTree = FALSE;
+	//提取标准图轮廓矩形
+	CWTS(TIMTOTAL)
+	CWTS(TIMGETCON)
+	vector<CvRect> srcrect;
+	GetContour(src,2,srcrect);
+	vector<CvRect> templrect;
+	GetContour(templ,2,templrect);
+	if(bShowTmp)
+	{
+		CWTE(TIMGETCON,"get contour total use time is %.4f\n")
+	}
+	//提取中心
+	CWTS(TIMADD2TREE)
+	vector<CvPoint> center;
+	center.reserve(templrect.size());
+	for (int i = 0 ; i < templrect.size();i++)
+	{
+		center.push_back(CwcvRectCenter(templrect[i]));
+	}
+#if USE_RTREE == 1
+	SomeThingTree rtree;
+	if (buseRTree)
+	{
+		AddDataToTREE(rtree,srcrect);
+	}
+#endif
+
+
+	if(bShowTmp)
+	{
+		CWTE(TIMADD2TREE,"插入到RTREE耗时 %.4f\n")
+	}
+	//移动图形并匹配点
+	double totalnum = 1.0/center.size();
+	double maxval = 0;
+	for (int disj = 0 ; disj < resImg->height;disj++)
+	{
+		for (int disi = 0; disi < resImg->width;disi++)
+		{
+			double resscale = 0;
+			int ntotal = 0;
+			//得到矩形内有孔的比例,从中间向两边
+			int i = disi / 2;
+			int j = disj / 2;
+			if(disi%2 == 1)
+			{
+				i *= -1;
+			}
+			if(disj%2 == 1)
+			{
+				j *= -1;
+			}
+			i += resImg->width/2;
+			j += resImg->height/2;
+			if(buseRTree)
+			{
+#if USE_RTREE == 1
+				for (int k = 0; k < center.size();k++)
+				{
+					BOOL res = GetHitIndex(rtree,cvRect(center[k].x + i,center[k].y + j,1,1));
+					if(res)
+						ntotal++;
+				}
+#endif
+			}
+			else
+			{
+				for (int k = 0; k < center.size();k++)
+				{
+					BOOL res = FALSE;
+					int xpos = center[k].x + i;
+					int ypos = center[k].y + j;
+					if(YX_BYTE(src,ypos,xpos) > 0)
+					{
+						ntotal++;
+					}						
+				}
+			}
+			double res = ntotal*totalnum;
+			YX_32F_IPL(resImg,j,i) = ntotal*totalnum;
+			maxval = max(res,maxval);
+			if(res > 0.7)
+				return TRUE;
+		}
+	}
+
+#if USE_RTREE == 1
+	if (buseRTree)
+	{
+		ReleaseTree(rtree);
+	}
+#endif
+	
+	if(bShowTmp)
+	{
+		CWTE(TIMTOTAL,"total use time is %.4f\n")
+	}
+	return TRUE;
+}
+
+BOOL CWPowerCV::test_matchContour()
+{
+	int widthTmep = 3000;//标准图宽
+	int heightTemp = 5000;//标准图高
+	int widthFinded = 2100;//模板宽
+	int heightFinded = 4500;//模板高
+	int testCirNum  = 2100;//测试用的圆的个数
+	int testNoise  = 0;//噪声
+	int halfNoise  = 0;//测试用的圆的个数
+	CvPoint templPos = cvPoint(400,200);//测试用，标准图跟木板的位置关系
+
+	//创建标准图
+	IplImage *src = cvCreateImage(cvSize(widthTmep,heightTemp),8,1);
+	IplImage *templ = cvCreateImage(cvSize(widthFinded,heightFinded),8,1);
+	cvZero(src);
+	cvZero(templ);
+
+	//应该匹配出来的位置为
+	CvRect bestPos = cvRect(templPos.x,templPos.y,widthFinded,heightFinded);
+	CvRect candrawPos = cvRect(0,0,widthFinded,heightFinded);
+
+	//画圆函数
+	CWTS(TIMCREATEPIC)
+	for (int i = 0;i < testCirNum;i++)
+	{
+		int drawatx = random(widthTmep);
+		int drawaty = random(heightTemp);
+		int cird = random(10)+5;
+		int noise = 0;//random(testNoise)-halfNoise;
+		cvCircle(src,cvPoint(drawatx,drawaty),cird,cvScalarAll(255),-1);
+		CvPoint newpos;
+		newpos.x = drawatx - templPos.x + noise;
+		newpos.y = drawaty - templPos.y + noise;
+		if(IsPtInRect(candrawPos,newpos))
+			cvCircle(templ,newpos,cird,cvScalarAll(255),-1);
+
+	}
+	CWTE(TIMCREATEPIC,"创建两个图像耗时为%.4f\n")
+	cvSaveImage("D:\\tmp\\src.bmp",src);
+	cvSaveImage("D:\\tmp\\templ.bmp",templ);
+
+
+	//创建图像保存最终结果
+	int iwidth = src->width - templ->width + 1;
+	int iheight = src->height - templ->height + 1;
+	IplImage* ftmp = cvCreateImage(cvSize(iwidth,iheight),32,1);//浮点型数据32位
+	CWTS(mtime)
+	MatchByContour(src,templ,ftmp);
+	double minval = 0;
+	double maxval = 1;
+	CvPoint MinLoc,MaxLoc;
+
+	cvMinMaxLoc(ftmp,&minval,&maxval,&MinLoc,&MaxLoc);
+	CWTE(mtime,"match Time is %.4f\n");
+	TRACE("pic size is(%d*%d)/(%d*%d) bestmatch is (%d,%d),resmatchis(%d,%d)",widthTmep,heightTemp,widthFinded,heightFinded,
+		templPos.x,templPos.y,MaxLoc.x,MaxLoc.y);
+
+
+	cvReleaseImage(&src);
+	src = NULL;
+	cvReleaseImage(&templ);
+	templ = NULL;
+	cvReleaseImage(&ftmp);
+	ftmp = NULL;
 	return TRUE;
 }
 

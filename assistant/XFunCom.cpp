@@ -14,7 +14,7 @@ CString LogSavePath = CString("LOG\\log.txt");
 //可释放CPU,消息循环队列的等待
 void XWaitTime(float fTime)
 {
-	LTimeCount tc;
+	CWTimeCount tc;
 	tc.Start();	
 	MSG msg;
 	bool bTimeOut = false;
@@ -41,26 +41,26 @@ void XWaitTime(float fTime)
 //////////////////////////////////////////////////////////////////////////
 //							时间操作开始
 //////////////////////////////////////////////////////////////////////////
-void LTimeCount::Start() // 计时开始
+void CWTimeCount::Start() // 计时开始
 {
 	QueryPerformanceFrequency( &Frequency );
 	QueryPerformanceCounter  ( &old );
 	UseTime = 0.0;
 }
-void LTimeCount::End() // 计时结束
+void CWTimeCount::End() // 计时结束
 {
 	QueryPerformanceCounter( &Time );
 	UseTime = (double) ( Time.QuadPart - old.QuadPart) / (double)Frequency.QuadPart;
 	// 	TRACE("Use time = %20.10f(s)\n", UseTime );
 }
 
-double LTimeCount::GetUseTime() // 获得算法处理时间(单位:秒)
+double CWTimeCount::GetUseTime() // 获得算法处理时间(单位:秒)
 {		
 	return UseTime;
 }
-void LTimeCount::WaitTime(double waitTime)
+void CWTimeCount::WaitTime(double waitTime)
 {
-	LTimeCount tt;
+	CWTimeCount tt;
 	tt.Start();
 	tt.End();
 	while(tt.GetUseTime()*1000 < waitTime)
@@ -208,7 +208,7 @@ void WriteDataToFile(CString strFilePath,std::vector<CString>& vecData)
 	{	
 		CreateAllDirectories(strFilePath.Left(strFilePath.ReverseFind('\\')));
 	}
-	LTimeCount tt;
+	CWTimeCount tt;
 	tt.Start();
 	CStdioFile m_StFile;
 	int m_nRows = 0;
@@ -221,8 +221,9 @@ void WriteDataToFile(CString strFilePath,std::vector<CString>& vecData)
 	for (int i = 0; i < vecData.size();i++)
 	{
 		m_StFile.WriteString(vecData[i]);				//整行读取
-		m_StFile.WriteString("\r\n");
+		m_StFile.WriteString("\n");
 	}
+	m_StFile.WriteString("\n");
 	m_StFile.Close();
 	tt.End();
 	TRACE("StdioFile读入%d行耗时：%.3f\n",m_nRows,tt.GetUseTime());
@@ -230,30 +231,36 @@ void WriteDataToFile(CString strFilePath,std::vector<CString>& vecData)
 }
 void GetDataFromFile(CString strFilePath,std::vector<CString>& vecData)
 {
+	BOOL bShowTmp = FALSE;
 	if (!FileExist(strFilePath))
 	{
 		AfxMessageBox("当前指定资料不存在!");
 		return;
 	}
-	LTimeCount tt;
-	tt.Start();
 	CStdioFile m_StFile;
 	int m_nRows = 0;
 	m_StFile.Open(strFilePath,CFile::modeRead);
+	int lengthFile = m_StFile.GetLength();
 	if (m_StFile == NULL)
 	{
 		return;
 	}
 	CString str;
+	CWTimeCount tt;
+	tt.Start();
 	while (m_StFile.ReadString(str))					//整行读取
 	{
 		//TRACE("%s\n",str);
-		vecData.push_back(str);
+		vecData.push_back(str);	
 		m_nRows ++;
 	}
 	m_StFile.Close();
-	tt.End();
-	TRACE("StdioFile读入%d行耗时：%.3f\n",m_nRows,tt.GetUseTime());
+	if(bShowTmp)
+	{
+		tt.End();
+		TRACE("StdioFile读入%d行耗时：%.3f\n",m_nRows,tt.GetUseTime());
+	}
+
 	return;
 }
 void OpenFilePath(vector<CString> &FilePathVector,CString strInitPath)
@@ -1029,6 +1036,168 @@ void DrawImageOnMemDc(IplImage *Img,CDC *pMemDC,CBitmap *bmp,float fImageScale)
 		hOldBitmap=NULL;
 	}
 }
+
+
+//enlargeFactor表示保留计算的小数点位数,不是cvPoint的话可以考虑使用这个代替上面那个函数
+static void Curve2Points(double Rad, double centerx, double centery, bool ClockWise, float sa, float ea, vector<CFloatPt> &m_contourPt,double enlargeFactor)
+{
+
+	//判断弧线的数量
+	int tmp_case=0;
+	ClockWise = !ClockWise;
+	//角度变化范围是否在一度之内,是的话就直接输出两个点就可以了
+	BOOL bdiffAngInOne = FALSE;
+	if (((0<(ea - sa )&&(ea - sa )< 1) &&!ClockWise)||(0<(sa - ea )&&(sa - ea )< 1)&&ClockWise)
+	{
+		bdiffAngInOne = TRUE;
+	}
+
+	if(sa==360)	sa=0;
+	if(ea==360) ea=0;
+	//第一种情况从开始都结束，第二种情况从开始到360度，从0到结束
+	if (!ClockWise)
+	{
+		if (ea>sa)
+			tmp_case = 1;
+	}else
+	{	
+		if (ea<sa)
+			tmp_case = 1;
+	}
+
+	//由于opencv的画圆函数会将角度四舍五入,导致缺点
+	//所以要先保存首末两点
+
+	CFloatPt firstPt,lastPt;
+	//firstPt.x = Rad * cos(ANG2RAD(sa)) + centerx;
+	firstPt.x = centerx + TRANS2COX(Rad, 0, sa);
+	firstPt.y = centery - TRANS2COX(Rad, 0, 450 -sa);
+
+	lastPt.x = centerx + TRANS2COX(Rad, 0, ea);
+	lastPt.y = centery - TRANS2COX(Rad, 0, 450 - ea);
+	//如果是弧线,第二个点向内收缩
+	if(sa < ea)
+	{
+		if(tmp_case)
+			sa = int(sa+1.0);
+		else
+			sa = int(sa);
+		if(tmp_case)
+			ea = int(ea);
+		else
+			ea = int(ea + 1.0);
+	}
+	else
+	{
+		if(tmp_case)
+			sa = int(sa);
+		else
+			sa = int(sa+1.0);
+		if(tmp_case)
+			ea = int(ea + 1.0);
+		else
+			ea = int(ea);
+	}
+
+	//如果在角度变化在1度以内
+	if (bdiffAngInOne)
+	{
+		m_contourPt.push_back(firstPt);	
+		m_contourPt.push_back(lastPt);	
+		return;
+	}
+
+	int nRadius = Rad*enlargeFactor;
+	//初始化数组来存放转化后的数据
+	CvPoint *tmppointer = new CvPoint[361];
+	CvPoint *tmppointer1 = new CvPoint[361];
+	CFloatPt m_tmpPt;					//将圆弧转化成为直线插入adshape里面
+	CvPoint m_CentePoint;
+	m_CentePoint.x = centerx*enlargeFactor;//太小的时候会造成大误差,圆弧的精度问题
+	m_CentePoint.y = centery*enlargeFactor;
+	CvSize CriSize;
+	CriSize.width = CriSize.height = nRadius;
+	int tmp_num;
+
+	//情况一的话就把终点坐标和tmmpointer里面的坐标比，到了就说明结束、
+	//情况2的画就分两部分
+	//360 - angle is trans the coordinate System
+	m_contourPt.push_back(firstPt);
+	if (tmp_case == 1)
+	{				
+		cvEllipse2Poly(m_CentePoint,CriSize,0,360-sa,360-ea,tmppointer,1);//开始到结束一次旋转一度，算出坐标
+		//获取点个数
+		tmp_num = abs(int(sa)-int(ea));
+
+		if(ClockWise)
+		{		
+			for (int i = 0;i<tmp_num;i++)
+			{
+				m_tmpPt.x = tmppointer[i].x/enlargeFactor;//放大100000倍，缩小回来
+				m_tmpPt.y = tmppointer[i].y/enlargeFactor;
+				m_contourPt.push_back(m_tmpPt);
+
+			}
+
+		}
+		else
+		{
+			for (int i=tmp_num - 1;i >= 0;i--)
+			{
+				m_tmpPt.x = tmppointer[i].x/enlargeFactor;//放大100000倍，缩小回来
+				m_tmpPt.y = tmppointer[i].y/enlargeFactor;
+				m_contourPt.push_back(m_tmpPt);
+			}
+		}
+	}
+	else if(tmp_case == 0)
+	{								
+		cvEllipse2Poly(m_CentePoint,CriSize,0,0,360-(ea>sa?ea:sa),tmppointer,1);//开始到结束一次旋转一度，算出坐标
+		cvEllipse2Poly(m_CentePoint,CriSize,0,360-(ea<sa?ea:sa),360,tmppointer1,1);//开始到结束一次旋转一度，算出坐标
+
+		if(ClockWise)
+		{
+			tmp_num = ea<sa?ea:sa;
+			for (int i=0;i<tmp_num;i++)
+			{
+				m_tmpPt.x = tmppointer1[i].x/enlargeFactor;
+				m_tmpPt.y = tmppointer1[i].y/enlargeFactor;
+				m_contourPt.push_back(m_tmpPt);	
+			}
+			tmp_num = 360 - (ea>sa?ea:sa);
+			for (int i=0;i<tmp_num;i++)
+			{
+				m_tmpPt.x = tmppointer[i].x/enlargeFactor;
+				m_tmpPt.y = tmppointer[i].y/enlargeFactor;
+				m_contourPt.push_back(m_tmpPt);	
+			}	
+		}
+		else
+		{
+			tmp_num = 360-(ea>sa?ea:sa);
+			for (int i=tmp_num;i>=0;i--)
+			{
+				m_tmpPt.x = tmppointer[i].x/enlargeFactor;
+				m_tmpPt.y = tmppointer[i].y/enlargeFactor;
+				m_contourPt.push_back(m_tmpPt);	
+			}
+			tmp_num = ea<sa?ea:sa;
+			for (int i=tmp_num;i>=0;i--)
+			{
+				m_tmpPt.x = tmppointer1[i].x/enlargeFactor;
+				m_tmpPt.y = tmppointer1[i].y/enlargeFactor;
+				m_contourPt.push_back(m_tmpPt);	
+			}
+		}
+
+	}	
+	m_contourPt.push_back(lastPt);	
+	delete []tmppointer;
+	tmppointer = NULL;
+	delete []tmppointer1;
+	tmppointer1 = NULL;
+}
+
 #endif
 /************************************************************************/
 /*								图像操作结束                             */
@@ -1085,10 +1254,10 @@ void SetLogPath(CString savePath)
 }
 int GetRand(int min,int max)
 {
-	int m_nMax;
+	double m_nMax;
 	m_nMax=RAND_MAX;
 	srand((unsigned)time(0));
-	return (int)(rand()*(max-min)/m_nMax+min);
+	return (int)((double)rand()*(double)(max-min)/m_nMax+(double)min);
 }
 void WaitProcess(LPTSTR FileName,LPTSTR Param,BOOL waitExit)
 {
@@ -1180,80 +1349,6 @@ vector<CString> GetresByStlRx(CString word,CString rule)
 	return result;
 }
 #endif
-void WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue)
-{
-
-	if(isWaitForTrue){
-		while(!waitObject)
-		{
-			Sleep(10);
-			MSG msg;
-			if(PeekMessage(&msg,NULL,0,0,PM_REMOVE))  
-			{  
-				DispatchMessage(&msg);  
-				TranslateMessage(&msg);  
-			} 
-		}
-	}
-	else
-	{
-		while(waitObject)
-		{
-			Sleep(10);
-			MSG msg;
-			if(PeekMessage(&msg,NULL,0,0,PM_REMOVE))  
-			{  
-				DispatchMessage(&msg);  
-				TranslateMessage(&msg);  
-			} 
-
-		}
-	}
-
-}
-
-BOOL WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue,double waitTimes)
-{
-	LTimeCount tc;
-	tc.Start();	
-	MSG msg;
-	if(isWaitForTrue){
-		while(!waitObject)
-		{
-			Sleep(1);
-			if(PeekMessage(&msg,NULL,0,0,PM_REMOVE))  
-			{  
-				DispatchMessage(&msg);  
-				TranslateMessage(&msg);  
-			} 
-			if (tc.GetUseTime()>waitTimes)
-			{
-				//return ERROR_TIME_OUT;
-				return FALSE;
-			}
-		}
-	}
-	else
-	{
-		while(waitObject)
-		{
-			Sleep(1);
-			MSG msg;
-			if(PeekMessage(&msg,NULL,0,0,PM_REMOVE))  
-			{  
-				DispatchMessage(&msg);  
-				TranslateMessage(&msg);  
-			} 
-			if (tc.GetUseTime()>waitTimes)
-			{
-				//return ERROR_TIME_OUT;
-				return FALSE;
-			}
-
-		}
-	}
-	return TRUE;
-}
 bool CheckInRect(CPoint point,CRect rect)
 {
 	if(point.x > rect.left && point.x < rect.right
@@ -1764,82 +1859,81 @@ double pointToPlaneDis3D(roiPointDecimal3D calPt, const RATIO_Plane *plane3D)
 	return (calPt.zzz - calPt.xxx * plane3D->r0 - calPt.yyy * plane3D->r1 - plane3D->r2) / plane3D->distB;
 }
 
-BOOL fileMapping(CString inputFile)
+BOOL fileMappingW(CString mapname,IplImage *pimg)
 {
-	HANDLE hdl = CreateFile(inputFile, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,  
-		NULL,OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN ,NULL);  
+	__int64 qwFileOffset = 0;
+	HANDLE hFileMapping = NULL;
+	PBYTE pbFile = NULL;
+	//filename.Format("Datamap%02d",i);
+	int bufsize = pimg->height*pimg->widthStep * sizeof(BYTE);
+	hFileMapping = CreateFileMapping(INVALID_HANDLE_VALUE, 
+		NULL,
+		PAGE_READWRITE,
+		0,bufsize,mapname);
 
-	if(INVALID_HANDLE_VALUE == hdl)  
-	{  
-		AfxMessageBox("CreateFile失败");  
-		return FALSE;  
-	}  
+	pbFile = (PBYTE)MapViewOfFile(hFileMapping,
+		FILE_MAP_WRITE,
+		(DWORD)(qwFileOffset>>32),
+		(DWORD)(qwFileOffset&0xFFFFFFFF),(DWORD)bufsize);
+	memcpy(pbFile,pimg->imageData,bufsize);
+	return TRUE;
+}
+BOOL fileMappingR(CString mapname,IplImage *pimg)
+{
+	HANDLE m_hReceiveMap2= OpenFileMapping(FILE_MAP_READ, FALSE, mapname);
 
-	DWORD dwLen = GetFileSize(hdl, NULL);//我设置了文件长度为128KB，即 dwLen = 128 * 1024  
-
-	HANDLE hMap = CreateFileMapping(hdl, NULL, PAGE_READWRITE, 0,0,NULL);  
-	if(!hMap)  
-	{  
-		CloseHandle(hdl);  
-		AfxMessageBox("创建映射对象失败");  
-		return FALSE;  
-	}  
-
-	UCHAR *pMap = (UCHAR *)MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0,dwLen/2,dwLen);//offset == 64KB  
-
-
-	if(!pMap)  
-	{  
-		AfxMessageBox("无法将文件与内存关联");  
-		CloseHandle(hMap);  
-		CloseHandle(hdl);  
-		return FALSE;  
-	}  
-
-	for(int k = 0; k < (dwLen)/4; k++)  
-	{  
-		UCHAR ucTmp = pMap[k];  
-		pMap[k] = pMap[(dwLen)/2 - 1 - k];  
-		pMap[(dwLen)/2 - 1 - k] = ucTmp;  
-	}  
-
-	UnmapViewOfFile(pMap);  
-	CloseHandle(hMap);  
-	CloseHandle(hdl);  
+	if (m_hReceiveMap2 == NULL)
+		return FALSE;//FALSE
+	PBYTE m_lpbReceiveBuf2 = (LPBYTE)MapViewOfFile(m_hReceiveMap2,FILE_MAP_READ,0,0,0);
+	if (m_lpbReceiveBuf2 == NULL)
+	{
+		CloseHandle(m_hReceiveMap2);
+		m_hReceiveMap2 = NULL;
+	}
+	memcpy(pimg->imageData,(BYTE*)m_lpbReceiveBuf2,sizeof(BYTE)*pimg->width*pimg->height);
+	if (m_lpbReceiveBuf2 != NULL)
+	{
+		UnmapViewOfFile(m_lpbReceiveBuf2);
+		m_lpbReceiveBuf2 = NULL;
+	}
+	if (m_hReceiveMap2 != NULL)
+	{
+		CloseHandle(m_hReceiveMap2);
+		m_hReceiveMap2=NULL;
+	}
 	return TRUE;
 }
 
-BOOL test_XFunCom()
+
+void CwTransform(double x0,double y0,double &x1,double &y1,double parms[9],int method)
 {
-	//assert(test_fileMapping());
-	assert(test_mergeSort());
-	return TRUE;
+	double dx = x0;
+	double dy = y0;
+	double denominator = 1;
+	switch(method)
+	{
+	case -1:
+	case 0:
+		x1 =   parms[0] * dx + parms[1] * dy + parms[2];
+		y1 = - parms[1] * dx + parms[0] * dy + parms[3];
+		break;
+	case 1:
+		x1 = parms[0] * dx + parms[1] * dy + parms[2];
+		y1 = parms[3] * dx + parms[4] * dy + parms[5];		
+		break;
+	case 2:
+	case 3:
+		denominator = parms[6] * dx + parms[7] * dy + parms[8];
+		x1 = (parms[0] * dx + parms[1] * dy + parms[2]) / denominator;
+		y1 = (parms[3] * dx + parms[4] * dy + parms[5]) / denominator;
+		break;
+	default:
+		break;
+	}
 }
 
-BOOL test_fileMapping()
-{
-	assert(fileMapping("D:\\test.bmp"));
-	return TRUE;
-}
 
-BOOL test_mergeSort()
-{
-	vector<double> sortdata;
-	sortdata.push_back(0.08);
-	sortdata.push_back(0.34);
-	sortdata.push_back(0.52);
-	sortdata.push_back(0.13);
-	sortdata.push_back(0.68);
-	sortdata.push_back(0.78);
-	vector<double> res = cwsortMerge(sortdata,sortdata);
-	assert(res[0] < res[res.size() - 1]);
-	sortdata.push_back(0.88);
-	vector<double> res1 = cwsortMerge(sortdata,sortdata);
-	assert(res1[0] < res1[res1.size() - 1]);
-	return TRUE;
-}
-
-vector<mergedata> mergetwo(vector<mergedata> L1,vector<mergedata> L2)
+vector<mergedata> mergetwo(vector<mergedata> &L1,vector<mergedata> &L2)
 {
 	int cwi = 0; 
 	int cwj = 0;
@@ -1892,164 +1986,290 @@ double GetAvg(vector<double> &srcdata)
 	return sum / (double)srcdata.size();
 }
 
-//enlargeFactor表示保留计算的小数点位数,不是cvPoint的话可以考虑使用这个代替上面那个函数
-static void Curve2Points(double Rad, double centerx, double centery, bool ClockWise, float sa, float ea, vector<CFloatPt> &m_contourPt,double enlargeFactor)
+
+#if USE_RTREE == 1
+void AddDataToTREE(SomeThingTree &rtree,vector<CvRect> &rect)
 {
-
-	//判断弧线的数量
-	int tmp_case=0;
-	ClockWise = !ClockWise;
-	//角度变化范围是否在一度之内,是的话就直接输出两个点就可以了
-	BOOL bdiffAngInOne = FALSE;
-	if (((0<(ea - sa )&&(ea - sa )< 1) &&!ClockWise)||(0<(sa - ea )&&(sa - ea )< 1)&&ClockWise)
+	int rectsmin[2] = {0,0};
+	int rectsmax[2] = {0,0};
+	for(int i=0; i<rect.size(); i++)
 	{
-		bdiffAngInOne = TRUE;
+		rectsmin[0] = rect[i].x;
+		rectsmin[1] = rect[i].y;
+		rectsmax[0] = rect[i].x + rect[i].width;
+		rectsmax[1] = rect[i].y + rect[i].height;
+		rtree.Insert(rectsmin, rectsmax, i); // Note, all values including zero are fine in this version
 	}
+}
+vector<int> hitIndex;
+bool MySearchCallback(int id, void* arg) 
+{
+	return false; // keep going
+}
+BOOL GetHitIndex(SomeThingTree &rtree,CvRect &rect)
+{
+	int rectsmin[2] = {0,0};
+	int rectsmax[2] = {0,0};
+	rectsmin[0] = rect.x;
+	rectsmin[1] = rect.y;
+	rectsmax[0] = rect.x + rect.width;
+	rectsmax[1] = rect.y + rect.height;
+	int nhits = rtree.Search(rectsmin, rectsmax, MySearchCallback, NULL);
+	return nhits > 0;
+}
 
-	if(sa==360)	sa=0;
-	if(ea==360) ea=0;
-	//第一种情况从开始都结束，第二种情况从开始到360度，从0到结束
-	if (!ClockWise)
+void ReleaseTree(SomeThingTree &rtree)
+{
+	rtree.RemoveAll();
+}
+#endif
+
+
+/************************************************************************/
+/*                        低端操作开始                                  */
+/************************************************************************/
+
+
+CvPoint CwcvRectCenter(CvRect &rect)
+{
+	return cvPoint(rect.x + rect.width / 2,rect.y  + rect.height / 2);
+}
+
+CvPoint CwcvRectLP(CvRect &rect)
+{
+	return cvPoint(rect.x,rect.y);
+}
+
+CvPoint CwcvRectRB(CvRect &rect)
+{
+	return cvPoint(rect.x + rect.width,rect.y + rect.height);
+}
+BOOL IsPtInRect(CvRect &rect , CvPoint &pt)
+{
+	if (pt.x<rect.x || pt.x>(rect.x + rect.width)||pt.y<rect.y||pt.y>(rect.y + rect.height))
 	{
-		if (ea>sa)
-			tmp_case = 1;
-	}else
-	{	
-		if (ea<sa)
-			tmp_case = 1;
-	}
-
-	//由于opencv的画圆函数会将角度四舍五入,导致缺点
-	//所以要先保存首末两点
-
-	CFloatPt firstPt,lastPt;
-	//firstPt.x = Rad * cos(ANG2RAD(sa)) + centerx;
-	firstPt.x = centerx + TRANS2COX(Rad, 0, sa);
-	firstPt.y = centery - TRANS2COX(Rad, 0, 450 -sa);
-
-	lastPt.x = centerx + TRANS2COX(Rad, 0, ea);
-	lastPt.y = centery - TRANS2COX(Rad, 0, 450 - ea);
-	//如果是弧线,第二个点向内收缩
-	if(sa < ea)
-	{
-		if(tmp_case)
-			sa = int(sa+1.0);
-		else
-			sa = int(sa);
-		if(tmp_case)
-			ea = int(ea);
-		else
-			ea = int(ea + 1.0);
+		return false;
 	}
 	else
 	{
-		if(tmp_case)
-			sa = int(sa);
-		else
-			sa = int(sa+1.0);
-		if(tmp_case)
-			ea = int(ea + 1.0);
-		else
-			ea = int(ea);
+		return true;
 	}
+}
+/************************************************************************/
+/*                        低端操作结束                                  */
+/************************************************************************/
+/*                        通信操作结束                                  */
+/************************************************************************/
 
-	//如果在角度变化在1度以内
-	if (bdiffAngInOne)
+void SendAMessage2Soft(CString windowName,int nmessageType,WPARAM wParam, LPARAM lParam)
+{
+	//ON_MESSAGE(nmessageType,Ondealfun)	//接收消息响应
+	CString str;
+	str.Format(windowName);
+	HWND hRecv;
+	hRecv = ::FindWindow(NULL,str);
+	if (hRecv != NULL)
 	{
-		m_contourPt.push_back(firstPt);	
-		m_contourPt.push_back(lastPt);	
-		return;
+		::PostMessage(hRecv, nmessageType, wParam, lParam);
 	}
+}
 
-	int nRadius = Rad*enlargeFactor;
-	//初始化数组来存放转化后的数据
-	CvPoint *tmppointer = new CvPoint[361];
-	CvPoint *tmppointer1 = new CvPoint[361];
-	CFloatPt m_tmpPt;					//将圆弧转化成为直线插入adshape里面
-	CvPoint m_CentePoint;
-	m_CentePoint.x = centerx*enlargeFactor;//太小的时候会造成大误差,圆弧的精度问题
-	m_CentePoint.y = centery*enlargeFactor;
-	CvSize CriSize;
-	CriSize.width = CriSize.height = nRadius;
-	int tmp_num;
-
-	//情况一的话就把终点坐标和tmmpointer里面的坐标比，到了就说明结束、
-	//情况2的画就分两部分
-	//360 - angle is trans the coordinate System
-	m_contourPt.push_back(firstPt);
-	if (tmp_case == 1)
-	{				
-		cvEllipse2Poly(m_CentePoint,CriSize,0,360-sa,360-ea,tmppointer,1);//开始到结束一次旋转一度，算出坐标
-		//获取点个数
-		tmp_num = abs(int(sa)-int(ea));
-
-		if(ClockWise)
-		{		
-			for (int i = 0;i<tmp_num;i++)
-			{
-				m_tmpPt.x = tmppointer[i].x/enlargeFactor;//放大100000倍，缩小回来
-				m_tmpPt.y = tmppointer[i].y/enlargeFactor;
-				m_contourPt.push_back(m_tmpPt);
-
-			}
-
-		}
-		else
+void cwcommunity::waitAddOne(int nLine)
+{
+	BOOL hadPush = FALSE;
+	int hadindex = -1;
+	for (int i = 0; i < vecLine.size();i++)
+	{
+		if(nLine == vecLine[i])
 		{
-			for (int i=tmp_num - 1;i >= 0;i--)
-			{
-				m_tmpPt.x = tmppointer[i].x/enlargeFactor;//放大100000倍，缩小回来
-				m_tmpPt.y = tmppointer[i].y/enlargeFactor;
-				m_contourPt.push_back(m_tmpPt);
-			}
+			hadPush = TRUE;
+			hadindex = i;
+			break;
 		}
 	}
-	else if(tmp_case == 0)
-	{								
-		cvEllipse2Poly(m_CentePoint,CriSize,0,0,360-(ea>sa?ea:sa),tmppointer,1);//开始到结束一次旋转一度，算出坐标
-		cvEllipse2Poly(m_CentePoint,CriSize,0,360-(ea<sa?ea:sa),360,tmppointer1,1);//开始到结束一次旋转一度，算出坐标
-
-		if(ClockWise)
+	if(hadPush)
+	{
+		vecTimes[hadindex]++;
+	}
+	else
+	{
+		vecLine.push_back(nLine);
+		vecTimes.push_back(1);
+	}
+	TRACE("开始在第%d行等\n",nLine);
+}
+void cwcommunity::waitdiffOne(int nLine)
+{
+	BOOL hadPush = FALSE;
+	int hadindex = -1;
+	for (int i = 0; i < vecLine.size();i++)
+	{
+		if(nLine == vecLine[i])
 		{
-			tmp_num = ea<sa?ea:sa;
-			for (int i=0;i<tmp_num;i++)
-			{
-				m_tmpPt.x = tmppointer1[i].x/enlargeFactor;
-				m_tmpPt.y = tmppointer1[i].y/enlargeFactor;
-				m_contourPt.push_back(m_tmpPt);	
-			}
-			tmp_num = 360 - (ea>sa?ea:sa);
-			for (int i=0;i<tmp_num;i++)
-			{
-				m_tmpPt.x = tmppointer[i].x/enlargeFactor;
-				m_tmpPt.y = tmppointer[i].y/enlargeFactor;
-				m_contourPt.push_back(m_tmpPt);	
-			}	
+			hadPush = TRUE;
+			hadindex = i;
+			break;
 		}
-		else
-		{
-			tmp_num = 360-(ea>sa?ea:sa);
-			for (int i=tmp_num;i>=0;i--)
-			{
-				m_tmpPt.x = tmppointer[i].x/enlargeFactor;
-				m_tmpPt.y = tmppointer[i].y/enlargeFactor;
-				m_contourPt.push_back(m_tmpPt);	
-			}
-			tmp_num = ea<sa?ea:sa;
-			for (int i=tmp_num;i>=0;i--)
-			{
-				m_tmpPt.x = tmppointer1[i].x/enlargeFactor;
-				m_tmpPt.y = tmppointer1[i].y/enlargeFactor;
-				m_contourPt.push_back(m_tmpPt);	
-			}
-		}
+	}
+	if(hadPush)
+	{
+		vecTimes[hadindex]--;
+	}
+	else
+	{
+		vecLine.push_back(nLine);
+	}
+	TRACE("第%d行waitfor退出等待\n",nLine);
+}
 
-	}	
-	m_contourPt.push_back(lastPt);	
-	delete []tmppointer;
-	tmppointer = NULL;
-	delete []tmppointer1;
-	tmppointer1 = NULL;
+void cwcommunity::waitForSelf(HANDLE hwaitevent,int waittime,int nPos)
+{
+	waitAddOne(nPos);
+	WaitForSingleObject(hwaitevent,waittime);
+	waitdiffOne(nPos);
+}
+void cwcommunity::LetEventGo(HANDLE hwaitevent)
+{
+	ResetEvent(hwaitevent);
+}
+
+BOOL cwcommunity::WaitForIT(volatile BOOL &waitObject , BOOL isWaitForTrue,int npos,double waitTimes)
+{
+	waitAddOne(npos);
+	BOOL res = WaitForBOOL(waitObject ,isWaitForTrue,waitTimes);
+	waitdiffOne(npos);
+	return res;
+}
+
+void WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue)
+{
+
+	if(isWaitForTrue){
+		while(!waitObject)
+		{
+			Sleep(10);
+			MSG msg;
+			if(PeekMessage(&msg,NULL,0,0,PM_REMOVE))  
+			{  
+				DispatchMessage(&msg);  
+				TranslateMessage(&msg);  
+			} 
+		}
+	}
+	else
+	{
+		while(waitObject)
+		{
+			Sleep(10);
+			MSG msg;
+			if(PeekMessage(&msg,NULL,0,0,PM_REMOVE))  
+			{  
+				DispatchMessage(&msg);  
+				TranslateMessage(&msg);  
+			} 
+
+		}
+	}
+
+}
+
+BOOL WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue,double waitTimes)
+{
+	CWTimeCount tc;
+	tc.Start();	
+	MSG msg;
+	if(isWaitForTrue){
+		while(!waitObject)
+		{
+			Sleep(1);
+			if(PeekMessage(&msg,NULL,0,0,PM_REMOVE))  
+			{  
+				DispatchMessage(&msg);  
+				TranslateMessage(&msg);  
+			} 
+			if (tc.GetUseTime()>waitTimes)
+			{
+				//return ERROR_TIME_OUT;
+				return FALSE;
+			}
+		}
+	}
+	else
+	{
+		while(waitObject)
+		{
+			Sleep(1);
+			MSG msg;
+			if(PeekMessage(&msg,NULL,0,0,PM_REMOVE))  
+			{  
+				DispatchMessage(&msg);  
+				TranslateMessage(&msg);  
+			} 
+			if (tc.GetUseTime()>waitTimes)
+			{
+				//return ERROR_TIME_OUT;
+				return FALSE;
+			}
+
+		}
+	}
+	return TRUE;
+}
+/************************************************************************/
+
+
+/************************************************************************/
+/*                        函数测试开始                                  */
+/************************************************************************/
+
+BOOL test_XFunCom()
+{
+	//assert(test_fileMapping());
+	//assert(test_mergeSort());
+	//assert(test_LoadFile());
+	//assert(test_Transform());
+	//assert(test_SortMatrixDis());
+	//assert(test_CvTranPointerType());
+	//assert(test_TimOfPICREAD());
+	assert(test_rtree());
+	return TRUE;
+}
+
+BOOL test_fileMapping()
+{
+	vector<CString> data;
+	CString pathfile = GetDirPathByDialog("",NULL,1);
+	IplImage* img = cvLoadImage(pathfile,0);
+	BOOL createmap = TRUE;
+	if(createmap == FALSE)
+	{
+		cvZero(img);
+		fileMappingR("PICTEST",img);
+		cvSaveImage("D:\\test.bmp",img);
+	}
+	else
+	{
+		fileMappingW("Datamap01",img);
+	}
+	
+	return TRUE;
+}
+
+BOOL test_mergeSort()
+{
+	vector<double> sortdata;
+	sortdata.push_back(0.08);
+	sortdata.push_back(0.34);
+	sortdata.push_back(0.52);
+	sortdata.push_back(0.13);
+	sortdata.push_back(0.68);
+	sortdata.push_back(0.78);
+	vector<double> res = cwsortMerge(sortdata,sortdata);
+	assert(res[0] < res[res.size() - 1]);
+	sortdata.push_back(0.88);
+	vector<double> res1 = cwsortMerge(sortdata,sortdata);
+	assert(res1[0] < res1[res1.size() - 1]);
+	return TRUE;
 }
 
 BOOL test_Curve2Points()
@@ -2085,3 +2305,305 @@ BOOL test_Curve2Points()
 	return TRUE;
 }
 
+BOOL test_LoadFile()
+{
+
+	vector<CString> data;
+	CString pathfile = GetDirPathByDialog("",NULL,1);
+	CWTS(TIM1)
+	data.reserve(10000);
+	GetDataFromFile(pathfile,data);
+	CWTE(TIM1,"测试加载文件耗时为%.4f\n")
+	return TRUE;
+}
+
+BOOL test_Transform()
+{
+	double para[9] = {1,0,-50,0,1,-100,0,0,1};
+	double resx = 0.0 ,resy = 0.0;
+	CwTransform(100,100,resx,resy,para,1);
+	assert(resx == 50);
+	assert(resy == 0);
+	return TRUE;
+}
+
+vector<CPoint> SortMatrixDis(int rows,int cols,int findrow,int findcol)
+{
+	BOOL bshowTmp = FALSE;
+	CWTS(TIM1)
+	vector<double> vecdis;
+	vector<CPoint> resPoss;
+	for (int i = 0; i < rows;i++)
+	{
+		for (int j = 0; j < cols;j++)
+		{
+			double dx = abs(i - findrow);
+			double dy = abs(j - findcol);
+			double dis = sqrt(dx*dx + dy*dy);
+			resPoss.push_back(CPoint(i,j));
+			vecdis.push_back(dis);
+		}
+	}
+	resPoss = cwsortMerge(vecdis,resPoss);
+	//cwsort(vecdis,resPoss,0,vecdis.size());
+	if(bshowTmp)
+	{
+		CWTE(TIM1,"查找离指定位置最近的点耗时为%.4f\n");
+	}
+	return resPoss;
+}
+
+BOOL test_SortMatrixDis()
+{
+	vector<CPoint> pts = SortMatrixDis(100,100,50,50);
+	assert(pts[0] == CPoint(50,50));
+	return TRUE;
+}
+
+BOOL test_TimOfPICREAD()
+{
+	try{
+ 		CWTS(TIM1)
+		IplImage *pimgHe = cvLoadImage("D:\\12.bmp",-1);
+		if(pimgHe == NULL)
+		{
+			return TRUE;
+		}
+		double dsum = 0;
+		for (int i = 0; i < pimgHe->width;i++)
+		{
+			for (int j = 0; j < pimgHe->height;j++)
+			{
+				dsum += YX_32F_IPL(pimgHe,j,i);
+			}
+		}		
+ 		IplImage *pimg = cvLoadImage("D:\\1.bmp",0);
+ 		for (int i = 0; i < pimg->width;i++)
+ 		{
+ 			for (int j = 0; j < pimg->height;j++)
+ 			{
+ 				dsum += int(YX_BYTE(pimg,j,i));
+ 			}
+ 		}
+ 		double avg = dsum/pimg->width/pimg->height;TRACE("平均值为%.4f",avg);
+ 		CWTE(TIM1,"第一种iplimg耗时为%.4f\n")
+		
+		CvMat *pmat = cvCreateMat(pimg->height,pimg->width,CV_32F);
+		cv::Mat mat = cv::Mat(pimg->height,pimg->width ,CV_32F);
+		cv::Mat mat1 = cv::Mat::zeros(pimg->height,pimg->width ,CV_32F);
+		IplImage *pFimg = cvCreateImage(cvSize(pimg->width,pimg->height),IPL_DEPTH_32F,1);
+		CWTS(TIM2)
+		for (int j = 0; j < pimg->height;j++)
+		{
+			for (int i = 0; i < pimg->width;i++)
+			{
+				YX_32F_IPL(pFimg,j,i) = int(YX_BYTE(pimg,j,i))+0.1;
+			}
+		}
+		CWTE(TIM2,"iplimage赋值耗时%.4f\n")
+		cvSaveImage("D:\\2.bmp",pimg);
+		
+
+
+		CWTS(TIM3)
+		for (int j = 0; j < pimg->height;j++)
+		{
+			for (int i = 0; i < pimg->width;i++)
+			{
+				YX_32F_MAT(mat,j,i) = int(YX_BYTE(pimg,j,i))+0.1;
+			}
+		}	
+		CWTE(TIM3,"mat赋值耗时%.4f\n")
+		imwrite("D:\\3.bmp",mat);
+		IplImage img_ipl;
+		CvTranPointerType(img_ipl,mat,CvMat(),FALSE,MAT_IPL);
+		cvSaveImage("D:\\4.bmp",&img_ipl);
+		
+		CWTS(TIM4)
+		for (int j = 0; j < pimg->height;j++)
+		{
+			for (int i = 0; i < pimg->width;i++)
+			{
+				//cvmSet(pmat,j,i,int(YX_BYTE(pimg,j,i))+0.1);
+				YX_32F_CVMAT(pmat,j,i) = int(YX_BYTE(pimg,j,i))+0.1;
+			}
+		}
+		CWTE(TIM4,"cvmat赋值耗时%.4f\n")
+		CvTranPointerType(img_ipl,cv::Mat(),*pmat,FALSE,CVMAT_IPL);
+		cvSaveImage("D:\\5.bmp",&img_ipl);	
+		
+		
+		CWTS(TIM5)
+		dsum = 0;
+		for (int i = 0; i < pimg->width;i++)
+		{
+			for (int j = 0; j < pimg->height;j++)
+			{
+				dsum += YX_32F_IPL(pFimg,j,i);
+			}
+		}
+		avg = dsum/pimg->width/pimg->height;
+		TRACE("平均值为%.4f",avg);
+		CWTE(TIM5,"iplimage取值耗时%.4f\n")
+
+		CWTS(TIM5_2)
+		dsum = 0;
+		for (int j = 0; j < pimg->height;j++)
+		{
+			for (int i = 0; i < pimg->width;i++)
+			{
+				dsum += YX_32F_IPL(pFimg,j,i);
+			}
+		}
+		avg = dsum/pimg->width/pimg->height;
+		TRACE("平均值为%.4f",avg);
+		CWTE(TIM5_2,"iplimage取值2耗时%.4f\n")
+
+		CWTS(TIM6)
+		dsum = 0;
+		for (int i = 0; i < pimg->width;i++)
+		{
+			for (int j = 0; j < pimg->height;j++)
+			{
+				dsum += YX_32F_MAT(mat,j,i);//mat.at<float>(i,j);
+			}
+		}	
+		avg = dsum/pimg->width/pimg->height;
+		TRACE("平均值为%.4f",avg);
+		CWTE(TIM6,"mat取值耗时%.4f\n")
+
+		CWTS(TIM6_2)
+		dsum = 0;
+		
+		for (int j = 0; j < mat.rows;j++)
+		{
+			for (int i = 0; i < mat.cols;i++)
+			{
+				dsum += YX_32F_MAT(mat,j,i);//mat.at<float>(i,j);
+			}
+		}	
+		avg = dsum/pimg->width/pimg->height;
+		TRACE("平均值为%.4f",avg);
+		CWTE(TIM6_2,"mat取值2耗时%.4f\n")
+
+		CWTS(TIM7)
+		dsum = 0;
+		for (int i = 0; i < pimg->width;i++)
+		{
+			for (int j = 0; j < pimg->height;j++)
+			{
+				dsum += YX_32F_CVMAT(pmat,j,i);
+			}
+		}	
+		avg = dsum/pimg->width/pimg->height;
+		TRACE("平均值为%.4f",avg);
+		CWTE(TIM7,"cvmat取值耗时%.4f\n")
+
+		CWTS(TIM7_2)
+		dsum = 0;
+		vector<roiPointDecimal3D> t3dpt;
+		roiPointDecimal3D t3dptsingal;
+		//t3dpt.reserve(pmat->height*pmat->width);
+		for (int j = 0; j < pimg->height;j++)
+		{
+			for (int i = 0; i < pimg->width;i++)
+			{
+				//dsum += YX_32F_CVMAT(pmat,j,i);
+				t3dptsingal.xxx = i;
+				t3dptsingal.yyy = j;
+				t3dptsingal.zzz = YX_32F_CVMAT(pmat,j,i);
+				if(t3dptsingal.zzz != -100)
+				{
+					t3dpt.push_back(t3dptsingal);
+				}
+			}
+		}	
+		avg = dsum/pimg->width/pimg->height;
+		TRACE("平均值为%.4f",avg);
+		CWTE(TIM7_2,"cvmat取值2耗时%.4f\n")
+
+		cvReleaseImage(&pimg);
+		cvReleaseImage(&pFimg);
+		cvReleaseMat(&pmat);
+
+	}
+	catch (cv::Exception e)
+	{
+		AfxMessageBox(e.err.c_str());
+	}
+	return TRUE;
+}
+
+
+BOOL CvTranPointerType(IplImage &src_ipl , cv::Mat &src_mat , CvMat &src_cvmat,BOOL bcopy,int type)
+{
+	if(type == IPL_MAT)
+	{
+		src_mat = cv::Mat(&src_ipl,bcopy);
+	}
+	if(type == MAT_IPL)
+	{
+		src_ipl = src_mat;
+	}
+	else if(type == IPL_CVMAT)
+	{
+		CvMat* mat = cvGetMat(&src_ipl,&src_cvmat);
+		src_cvmat = *mat;
+
+	}
+	else if(type == CVMAT_MAT)
+	{
+		src_mat = cv::Mat(&src_cvmat,bcopy);
+	}
+	else if(type == MAT_CVMAT)
+	{
+		src_cvmat = src_mat;
+	}
+
+	return TRUE;
+}
+
+BOOL test_CvTranPointerType()
+{
+ 	IplImage *pimg = cvLoadImage("D:\\1.bmp",0);
+	CvMat img_cvmat;
+	CvTranPointerType(*pimg,cv::Mat(),img_cvmat,FALSE,IPL_CVMAT);
+	cvSaveImage("D:\\2.bmp",&img_cvmat);
+
+	cv::Mat img_mat;
+	CvTranPointerType(*pimg,img_mat,img_cvmat,FALSE,CVMAT_MAT);
+	imwrite("D:\\2.bmp",img_mat);
+
+	cvReleaseImage(&pimg);
+	return TRUE;
+}
+
+BOOL test_rtree()
+{
+#if USE_RTREE == 1
+	vector<CvRect> rects;
+	rects.push_back(cvRect(0,0,60,60));
+	rects.push_back(cvRect(75,0,100,25));
+	rects.push_back(cvRect(25,25,75,75));
+	rects.push_back(cvRect(40,40,100,100));
+	rects.push_back(cvRect(0,25,25,100));
+	SomeThingTree cwrtree;
+	AddDataToTREE(cwrtree,rects);
+
+	BOOL res = GetHitIndex(cwrtree,cvRect(49,49,1,1));
+	ReleaseTree(cwrtree);
+#endif
+
+	return TRUE;
+
+}
+
+
+
+
+
+
+
+/************************************************************************/
+/*                        函数测试结束                                  */
+/************************************************************************/

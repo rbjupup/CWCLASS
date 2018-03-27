@@ -7,6 +7,7 @@
 #include "CLASSTESTDlg.h"
 #include "afxdialogex.h"
 #include "YCIni.h"
+#include "XFunCom.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -166,7 +167,6 @@ BOOL CCLASSTESTDlg::OnInitDialog()
 	m_ListInput.SetExtendedStyle(dwStyle); //设置扩展风格
 	m_ListInput.InsertColumn(0,"输入编号",0,80);
 	m_ListInput.InsertColumn(1,"输入内容",0,400);
-	assert(test_XFunCom());
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 

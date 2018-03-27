@@ -1,7 +1,12 @@
 #if !defined(AFX_XFUNCOM_H_INCLUDED_)
 #define AFX_XFUNCOM_H_INCLUDED_
+
+
+
 #define USE_OPENCV 1
+#define HAD_XFUN 1
 //#define USE_EMAIL
+#define USE_RTREE 0
 //使用正则之前要先将extern的正则文件覆盖到mfc目录下
 #define USE_STL
 #include <vector>
@@ -13,6 +18,8 @@
 #include "Def.h"
 #ifdef USE_OPENCV
 #include "cv.h"
+#include "opencv2/core/core.hpp"
+#include "opencv2/highgui/highgui.hpp"
 #include "minmax.h"
 #endif
 #ifdef USE_EMAIL
@@ -21,7 +28,11 @@
 #ifdef USE_STL
 #include <atlrx.h>
 #endif
+#if USE_RTREE == 1
+#include "RTree.h"
+#endif
 using namespace std;
+
 
 
 /************************************************************************/
@@ -30,55 +41,68 @@ using namespace std;
 /*
 
 文件和文件夹
-文件和文件夹----判断文件夹是否存在
-文件和文件夹----判断文件是否存在
-文件和文件夹----获取文件夹中的全部文件夹
-文件和文件夹----获取文件夹中全部文件
-文件和文件夹----获取文件中全部数据
-文件和文件夹----将全部数据写入文件中
-文件和文件夹----多选文件框
-文件和文件夹----创建文件夹
-文件和文件夹----创建完整路径
-文件和文件夹----获取文件夹路径0表示文件夹，1表示文件
-文件和文件夹----查找文件夹中所有的文件夹
-文件和文件夹----查找文件夹中相同后缀的文件
-文件和文件夹----删除路径和路径中的文件
-文件和文件夹----拷贝路径
-文件和文件夹----获取程序运行当前路径
-文件和文件夹----删除非空文件夹
-文件和文件夹----获取exe文件夹路径
-文件和文件夹----文件解压缩
-文件和文件夹----分割路径
+	判断文件夹是否存在
+	判断文件是否存在
+	获取文件夹中的全部文件夹
+	获取文件夹中全部文件
+	获取文件中全部数据
+	将全部数据写入文件中
+	多选文件框
+	创建文件夹
+	创建完整路径
+	获取文件夹路径0表示文件夹，1表示文件
+	查找文件夹中所有的文件夹
+	查找文件夹中相同后缀的文件
+	删除路径和路径中的文件
+	拷贝路径
+	获取程序运行当前路径
+	删除非空文件夹
+	获取exe文件夹路径
+	文件解压缩
+	分割路径
 
 字符串
 
 图像
-图像----填充位图头文件
-图像----在DC上绘制图像
-图像----在图像上绘制十字线
+	填充位图头文件
+	在DC上绘制图像
+	在图像上绘制十字线
 
 计时
 
 其它函数
-其它函数----使用CString的格式来写日志
-其它函数----写日志到文件中
-其它函数----设置日志保存的地址
-其它函数----获取一个在最大值到最小值之间的随机数
-其它函数----调用cmd.exe实现对bat文件的调用,或者直接对其它软件进行调用
-其它函数----使用正则表达式进行匹配
-其它函数----内存整理
-其它函数----等待某个变量为真或者为否再继续执行接下去的代码
+	使用CString的格式来写日志
+	写日志到文件中
+	设置日志保存的地址
+	获取一个在最大值到最小值之间的随机数
+	调用cmd.exe实现对bat文件的调用,或者直接对其它软件进行调用
+	使用正则表达式进行匹配
+	内存整理
+	等待某个变量为真或者为否再继续执行接下去的代码
 
 
 网络
-网络----判断网络是否连通且输出联通类型
-网络----判断一个IP是否联通
-网络----发送一封Email
+	判断网络是否连通且输出联通类型
+	判断一个IP是否联通
+	发送一封Email
 
 数据处理
-求容器均值
-求容器最小值
-拟合平面
+	求容器均值
+	求容器最小值
+	拟合平面
+
+高端操作
+	仿射变换
+
+低端操作
+	获取cvrect的中心
+	获取cvrect的左上角
+	获取cvrect的右下角
+
+	通信
+	与其它软件进行一次通信
+	进程之间进行通信
+
 */
 
 /************************************************************************/
@@ -87,6 +111,26 @@ using namespace std;
 
 #ifndef YX_BYTE//8 - bit 1 - channel 
 #define YX_BYTE(img,y,x) ((BYTE*)(img->imageData + (y)*img->widthStep))[x]
+#endif
+
+#ifndef YX_32F_IPL//8 - bit 1 - channel 
+#define YX_32F_IPL(img,y,x) ((float*)(img->imageData + (y)*img->widthStep))[x]
+#endif
+
+#ifndef YX_32F_CVMAT//8 - bit 1 - channel 
+#define YX_32F_CVMAT(img,y,x) ((float*)(img->data.fl +(y)*(img->step/sizeof(float))))[x]
+#endif
+
+#ifndef YX_32F_MAT//8 - bit 1 - channel 
+#define YX_32F_MAT(img,y,x) ((float*)((float*)img.data +(y)*(img.cols)))[x]
+#endif
+
+#ifndef YX_BYTE_CVMAT//8 - bit 1 - channel 
+#define YX_BYTE_CVMAT(img,y,x) ((BYTE*)(img->data.fl +(y)*(img->step/sizeof(BYTE))))[x]
+#endif
+
+#ifndef YX_BYTE_MAT//8 - bit 1 - channel 
+#define YX_BYTE_MAT(img,y,x) ((BYTE*)((BYTE*)img.data +(y)*(img.cols)))[x]
 #endif
 
 #ifndef YX_BYTE_B//8 - bit 3 - channel
@@ -114,8 +158,7 @@ using namespace std;
 #define PixArea2Dia(fArea,fDPI)			Pix2Mil(2*sqrt(fArea/PI),fDPI)												//像素面积转mil直径
 #define Dia2PixArea(fDia,fDPI)			PI*(Mil2Pix(fDia/2,fDPI))*(Mil2Pix(fDia/2,fDPI))							//mil直径转像素面积
 #define random(x) (rand()%x)								//随机数生成器
-
-#ifndef TRANS2COX		
+		
 #ifndef PI
 #define					PI								3.141592653			
 #endif
@@ -123,7 +166,7 @@ using namespace std;
 #define					RAD2ANG(x)						float((x)*180/PI)				//弧度转角度
 #define					TRANS2COX(X,Y,fangle)				float((X)*cos(ANG2RAD(fangle))-(Y)*sin(ANG2RAD(fangle)))//旋转坐标轴
 #define					TRANS2COY(X,Y,fangle)				float((Y)*cos(ANG2RAD(fangle))+(X)*sin(ANG2RAD(fangle)))
-#endif
+
 #define					Rad2Ang(x)							float(x*180.0/PI)
 #define					Ang2Rad(x)							float(x*PI/180.0)
 // #define EUCLIDEAN	-1
@@ -136,6 +179,10 @@ using namespace std;
 #define AFFINE		1
 #define PERSPECTIVE 2
 #define PROJECTIVE	3
+
+#define CWTS(TIMECOUNTNAME) CWTimeCount TIMECOUNTNAME;TIMECOUNTNAME.Start();
+#define CWTE(TIMECOUNTNAME,CWSTRDATA) TIMECOUNTNAME.End();TRACE(CWSTRDATA,TIMECOUNTNAME.GetUseTime());
+
 enum  SHAPE
 {
 	SHAPE_RECTANGLE_R,				//给定一个RECT的方式绘制矩形
@@ -360,6 +407,10 @@ void DrawImageOnMemDc(IplImage *Img,CDC *pMemDC,CBitmap *bmp,float fImageScale);
 void DrawCrossOnImage(IplImage *Img,CvPoint pt,int nLength,CvScalar rgb);
 //将圆弧转换成圆上面的点集
 static void Curve2Points(double Rad, double centerx, double centery, bool ClockWise, float sa, float ea, vector<CFloatPt> &m_contourPt,double enlargeFactor);
+//opencv图像格式转换
+enum {IPL_MAT,MAT_IPL,CVMAT_IPL,IPL_CVMAT,CVMAT_MAT,MAT_CVMAT};
+BOOL  CvTranPointerType(IplImage &src_ipl , cv::Mat &src_mat , CvMat &src_cvmat,BOOL bcopy,int type);
+
 #endif
 /************************************************************************/
 /*								图像操作结束                             */
@@ -394,7 +445,7 @@ public:
 		return UseTime;
 	}
 };
-class LTimeCount
+class CWTimeCount
 {
 private:	
 	double			UseTime;				// 算法处理时间(单位:秒)
@@ -430,9 +481,6 @@ void WaitProcess(LPTSTR FileName,LPTSTR Param,BOOL waitExit = TRUE);
 vector<CString> GetresByStlRx(CString word,CString rule);
 //内存整理
 BOOL memsort();
-//等待某个变量为真或者为否再继续执行接下去的代码
-void WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue);
-BOOL WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue,double waitTimes);
 //检查是否在矩形中
 bool CheckInRect(CPoint point,CRect rect);
 //截屏
@@ -513,7 +561,7 @@ struct  mergedata
 	}
 };
     //合并两个数组
-vector<mergedata> mergetwo(vector<mergedata> L1,vector<mergedata> L2);
+vector<mergedata> mergetwo(vector<mergedata> &L1,vector<mergedata> &L2);
 	//合并排序
 template<typename T>
 vector<T> cwsortMerge(vector<double> &sortBy,const vector<T> &data)
@@ -562,10 +610,64 @@ double pointToPlaneDis3D(roiPointDecimal3D calPt, const RATIO_Plane *plane3D);
 /*                        高端操作开始                                  */
 /************************************************************************/
 //文件映射
-BOOL fileMapping(CString inputFile);
+BOOL fileMappingW(CString mapname,IplImage *pimg);
+BOOL fileMappingR(CString mapname,IplImage *pimg);
+//仿射变换
+void CwTransform(double x0,double y0,double &x1,double &y1,double parms[9],int method);
+//RTREE
+#if USE_RTREE == 1
+typedef RTree<int, int, 2> SomeThingTree;
+void AddDataToTREE(SomeThingTree &rtree,vector<CvRect> &rect);
+BOOL GetHitIndex(SomeThingTree &rtree,CvRect &rect);
+void ReleaseTree(SomeThingTree &rtree);
+#endif
+
+
 /************************************************************************/
 /*                        高端操作结束                                  */
 /************************************************************************/
+/************************************************************************/
+/*                        低端操作开始                                  */
+/************************************************************************/
+//获取cvrect的中心
+CvPoint CwcvRectCenter(CvRect &rect);
+//获取cvrect的左上角
+CvPoint CwcvRectLP(CvRect &rect);
+//获取cvrect的右下角
+CvPoint CwcvRectRB(CvRect &rect);
+//判断cvpoint有没有在矩形中
+BOOL IsPtInRect(CvRect &rect , CvPoint &pt);
+//排序矩阵的距离
+vector<CPoint> SortMatrixDis(int rows,int cols,int findrow,int findcol);
+/************************************************************************/
+/*                        低端操作结束                                  */
+/************************************************************************/
+/************************************************************************/
+/*                        通信操作开始                                  */
+/************************************************************************/
+//与其它软件进行一次通信
+	//进程间的通信
+void SendAMessage2Soft(CString windowName,int nmessageType,WPARAM wParam, LPARAM lParam);
+
+//进程之间进行通信
+	//线程间的通信之一,事件通信
+	//创建事件CreateEvent(NULL, TRUE, FALSE, NULL);
+struct cwcommunity{
+	vector<int> vecLine;				//在等待的位置
+	vector<int> vecTimes;				//进该等待位置的次数
+	void waitAddOne(int nLine);		//等待中的事件加一//这两个函数主要是防止程序卡死的时候难以找到卡在哪里
+	void waitdiffOne(int nLine);		//等待中的事件减一//通过
+	void waitForSelf(HANDLE hwaitevent,int waittime,int npos);							//等待本软件的事件让它走
+	void LetEventGo(HANDLE hwaitevent);											//让本软件的继续向下走
+	BOOL WaitForIT(volatile BOOL &waitObject , BOOL isWaitForTrue,int npos,double waitTimes = 100000);
+};
+void WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue);			//等待某个变量为真或者为否再继续执行接下去的代码
+BOOL WaitForBOOL(volatile BOOL &waitObject , BOOL isWaitForTrue,double waitTimes);
+
+/************************************************************************/
+/*                        通信操作结束                                  */
+/************************************************************************/
+
 
 /************************************************************************/
 /*                        函数测试开始                                  */
@@ -575,6 +677,12 @@ BOOL test_XFunCom();
 BOOL test_fileMapping();
 BOOL test_mergeSort();
 BOOL test_Curve2Points();
+BOOL test_LoadFile();
+BOOL test_Transform();
+BOOL test_SortMatrixDis();
+BOOL test_TimOfPICREAD();
+BOOL test_CvTranPointerType();
+BOOL test_rtree();
 /************************************************************************/
 /*                        函数测试结束                                  */
 /************************************************************************/

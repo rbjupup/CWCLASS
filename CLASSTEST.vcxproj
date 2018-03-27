@@ -69,8 +69,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>assistant;CLASS\ROB;CLASS\CAM;CLASS\CAM\KSJApiInc;CLASS\CAM\IMGInc;CLASS\CAM\DSInc;CLASS\CAM\PTGInc;$(ProjectDir)EXTERN\BCGCBPro;$(ProjectDir)CLASS\COM;$(ProjectDir)CLASS\SOCKET;$(ProjectDir);$(ProjectDir)INC;$(ProjectDir)INC\MotionCard;$(ProjectDir)EXTERN\KDXF\include;$(ProjectDir)EXTERN\opencv\build\include;$(ProjectDir)EXTERN\opencv\build\include\opencv;$(ProjectDir)EXTERN\opencv\build\include\opencv2;E:\wzn\opencv231\build\include;E:\wzn\opencv231\build\include\opencv2;E:\wzn\opencv231\build\include\opencv;EXTERN\MotionCard\INC;$(IncludePath)</IncludePath>
-    <LibraryPath>CLASS\CAM\IMGLib;CLASS\CAM\KSJApiLib;CLASS\CAM\PTGLib;CLASS\CAM\DSLib;$(ProjectDir)LIB\MotionCard;$(ProjectDir)EXTERN\KDXF\libs;$(ProjectDir)EXTERN\opencv\build\x86\vc10\lib;$(ProjectDir)EXTERN\BCGCBPro\lib;EXTERN\MotionCard\LIB;$(LibraryPath)</LibraryPath>
+    <IncludePath>assistant;CLASS\ROB;CLASS\CAM;CLASS\CAM\KSJApiInc;CLASS\CAM\IMGInc;CLASS\CAM\DSInc;CLASS\CAM\PTGInc;$(ProjectDir)EXTERN\BCGCBPro;$(ProjectDir)CLASS\COM;$(ProjectDir)CLASS\SOCKET;$(ProjectDir);$(ProjectDir)INC;$(ProjectDir)INC\MotionCard;$(ProjectDir)EXTERN\KDXF\include;$(ProjectDir)EXTERN\opencv\build\include5;$(ProjectDir)EXTERN\opencv\build\include\opencv5;$(ProjectDir)EXTERN\opencv\build\include\opencv25;C:\Program Files\opencv2.3.1\build\include;C:\Program Files\opencv2.3.1\build\include\opencv;C:\Program Files\opencv2.3.1\build\include\opencv2;EXTERN\MotionCard\INC;$(IncludePath)</IncludePath>
+    <LibraryPath>CLASS\CAM\IMGLib;CLASS\CAM\KSJApiLib;CLASS\CAM\PTGLib;CLASS\CAM\DSLib;$(ProjectDir)LIB\MotionCard;$(ProjectDir)EXTERN\KDXF\libs;C:\Program Files\opencv2.3.1\build\x86\vc10\lib;$(ProjectDir)EXTERN\opencv\build\x86\vc10\lib5;$(ProjectDir)EXTERN\BCGCBPro\lib;EXTERN\MotionCard\LIB;$(LibraryPath)</LibraryPath>
     <EmbedManifest>false</EmbedManifest>
     <GenerateManifest>false</GenerateManifest>
     <SourcePath>$(SourcePath)</SourcePath>

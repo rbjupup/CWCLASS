@@ -40,6 +40,9 @@
     <Filter Include="CLASS\MFCCTRL\tab">
       <UniqueIdentifier>{32d6cce9-6d89-4849-b4da-ea64567dbe93}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CLASS\TREE">
+      <UniqueIdentifier>{893fd5c3-f4dc-4b1b-81c2-3b9cac21c11a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />

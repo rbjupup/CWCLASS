@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "ImageStatic.h"
 #include "Class\CV\CvvImage.h"
+#include "XFunCom.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE

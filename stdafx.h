@@ -57,8 +57,6 @@
 #endif
 #endif
 
-#include "XFunCom.h"
-
 
 
 #ifdef BCG

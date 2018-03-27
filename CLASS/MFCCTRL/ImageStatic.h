@@ -9,7 +9,6 @@
 #define STATIC_CV
 #include "def.h"
 #include <afxmt.h>
-#include "XFunCom.h"
 #ifdef STATIC_CV
 #include "cv.h"
 #endif
