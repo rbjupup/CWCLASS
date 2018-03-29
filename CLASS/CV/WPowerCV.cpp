@@ -1522,8 +1522,8 @@ BOOL CWPowerCV::test_cwcv()
 		//assert(test_cwcvBack());
 		//assert(test_match());
 		//assert(test_Contour());
-		//assert(test_cvline());
-		assert(test_matchContour());
+		assert(test_cvline());
+		//assert(test_matchContour());
 	}
 	catch (CMemoryException* e)
 	{
@@ -1718,8 +1718,45 @@ BOOL CWPowerCV::test_CwWarp()
 BOOL CWPowerCV::test_cvline()
 {
 	IplImage *pimg = cvCreateImage(cvSize(3000,3000),8,1);
-	cvLine(pimg,cvPoint(1969.9060,504.9450),cvPoint(2138.0223,504.9450),cvScalarAll(255),7,8,1);
+	cvLine(pimg,cvPoint(1969,504),cvPoint(2138,504),cvScalarAll(255),7,4);
 	cvSaveImage("D:\\tmp\\testline.bmp",pimg);
+
+	double testwidth[3] = {1,7,8};
+	CvPoint testPt[8] = {
+		cvPoint(10,0),
+		cvPoint(10,10),
+		cvPoint(0,10),
+		cvPoint(-10,10),
+		cvPoint(-10,0),
+		cvPoint(-10,-10),
+		cvPoint(0,-10),
+		cvPoint(10,-10)
+	};
+	CvPoint StartPt[2] = {
+		cvPoint(21,21),
+		cvPoint(22,22)
+	};
+
+	for (int linewidth = 0; linewidth < 3; linewidth++)
+	{
+		for (int nstartpt = 0; nstartpt < 2;nstartpt++)
+		{
+			for (int ntestpt = 0; ntestpt < 8; ntestpt++)
+			{
+				cvZero(pimg);
+				cvLine(pimg,StartPt[nstartpt],
+					cvPoint(StartPt[nstartpt].x + testPt[ntestpt].x,StartPt[nstartpt].y + testPt[ntestpt].y),
+					cvScalarAll(255),testwidth[linewidth],8);
+				CString savepath;
+				savepath.Format("D:\\tmp\\testline_%d_%d_%d.bmp",linewidth,nstartpt,ntestpt);
+				cvSaveImage(savepath,pimg);
+			}
+		}
+	}
+
+	cvReleaseImage(&pimg);
+	pimg = NULL;
+	
 	return TRUE;
 }
 

@@ -57,9 +57,7 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -74,14 +72,16 @@
     <EmbedManifest>false</EmbedManifest>
     <GenerateManifest>false</GenerateManifest>
     <SourcePath>$(SourcePath)</SourcePath>
+    <ExecutablePath>E:\OPENCV231\bin\Debug;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>assistant;CLASS\ROB;CLASS\CAM;CLASS\CAM\KSJApiInc;CLASS\CAM\IMGInc;CLASS\CAM\DSInc;CLASS\CAM\PTGInc;$(ProjectDir)EXTERN\BCGCBPro;$(ProjectDir)CLASS\COM;$(ProjectDir)CLASS\SOCKET;$(ProjectDir);$(ProjectDir)INC;$(ProjectDir)INC\MotionCard;$(ProjectDir)EXTERN\KDXF\include;$(ProjectDir)EXTERN\opencv\build\include;$(ProjectDir)EXTERN\opencv\build\include\opencv;$(ProjectDir)EXTERN\opencv\build\include\opencv2;E:\wzn\opencv231\build\include;E:\wzn\opencv231\build\include\opencv2;E:\wzn\opencv231\build\include\opencv;EXTERN\MotionCard\INC;$(IncludePath)</IncludePath>
-    <LibraryPath>CLASS\CAM\IMGLib;CLASS\CAM\KSJApiLib;CLASS\CAM\PTGLib;CLASS\CAM\DSLib;$(ProjectDir)LIB\MotionCard;$(ProjectDir)EXTERN\KDXF\libs;$(ProjectDir)EXTERN\opencv\build\x64\vc10\lib;$(ProjectDir)EXTERN\BCGCBPro\lib;EXTERN\MotionCard\LIB;$(LibraryPath)</LibraryPath>
+    <IncludePath>assistant;CLASS\ROB;CLASS\CAM;CLASS\CAM\KSJApiInc;CLASS\CAM\IMGInc;CLASS\CAM\DSInc;CLASS\CAM\PTGInc;$(ProjectDir)EXTERN\BCGCBPro;$(ProjectDir)CLASS\COM;$(ProjectDir)CLASS\SOCKET;$(ProjectDir);$(ProjectDir)INC;$(ProjectDir)INC\MotionCard;$(ProjectDir)EXTERN\KDXF\include;E:\OPENCV231\opencv\build\include;E:\OPENCV231\opencv\build\include\opencv;E:\OPENCV231\opencv\build\include\opencv2;$(ProjectDir)EXTERN\opencv\build\include;$(ProjectDir)EXTERN\opencv\build\include\opencv;$(ProjectDir)EXTERN\opencv\build\include\opencv2;EXTERN\MotionCard\INC;$(IncludePath)</IncludePath>
+    <LibraryPath>E:\OPENCV231\lib\Debug;CLASS\CAM\IMGLib;CLASS\CAM\KSJApiLib;CLASS\CAM\PTGLib;CLASS\CAM\DSLib;$(ProjectDir)LIB\MotionCard;$(ProjectDir)EXTERN\KDXF\libs;$(ProjectDir)EXTERN\BCGCBPro\lib;EXTERN\MotionCard\LIB;$(ProjectDir)EXTERN\opencv\build\x64\vc10\lib;$(LibraryPath)</LibraryPath>
     <EmbedManifest>false</EmbedManifest>
     <GenerateManifest>false</GenerateManifest>
     <SourcePath>$(SourcePath)</SourcePath>
+    <ExecutablePath>E:\OPENCV231\bin\Debug;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
