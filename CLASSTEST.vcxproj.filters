@@ -177,6 +177,9 @@
     <ClInclude Include="CLASS\MFCCTRL\ManStaticTest.h">
       <Filter>CLASS\MFCCTRL</Filter>
     </ClInclude>
+    <ClInclude Include="DlgDouYin.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CLASSTEST.cpp">
@@ -271,6 +274,9 @@
     </ClCompile>
     <ClCompile Include="CLASS\MFCCTRL\ManStaticTest.cpp">
       <Filter>CLASS\MFCCTRL</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgDouYin.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

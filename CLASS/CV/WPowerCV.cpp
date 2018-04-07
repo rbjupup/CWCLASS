@@ -1,14 +1,99 @@
 #include "StdAfx.h"
 #include "WPowerCV.h"
 #include "XFunCom.h"
+#include "opencv2\video\video.hpp"
+#include "opencv2\objdetect\objdetect.hpp"
+#include "opencv2\highgui\highgui.hpp"
+#include "opencv2\imgproc\imgproc.hpp"
+
+
+MFace::MFace(void)
+{
+	m_cascadeface = Loadhaar("C:\\Program Files\\opencv2.3.1\\data\\haarcascades\\haarcascade_frontalface_alt.xml");
+}
+
+MFace::~MFace(void)
+{
+}
+CvHaarClassifierCascade* MFace::Loadhaar(CString path){
+	return (CvHaarClassifierCascade*)cvLoad(path);
+}
+
+int MFace::FindAndDraw(CString image,CvHaarClassifierCascade* cascade,int pyrdown){
+	//加载检测图片
+	IplImage* mainImage = cvLoadImage(image,0);
+	Facedata face;
+	FindAndDraw(mainImage,pyrdown );
+
+	//保存图像
+	cvSaveImage("D:\\result.bmp",mainImage);
+
+	return 0;
+}
+
+int MFace::FindAndDraw(IplImage* mainImage,int pyrdown)
+{
+	if(mainImage == NULL)
+	{
+		return 0;
+	}
+	facedata.Faceplace.clear();
+	FindFace(mainImage,pyrdown,facedata);
+	for (int i =0 ; i < facedata.Faceplace.size();i++)
+	{
+		cvDrawRect(mainImage,CwcvRectLP(facedata.Faceplace[i]),
+		CwcvRectRB(facedata.Faceplace[i]),cvScalar(255,255,0));
+	}
+	return 1;
+}
+
+void MFace::FindFace(IplImage* mainImage,int pyrdown , Facedata &data)
+{
+	CvHaarClassifierCascade* cascade = m_cascadeface;
+	CvMemStorage* mem= cvCreateMemStorage(0);
+	CvSeq* seq = NULL;
+
+	//如果金子塔变换加载小图片
+	IplImage* smallImage;
+	if(pyrdown > 0){
+		smallImage = cvCreateImage(cvSize(mainImage->width/2,mainImage->height/2),mainImage->depth,mainImage->nChannels);
+		cvPyrDown(mainImage,smallImage,CV_GAUSSIAN_5x5);
+	}
+	else{
+		smallImage = cvCreateImage(cvGetSize(mainImage),mainImage->depth,mainImage->nChannels);
+		cvCopy(mainImage,smallImage);
+	}
+	//绘制找到的地方
+	seq = cvHaarDetectObjects(smallImage,cascade,mem,1.2,2,CV_HAAR_DO_CANNY_PRUNING);
+	for (int i = 0; i < seq->total;i++){
+		CvRect center = *(CvRect*)cvGetSeqElem(seq,i);
+		if(!pyrdown)
+		{
+			data.Faceplace.push_back(center);
+		}
+		else
+		{
+			center.x *=2;
+			center.y *=2;
+			center.width *= 2;
+			center.height *= 2;
+			data.Faceplace.push_back(center);
+		}
+		
+		//cvDrawRect(mainImage,cvPoint(center.x,center.y),cvPoint(center.x+center.width,center.y + center.height),cvScalarAll(255),2);
+	}
+}
+
 CWPowerCV::CWPowerCV(void)
 {
 	m_bShowTmp =  TRUE;
+	capture =NULL;
 }
 
 
 CWPowerCV::~CWPowerCV(void)
 {
+	releasecwcam();
 }
 
 BOOL CWPowerCV::SplitByXYNum(CString InputImgPath,CString OutPutDir,int XNum,int YNum)
@@ -1717,24 +1802,24 @@ BOOL CWPowerCV::test_CwWarp()
 
 BOOL CWPowerCV::test_cvline()
 {
-	IplImage *pimg = cvCreateImage(cvSize(3000,3000),8,1);
+	IplImage *pimg = cvCreateImage(cvSize(150,150),8,1);
 	cvLine(pimg,cvPoint(1969,504),cvPoint(2138,504),cvScalarAll(255),7,4);
 	cvSaveImage("D:\\tmp\\testline.bmp",pimg);
 
-	double testwidth[3] = {1,7,8};
+	double testwidth[3] = {1,17,18};
 	CvPoint testPt[8] = {
-		cvPoint(10,0),
-		cvPoint(10,10),
-		cvPoint(0,10),
-		cvPoint(-10,10),
-		cvPoint(-10,0),
-		cvPoint(-10,-10),
-		cvPoint(0,-10),
-		cvPoint(10,-10)
+		cvPoint(30,0),
+		cvPoint(30,30),
+		cvPoint(0,30),
+		cvPoint(-30,30),
+		cvPoint(-30,0),
+		cvPoint(-30,-30),
+		cvPoint(0,-30),
+		cvPoint(30,-30)
 	};
 	CvPoint StartPt[2] = {
-		cvPoint(21,21),
-		cvPoint(22,22)
+		cvPoint(41,41),
+		cvPoint(42,42)
 	};
 
 	for (int linewidth = 0; linewidth < 3; linewidth++)
@@ -1744,7 +1829,7 @@ BOOL CWPowerCV::test_cvline()
 			for (int ntestpt = 0; ntestpt < 8; ntestpt++)
 			{
 				cvZero(pimg);
-				cvLine(pimg,StartPt[nstartpt],
+				cwline(pimg,StartPt[nstartpt],
 					cvPoint(StartPt[nstartpt].x + testPt[ntestpt].x,StartPt[nstartpt].y + testPt[ntestpt].y),
 					cvScalarAll(255),testwidth[linewidth],8);
 				CString savepath;
@@ -1937,5 +2022,313 @@ BOOL CWPowerCV::test_matchContour()
 	cvReleaseImage(&ftmp);
 	ftmp = NULL;
 	return TRUE;
+}
+
+void CWPowerCV::cwline(CvArr* m_pImg, CvPoint SPoint, CvPoint EPoint, CvScalar color, int thickness , int line_type , int shift )
+{
+	if(thickness == 1)
+	{
+		cvLine(m_pImg,SPoint,EPoint,color,thickness,line_type,shift);
+		return;
+	}
+	BOOL odd = thickness&1;
+	double sx = SPoint.x, sy = SPoint.y;
+	double ex = EPoint.x, ey = EPoint.y;
+	double dx = ex - sx, dy = ey - sy;
+	double rsina,rcosa;
+	double rsinas,rcosas;
+	double a = atan2(dy, dx);
+	if(odd)
+	{
+		thickness -= 1;
+		rsina = thickness/2.0 * sin(a), rcosa = thickness/2.0 * cos(a);
+		rsinas = thickness/2.0 * sin(a), rcosas = thickness/2.0 * cos(a);
+	}
+	else
+	{
+		rsina = thickness/2.0 * sin(a), rcosa = thickness/2.0 * cos(a);
+		rsinas = (thickness/2.0 - 1) * sin(a), rcosas = (thickness/2.0 - 1) * cos(a);
+	}
+	//发现有的时候,竖直会算成一个很小很小的数导致计算错误
+	if(rsina>-0.000001&&rsina<0.000001)
+		rsina = 0;
+	if(rcosa>-0.000001&&rcosa<0.000001)
+		rcosa = 0;
+	if(rsinas>-0.000001&&rsinas<0.000001)
+		rsinas = 0;
+	if(rcosas>-0.000001&&rcosas<0.000001)
+		rcosas = 0;
+	CvPoint pt[4];
+	pt[0].x = SPoint.x - rsina ;
+	pt[0].y = SPoint.y + rcosa ;
+	pt[1].x = SPoint.x + rsinas ;
+	pt[1].y = SPoint.y - rcosas ;
+	pt[2].x = EPoint.x + rsinas ;
+	pt[2].y = EPoint.y - rcosas ;
+	pt[3].x = EPoint.x - rsina ;
+	pt[3].y = EPoint.y + rcosa ;
+// 	//如果是偶数的线宽对多出来的一个像素进行修正
+// 	if(!(odd) && rsina >= 1.0)
+// 	{
+// 		pt[1].x += 1;
+// 		pt[2].x += 1;
+// 	}
+// 	if(!(odd) && rcosa >= 1.0)
+// 	{
+// 		pt[1].y += 1;
+// 		pt[2].y += 1;
+// 	}
+// 	if(!(odd) && rsina <= -1.0)
+// 	{
+// 		pt[1].x -= 1;
+// 		pt[2].x -= 1;
+// 	}
+// 	if(!(odd) && rcosa <= -1.0)
+// 	{
+// 		pt[1].y -= 1;
+// 		pt[2].y -= 1;
+// 	}
+	if(pt[0].x >=0 && pt[0].y >= 0 &&
+		pt[1].x >=0 && pt[1].y >= 0 &&
+		pt[2].x >=0 && pt[2].y >= 0 &&
+		pt[3].x >=0 && pt[3].y >= 0 )
+		TRACE("绘制方形直线,传入cvline的参数是pt(%.4f,%.4f,%.4f,%.4f)\n",pt[0],pt[1],pt[2],pt[3]);
+	// 	int pts[1] = {1};
+	// 	vector<vector<CvPoint>> vecpts;
+	// 	vector<CvPoint> sinpts;
+	// 	sinpts.push_back(pt[0]);
+	// 	sinpts.push_back(pt[1]);
+	// 	sinpts.push_back(pt[2]);
+	// 	sinpts.push_back(pt[3]);
+	// 	vecpts.push_back(sinpts);
+	cvFillConvexPoly (m_pImg,pt,4,color,line_type,shift);
+	int rad = 0;
+	if(odd)
+	{
+		rad = thickness/2;
+	}
+	else
+	{
+		rad = thickness/2 - 1;
+	}
+	cvCircle(m_pImg,SPoint,rad,color,-1);
+	cvCircle(m_pImg,EPoint,rad,color,-1);
+
+}
+
+void CWPowerCV::opencwcam()
+{
+	if(capture  != NULL)
+	{
+		cvReleaseCapture(&capture); 
+		capture = NULL;
+	}
+	capture=cvCreateCameraCapture(-1);  
+}
+
+void CWPowerCV::releasecwcam()
+{
+	if(capture  != NULL)
+	{
+		cvReleaseCapture(&capture); 
+		capture = NULL;
+	}
+		 
+}
+
+void CWPowerCV::GetOneFrame(IplImage *&frame)
+{
+	frame=cvQueryFrame(capture);  
+
+}
+
+
+
+void CWPowerCV::GrayEqualization(IplImage *pSrc,IplImage *pDst)
+{
+	if(1)
+	{
+		ASSERT(pSrc != NULL);
+		ASSERT(pSrc->nChannels == 1);
+		ASSERT(pDst != NULL);
+		ASSERT(pDst->nChannels == 1);
+		BYTE* pixel = (BYTE*)pSrc->imageData;
+		BYTE* tempPixel = (BYTE*)pDst->imageData;
+		UINT width = pSrc->widthStep;
+		UINT height = pSrc->height;
+		int channel = pSrc->nChannels;
+		// 灰度映射表
+		BYTE map[256];
+		long lCounts[256];
+		double p[256] = {0.0};//概率
+		long valcount = 0;	//有效数据总数
+		memset(lCounts, 0, sizeof(long) * 256);
+
+		// 计算各灰度值个数
+		for (UINT i = 0; i < width * height; i++)
+		{
+			int x = pixel[i];
+			if(x == 0){
+				continue;
+			}
+			lCounts[x]++;
+			valcount++;
+		}
+
+
+		// 计算概率
+		for (int i = 0; i < 256; i++)
+		{
+			p[i] = (lCounts[i] / (double)valcount);
+		}
+
+		//计算分布
+		double lTemp[256];
+
+		for (int i = 0; i < 256; i++)
+		{
+			if(i == 0)
+				lTemp[i] = p[i];
+			else
+				lTemp[i]  = lTemp[i - 1] + p[i];
+
+			map[i] = lTemp[i] *255.f + 0.5;
+		}
+
+		// 变换后的值直接在映射表中查找
+		for (int j=0;j<pSrc->height;j++)
+		{
+			for (int i=0;i<pSrc->width;i++)
+			{
+				int nSrcValue = YX_BYTE(pSrc,j,i);
+				int nValue = map[nSrcValue];
+				YX_BYTE(pDst,j,i) = nValue;
+			}
+		}
+	}
+	else
+	{
+		ASSERT(pSrc != NULL);
+		ASSERT(pSrc->nChannels == 1);
+		ASSERT(pDst != NULL);
+		ASSERT(pDst->nChannels == 1);
+		int nHist[256] = {0};
+		double p[256] = {0.0};
+		double c[256] = {0.0};
+		double nTotalNum = pSrc->width*pSrc->height;
+		int nMaxGrey = 0;
+		int nMinGrey = INT_MAX;
+		int nCount = 0;
+		//统计灰度直方图
+		for (int j=0;j<pSrc->height;j++)
+		{
+			for (int i=0;i<pSrc->width;i++)
+			{
+				int nValue = YX_BYTE(pSrc,j,i);
+				if (nValue > 0)
+				{
+					nHist[nValue] ++;
+					nMaxGrey = nMaxGrey>nValue?nMaxGrey:nValue;
+					nMinGrey = nMinGrey<nValue?nMinGrey:nValue;
+					nCount ++;
+				}
+			}
+		}
+		//直方图归一化
+		for (int i=0;i<256;i++)
+		{
+			p[i] = (double)nHist[i]/(double)nCount;
+		}
+		//计算累计直方图
+		for (int i=0;i<256;i++)
+		{
+			if (0 == i)
+			{
+				c[i] = p[i];
+			}
+			else
+			{
+				c[i] = c[i-1]+p[i];
+			}
+		}
+		//均衡化
+		int nGrey = nMaxGrey-nMinGrey;
+		cvZero(pDst);
+		for (int j=0;j<pSrc->height;j++)
+		{
+			for (int i=0;i<pSrc->width;i++)
+			{
+				int nSrcValue = YX_BYTE(pSrc,j,i);
+				int nValue = c[nSrcValue]*nGrey;
+				YX_BYTE(pDst,j,i) = nValue;
+			}
+		}
+	}
+}
+
+void CWPowerCV::GrayEqualization(CString path,CString savepath)
+{
+	IplImage *srcimg = cvLoadImage(path,0);
+	IplImage *dstimg = cvCreateImage(cvGetSize(srcimg),srcimg->depth,srcimg->nChannels);
+	cvSaveImage(savepath,srcimg);
+	cvZero(dstimg);
+	GrayEqualization(srcimg,dstimg);
+	IplImage *hist = Gethist(dstimg);
+	cvSaveImage("D:\\afhistsrcsmall1.bmp",hist);
+	cvSaveImage(savepath,dstimg);
+	cvReleaseImage(&srcimg);
+	cvReleaseImage(&dstimg);
+	cvReleaseImage(&hist);
+	srcimg = NULL;
+	hist = NULL;
+	dstimg = NULL;
+}
+
+IplImage* CWPowerCV::Gethist(IplImage* src)
+{
+	int hist_size = 256;    //直方图尺寸  
+	int hist_height = 256;  
+	float range[] = {0,255};  //灰度级的范围  
+	float* ranges[]={range};  
+	//创建一维直方图，统计图像在[0 255]像素的均匀分布  
+	CvHistogram* gray_hist = cvCreateHist(1,&hist_size,CV_HIST_ARRAY,ranges,1);  
+
+	//计算灰度图像的一维直方图  
+	IplImage* tmpbin = cvCloneImage(src);
+	cvThreshold(src,tmpbin,1,255,CV_THRESH_BINARY);
+	cvCalcHist(&src,gray_hist,0,tmpbin); 
+	cvReleaseImage(&tmpbin);
+	tmpbin = NULL;
+	//归一化直方图  
+	//cvNormalizeHist(gray_hist,1.0);  
+	int scale = 2;  
+	//创建一张一维直方图的“图”，横坐标为灰度级，纵坐标为像素个数（*scale）  
+	IplImage* hist_image = cvCreateImage(cvSize(hist_size*scale,hist_height),8,3);  
+	cvZero(hist_image);  
+	//统计直方图中的最大直方块  
+	float max_value = 0;  
+	cvGetMinMaxHistValue(gray_hist, 0,&max_value,0,0);
+	//分别将每个直方块的值绘制到图中  
+	for(int i=0;i<hist_size;i++)  
+	{  
+		float bin_val = cvQueryHistValue_1D(gray_hist,i); //像素i的概率  
+		int intensity = cvRound(bin_val*hist_height/max_value);  //要绘制的高度  
+		cvRectangle(hist_image,  
+			cvPoint(i*scale,hist_height-1),  
+			cvPoint((i+1)*scale - 1, hist_height - intensity),  
+			CV_RGB(255,255,255));    
+	}  
+	return hist_image;
+}
+
+void CWPowerCV::Gethist(CString path,CString savepath)
+{
+	IplImage *srcimg = cvLoadImage(path,0);
+	IplImage *hist = Gethist(srcimg);
+	cvSaveImage(savepath,hist);
+	cvReleaseImage(&srcimg);
+	cvReleaseImage(&hist);
+	srcimg = NULL;
+	hist = NULL;
 }
 

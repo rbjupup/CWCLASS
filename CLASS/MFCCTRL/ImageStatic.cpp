@@ -118,6 +118,7 @@ void CImageStatic::ShowImage()
 			cvSetImageROI(m_pImg,cvRect(m_ROIrect.x,m_ROIrect.y,m_ROIrect.width,m_ROIrect.height));
 			cimg.CopyOf(m_pImg);  
 			cimg.DrawToHDC(hDC,&rect);  
+			cvResetImageROI(m_pImg);
 			//»æÖÆÆäËü
 			m_nIndex = 0;
 	 		if (m_nIndex >=0 &&m_nIndex<CameraNum)
@@ -1181,7 +1182,7 @@ void CImageStatic::Fun(CDC *pMemDC,int x, int y, CString strText, COLORREF crCol
 
 void CImageStatic::ChangeImg(IplImage* img,BOOL bchangescale)
 {
-	if(m_pImg != NULL)
+	if(m_pImg != img&&m_pImg != NULL)
 		cvReleaseImage(&m_pImg);
 	m_pImg = img;
 	CRect rect;
@@ -1189,9 +1190,9 @@ void CImageStatic::ChangeImg(IplImage* img,BOOL bchangescale)
 	ImageScale2 = 1;
 	if(bchangescale == FALSE){
 		int roiwidth = min(m_pImg->width,m_pImg->height);
-		m_ROIrect = CDRect(0,0,roiwidth,roiwidth);
 		scalx = (double)rect.Width()/(double)roiwidth;//m_pImg->width;
 		scaly = (double)rect.Height()/(double)roiwidth;//m_pImg->height;
+		m_ROIrect = CDRect(0,0,roiwidth,roiwidth*scaly/scalx);
 	}
 	else
 	{

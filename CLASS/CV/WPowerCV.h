@@ -68,15 +68,32 @@ struct SSZNPRPJECT{
 
 	}
 } ;
+struct Facedata
+{
+	vector<CvRect> Faceplace;
+};
+
+class MFace
+{
+public:
+	MFace(void);
+	~MFace(void);
+	CvHaarClassifierCascade* m_cascadeface;//加载harris
+	Facedata facedata;//保存脸部区域
+	CvHaarClassifierCascade* Loadhaar(CString path);
+	int FindAndDraw(CString image,CvHaarClassifierCascade* cascade,int pyrdown);
+	int FindAndDraw(IplImage* mainImage,int pyrdown);
+
+	void FindFace(IplImage* mainImage,int pyrdown , Facedata &data);
+
+};
+
 class CWPowerCV
 {
 public:
 	CWPowerCV(void);
 	~CWPowerCV(void);
 	SSZNPRPJECT	m_ssznpic;
-	//定义轮廓和层次结构
-	vector<vector<cv::Point> > contours;
-	vector<Vec4i> hierarchy;
 	//是否显示中间结果
 	BOOL m_bShowTmp;
 public:
@@ -123,6 +140,16 @@ public:
 	BOOL FileToCv(Mat&mat,CString LoadPath,int type = 1);
 	BOOL GetContour(IplImage* pImg,double areath,vector<CvRect> &boundrect);
 	BOOL GetContour(IplImage* pImg,double areath,vector<CRect> &boundrect);
+	//opencv画线函数有错,重写一个
+	void cwline(CvArr* img, CvPoint pt1, CvPoint pt2,
+		CvScalar color, int thickness CV_DEFAULT(1),
+		int line_type CV_DEFAULT(8), int shift CV_DEFAULT(0) );
+	//直方图均衡化
+	void GrayEqualization(CString path,CString savepath);
+	void GrayEqualization(IplImage *src,IplImage *dst);
+	//获取直方图
+	void Gethist(CString path,CString savepath);
+	IplImage* Gethist(IplImage* src);
 	/************************************************************************/
 	/*                             图像常用操作结束                         */
 	/************************************************************************/
@@ -154,6 +181,26 @@ public:
 	/************************************************************************/
 	/*                       For3D相机操作结束                              */
 	/************************************************************************/
+
+	/************************************************************************/
+	/*                       摄像头操作开始                                 */
+	/************************************************************************/
+	CvCapture * capture;
+	void opencwcam();
+	void GetOneFrame(IplImage *&frame);
+	void releasecwcam();
+	/************************************************************************/
+	/*                       摄像头操作结束                                 */
+	/************************************************************************/
+
+	/************************************************************************/
+	/*                       人脸识别开始                                   */
+	/************************************************************************/
+	MFace m_face;
+	/************************************************************************/
+	/*                       人脸检测结束                                   */
+	/************************************************************************/
+
 	/************************************************************************/
 	/*                       测试开始                                       */
 	/************************************************************************/

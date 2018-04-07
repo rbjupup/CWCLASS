@@ -99,7 +99,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opencv_core231d.lib;opencv_highgui231d.lib;opencv_imgproc231d.lib;opencv_calib3d231d.lib</AdditionalDependencies>
+      <AdditionalDependencies>opencv_calib3d231d.lib;opencv_contrib231d.lib;opencv_core231d.lib;opencv_features2d231d.lib;opencv_flann231d.lib;opencv_gpu231d.lib;opencv_highgui231d.lib;opencv_imgproc231d.lib;opencv_legacy231d.lib;opencv_ml231d.lib;opencv_objdetect231d.lib;opencv_ts231d.lib;opencv_video231d.lib</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -228,6 +228,7 @@
     <ClInclude Include="CLASSTEST.h" />
     <ClInclude Include="CLASSTESTDlg.h" />
     <ClInclude Include="Def.h" />
+    <ClInclude Include="DlgDouYin.h" />
     <ClInclude Include="ResDlg.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -269,6 +270,7 @@
     <ClCompile Include="CLASSTEST.cpp" />
     <ClCompile Include="CLASSTESTDlg.cpp" />
     <ClCompile Include="CLASS\RTREE\BigData.cpp" />
+    <ClCompile Include="DlgDouYin.cpp" />
     <ClCompile Include="ResDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

@@ -9,7 +9,7 @@ using namespace std;
 #include "stdafx.h"
 #include "CLASS/MONITOR/WmonUrl.h"
 #include "CLASS/CV/WPowerCV.h"
-
+#include "DlgDouYin.h"
 
 
 
@@ -33,5 +33,6 @@ private:
 	CWMFCCtlMan m_cwMfcCtl;					//控件管理类
 	CWmonUrl m_monitor;						//网页监听类
 	CWPowerCV m_powcv;						//opencv二次开发
+	CDlgDouYin m_douyin;						//抖音窗口开发
 };
 
