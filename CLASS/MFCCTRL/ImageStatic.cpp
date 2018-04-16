@@ -3,8 +3,7 @@
 
 #include "stdafx.h"
 #include "ImageStatic.h"
-#include "Class\CV\CvvImage.h"
-#include "XFunCom.h"
+#include "CvvImage.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -58,6 +57,7 @@ CImageStatic::CImageStatic()
 
 	m_nIndex = 0;
 	m_move.m_show = this;
+	m_bGL = FALSE;
 #ifdef STATIC_CV
 	m_pImg = NULL;
 #endif
@@ -79,6 +79,8 @@ ON_WM_LBUTTONDOWN()
 ON_WM_LBUTTONUP()
 ON_WM_MOUSEMOVE()
 ON_WM_MOUSEWHEEL()
+ON_WM_SIZE()
+ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -94,8 +96,10 @@ void CImageStatic::OnPaint()
 	
 	if(this->GetSafeHwnd() == NULL)
 		return ;
-	ShowImage();
-
+	if(m_bGL)
+		ShowImageGL();
+	else
+		ShowImage();
 	// Do not call CStatic::OnPaint() for painting messages
 }
 
@@ -112,12 +116,23 @@ void CImageStatic::ShowImage()
 			SetRect(rect,rect.left,rect.top,rect.right,rect.bottom);  
 			CDC *pDC=GetDC();
 			HDC hDC=pDC->GetSafeHdc();
+
+			//初始化双缓冲绘图
+			CPoint ptCenter;  
+			ptCenter = rect.CenterPoint();  
+			CDC dcMem; //用于缓冲作图的内存DC  
+			CBitmap bmp; //内存中承载临时图象的位图  
+			dcMem.CreateCompatibleDC(pDC); //依附窗口DC创建兼容内存DC  
+			bmp.CreateCompatibleBitmap(pDC,rect.Width(),rect.Height());//创建兼容位图  
+			dcMem.SelectObject(&bmp); //将位图选择进内存DC  
+			dcMem.FillSolidRect(rect,pDC->GetBkColor());  //按原来背景填充客户区，不然会是黑色  
+
 			//绘制图像
 			CvvImage cimg;  
 			cvResetImageROI(m_pImg);
 			cvSetImageROI(m_pImg,cvRect(m_ROIrect.x,m_ROIrect.y,m_ROIrect.width,m_ROIrect.height));
 			cimg.CopyOf(m_pImg);  
-			cimg.DrawToHDC(hDC,&rect);  
+			cimg.DrawToHDC(dcMem.GetSafeHdc(),&rect);  
 			cvResetImageROI(m_pImg);
 			//绘制其它
 			m_nIndex = 0;
@@ -127,15 +142,15 @@ void CImageStatic::ShowImage()
 	 			{
 	 				if(m_bNoShowBox == TRUE)
 	 					break;
-	 				myRectangle(pDC,m_Rects[m_nIndex][i].m_Rect,m_Rects[m_nIndex][i].m_Color,m_Rects[m_nIndex][i].nWidth,m_Rects[m_nIndex][i].nPenStyle);
+	 				myRectangle(&dcMem,m_Rects[m_nIndex][i].m_Rect,m_Rects[m_nIndex][i].m_Color,m_Rects[m_nIndex][i].nWidth,m_Rects[m_nIndex][i].nPenStyle);
 	 			}
 	 			for (i=0; i<m_Lines[m_nIndex].size(); i++)//绘制所有直线
 	 			{
-	 				myLine(pDC,m_Lines[m_nIndex][i].Pt1,m_Lines[m_nIndex][i].Pt2,m_Lines[m_nIndex][i].m_Color,m_Lines[m_nIndex][i].nWidth,m_Lines[m_nIndex][i].nPenStyle,m_Lines[m_nIndex][i].IsShow);
+	 				myLine(&dcMem,m_Lines[m_nIndex][i].Pt1,m_Lines[m_nIndex][i].Pt2,m_Lines[m_nIndex][i].m_Color,m_Lines[m_nIndex][i].nWidth,m_Lines[m_nIndex][i].nPenStyle,m_Lines[m_nIndex][i].IsShow);
 	 			}
 	 			for (i=0; i< m_Circle[m_nIndex].size(); i++)//绘制文字
 	 			{	
-	 				myCircle(pDC,
+	 				myCircle(&dcMem,
 	 					m_Circle[m_nIndex][i].m_CircleCX,
 	 					m_Circle[m_nIndex][i].m_CircleCY,
 	 					m_Circle[m_nIndex][i].m_CircleR,
@@ -148,11 +163,11 @@ void CImageStatic::ShowImage()
 	 			{
 	 				if((m_bNoShowCoppeArea == TRUE) || (m_bNoShowSheetArea == TRUE))
 	 					continue;
-	 				myRectangle(pDC,DetRects[m_nIndex][i].m_Rect,DetRects[m_nIndex][i].m_Color,DetRects[m_nIndex][i].nWidth,DetRects[m_nIndex][i].nPenStyle);
+	 				myRectangle(&dcMem,DetRects[m_nIndex][i].m_Rect,DetRects[m_nIndex][i].m_Color,DetRects[m_nIndex][i].nWidth,DetRects[m_nIndex][i].nPenStyle);
 	 			}
 	 			for (i=0; i< m_String[m_nIndex].size(); i++)//绘制文字
 	 			{	
-	 				Fun(pDC,
+	 				Fun(&dcMem,
 	 					m_String[m_nIndex][i].Pt.x,
 	 					m_String[m_nIndex][i].Pt.y,
 	 					m_String[m_nIndex][i].strText,
@@ -165,7 +180,7 @@ void CImageStatic::ShowImage()
 	 			for (i=0; i< m_AngleArc[m_nIndex].size(); i++)//圆弧
 	 			{	
 	 
-	 				myAngleArc(pDC,
+	 				myAngleArc(&dcMem,
 	 					m_AngleArc[m_nIndex][i].Pt1,
 	 					m_AngleArc[m_nIndex][i].Pt2,
 	 					m_AngleArc[m_nIndex][i].Pt3,
@@ -174,417 +189,16 @@ void CImageStatic::ShowImage()
 	 					m_AngleArc[m_nIndex][i].nPenStyle);
 	 
 	 			}
-	 		}
-			ReleaseDC(pDC); 
-		}
-#endif
+			}// end of if (m_nIndex >=0 &&m_nIndex<CameraNum)
 
-// 	if (Is3DView == 2)
-// 	{
-//  		if (NULL == m_pImageDeal)
-//  		{
-//  			m_g_cs.Unlock();//解锁@whq
-//  			Sleep(1);//@whq
-//  			return;
-//  		}
-//  		HDC hdc;
-//  		if (( FALSE == m_pImageDeal->GetSurfaceDC(hdc) ))
-//  		{
-//  			m_pImageDeal->ReleaseSurfaceDC(hdc);
-//  			m_g_cs.Unlock();//解锁@whq
-//  			Sleep(1);//@whq
-//  			return ;
-//  		}
-// 		CDC *MemDC /*= new CDC */= CDC::FromHandle(hdc);
-// 		CRect rect;
-// 		GetWindowRect(&rect);//获取控件相对于屏幕的位置
-// 		ScreenToClient(rect);
-// 		CRgn Rgn;
-// 		Rgn.CreateRectRgn(rect.left, rect.top, rect.right, rect.bottom);
-// 		MemDC->SelectClipRgn(&Rgn);
-// 		if (m_nIndex >=0 &&m_nIndex<CameraNum)
-// 		{	
-// 			for (i=0; i<m_Rects[m_nIndex].size(); i++)//绘制所有区域
-// 			{
-// 				if(m_bNoShowBox == TRUE)
-// 					break;
-// 				myRectangle(MemDC,m_Rects[m_nIndex][i].m_Rect,m_Rects[m_nIndex][i].m_Color,m_Rects[m_nIndex][i].nWidth,m_Rects[m_nIndex][i].nPenStyle);
-// 			}
-// 			for (i=0; i<m_Lines[m_nIndex].size(); i++)//绘制所有直线
-// 			{
-// 				myLine(MemDC,m_Lines[m_nIndex][i].Pt1,m_Lines[m_nIndex][i].Pt2,m_Lines[m_nIndex][i].m_Color,m_Lines[m_nIndex][i].nWidth,m_Lines[m_nIndex][i].nPenStyle,m_Lines[m_nIndex][i].IsShow);
-// 			}
-// 			for (i=0; i< DetRects[m_nIndex].size(); i++)//绘制所有检测区域
-// 			{
-// 				if((0 == i && m_bNoShowCoppeArea == TRUE) || (1 == i && m_bNoShowSheetArea == TRUE))
-// 					continue;
-// 				myRectangle(MemDC,DetRects[m_nIndex][i].m_Rect,DetRects[m_nIndex][i].m_Color,DetRects[m_nIndex][i].nWidth,DetRects[m_nIndex][i].nPenStyle);
-// 			}
-// 			for (i=0; i< m_String[m_nIndex].size(); i++)//绘制文字
-// 			{	
-// 				Fun(MemDC,
-// 					m_String[m_nIndex][i].Pt.x,
-// 					m_String[m_nIndex][i].Pt.y,
-// 					m_String[m_nIndex][i].strText,
-// 					m_String[m_nIndex][i].crColor,
-// 					m_String[m_nIndex][i].lfHeight,
-// 					m_String[m_nIndex][i].strFont,
-// 					m_String[m_nIndex][i].nAngle,
-// 					m_String[m_nIndex][i].nRadius);
-// 			}
-// 			for (i=0; i< m_Circle[m_nIndex].size(); i++)//绘制文字
-// 			{	
-// 				myCircle(MemDC,
-// 					m_Circle[m_nIndex][i].m_CircleCX,
-// 					m_Circle[m_nIndex][i].m_CircleCY,
-// 					m_Circle[m_nIndex][i].m_CircleR,
-// 					m_Circle[m_nIndex][i].m_Color,
-// 					m_Circle[m_nIndex][i].nWidth,
-// 					m_Circle[m_nIndex][i].nPenStyle);
-// 
-// 			}
-// 			for (i=0; i< m_AngleArc[m_nIndex].size(); i++)//圆弧
-// 			{	
-// 
-// 				myAngleArc(MemDC,
-// 					m_AngleArc[m_nIndex][i].Pt1,
-// 					m_AngleArc[m_nIndex][i].Pt2,
-// 					m_AngleArc[m_nIndex][i].Pt3,
-// 					m_AngleArc[m_nIndex][i].m_Color,
-// 					m_AngleArc[m_nIndex][i].nWidth,
-// 					m_AngleArc[m_nIndex][i].nPenStyle);
-// 
-// 			}
-// 		}
-// 		ReleaseDC(MemDC);
-//  		m_pImageDeal->ReleaseSurfaceDC(hdc);
-// 		m_g_cs.Unlock();//解锁@whq
-// 		Sleep(1);//@whq
-// 		return;
-// 	}
-// 	CDC *pDC=GetDC();
-// 	//LT
-// 	if (pDC == NULL)
-// 	{
-// 		m_g_cs.Unlock();//解锁@whq
-// 		return;
-// 	}
-   //获得矩形框架大小
-// 	CRect rect;
-//     GetWindowRect(&rect);//获取控件相对于屏幕的位置
-// 	ScreenToClient(rect);
-//     CDC		MemDC;					//首先定义一个显示设备对象 
-// 	CBitmap MemBitmap;				//定义一个位图对象 
-// 	MemDC.CreateCompatibleDC(pDC); //随后建立与屏幕显示兼容的内存显示设备
-// 	if (MemDC == NULL)
-// 	{
-// 		AfxMessageBox("显示设备对象出错");
-// 	}
-//    
-// 	//显示保存在m_pImage中的图片
-// 	MemBitmap.CreateCompatibleBitmap(pDC, rect.Width(), rect.Height());
-// 	MemDC.SelectObject(&MemBitmap);
-// 	if (NULL != m_pImage)
-// 	{
-// 		m_pImage->ShowCurrentImage(&MemDC, 0, 0, rect.Width(), rect.Height());
-// 		//抗锯齿
-// 		//m_pImage->ShowPartialImage(&MemDC, rect, CPoint(0,0), CPoint(m_pImage->GetImageWidth(),m_pImage->GetImageHeight()));
-// 		//ImageScale = (double)rect.Width()/m_pImage->GetImageWidth();
-// 		//LT 20151010  在page上显示大相机和小相机图像时缩放倍率始终无法传进来
-//  		if (ImageScale > 0.99)
-//  		{
-// //  			double scale1 = rect.Width()/float(SMALL_CAM_WIDTH);
-// //  			double scale2 = rect.Height()/float(SMALL_CAM_HIGHT);
-// 			double scale1 = rect.Width()/float(m_pImage->GetImageWidth());
-// 			double scale2 = rect.Height()/float(m_pImage->GetImageHeight());
-//  			ImageScale = scale1<scale2?scale1:scale2;
-//  		}
-// 	}
-// 	else
-// 	{
-// 		//MemDC.FillSolidRect(0, 0, rect.Width(), rect.Height(),/* RGB(0,85,241)*/RGB(85,123,205));
-// 	}
-// 
-//  	if (m_bDrawRulerOut == TRUE)
-//  	{
-//  		int i  = 0;
-//  		i++;
-//  	}
-// 
-//  
-// 	DrawRuler(&MemDC);
-//  	if (m_bDrawRuler == TRUE && m_nIndexEnum[2] == m_nIndex && m_bFist == FALSE)
-//  	{
-//  		DrawRuler(&MemDC);
-//  	}
-//  	if (m_bDrawRulerOut == TRUE && m_nIndexEnum[2] == m_nIndex /*&& m_bFist == TRUE*/)
-//  	{
-//  		DrawRuler(&MemDC);
-//  	}
-//  
-//  	if (m_bDrawRuler2 == TRUE && m_nIndexEnum[3] == m_nIndex && m_bFist == FALSE)
-//  	{
-//  		DrawRuler(&MemDC);
-//  	}
-//  	if (m_bDrawRulerOut2 == TRUE && m_nIndexEnum[3] == m_nIndex /*&& m_bFist == TRUE*/)
-//  	{
-//  		DrawRuler(&MemDC);
-//  	}
-// 	if (m_pImage != NULL)
-// 	{
-// 		ImageScale2 = m_pImage->GetShowScale(); 
-// 	}
-// 	else
-// 	{
-// 		if(rect.Width()>0)
-// 		{
-// 			ImageScale2 = (double)(rect.Width() / 1280.0);
-// 		}
-// 		else
-// 		{
-// 			ImageScale2 = 1;
-// 		}
-// 	}
-// 
-// 	MemDC.SelectStockObject(NULL_BRUSH);
-// 	for (i=0; i<4; i++)
-// 	{
-// 		MemDC.SelectObject(&m_pen[i]);
-// 		if(m_bDrawRect[i] == TRUE)
-// 		{
-// 			MemDC.Rectangle(m_rtDraw[i]);
-// 		}
-// 	}
-// 
-// 	if (m_nIndex >=0 &&m_nIndex<CameraNum)
-// 	{	
-// 		for (i=0; i<m_Rects[m_nIndex].size(); i++)//绘制所有区域
-// 		{
-// 			if(m_bNoShowBox == TRUE)
-// 				break;
-// 			myRectangle(&MemDC,m_Rects[m_nIndex][i].m_Rect,m_Rects[m_nIndex][i].m_Color,m_Rects[m_nIndex][i].nWidth,m_Rects[m_nIndex][i].nPenStyle);
-// 		}
-// 		//LT
-//  		for (i=0; i<m_Lines[m_nIndex].size(); i++)//绘制所有直线//@whq624注释
-//  		{
-//  			myLine(&MemDC,m_Lines[m_nIndex][i].Pt1,m_Lines[m_nIndex][i].Pt2,m_Lines[m_nIndex][i].m_Color,m_Lines[m_nIndex][i].nWidth,m_Lines[m_nIndex][i].nPenStyle,m_Lines[m_nIndex][i].IsShow);
-//  		}
-// 		//
-// 		for (i=0; i< DetRects[m_nIndex].size(); i++)//绘制所有检测区域
-// 		{
-// 			if((0 == i && m_bNoShowCoppeArea == TRUE) || (1 == i && m_bNoShowSheetArea == TRUE))
-// 				continue;
-// 			myRectangle(&MemDC,DetRects[m_nIndex][i].m_Rect,DetRects[m_nIndex][i].m_Color,DetRects[m_nIndex][i].nWidth,DetRects[m_nIndex][i].nPenStyle);
-// 		}
-// 		for (i=0; i< m_String[m_nIndex].size(); i++)//绘制文字
-// 		{	
-// 			Fun(&MemDC,
-// 				m_String[m_nIndex][i].Pt.x,
-// 				m_String[m_nIndex][i].Pt.y,
-// 				m_String[m_nIndex][i].strText,
-// 				m_String[m_nIndex][i].crColor,
-// 				m_String[m_nIndex][i].lfHeight,
-// 				m_String[m_nIndex][i].strFont,
-// 				m_String[m_nIndex][i].nAngle,
-// 				m_String[m_nIndex][i].nRadius);
-// 		}
-// 		for (i=0; i< m_Circle[m_nIndex].size(); i++)//绘制文字
-// 		{	
-// 			myCircle(&MemDC,
-// 				m_Circle[m_nIndex][i].m_CircleCX,
-// 				m_Circle[m_nIndex][i].m_CircleCY,
-// 				m_Circle[m_nIndex][i].m_CircleR,
-// 				m_Circle[m_nIndex][i].m_Color,
-// 				m_Circle[m_nIndex][i].nWidth,
-// 				m_Circle[m_nIndex][i].nPenStyle);
-// 			
-// 		}
-// 		for (i=0; i< m_AngleArc[m_nIndex].size(); i++)//圆弧
-// 		{	
-// 			
-// 			myAngleArc(&MemDC,
-// 				m_AngleArc[m_nIndex][i].Pt1,
-// 				m_AngleArc[m_nIndex][i].Pt2,
-// 				m_AngleArc[m_nIndex][i].Pt3,
-// 				m_AngleArc[m_nIndex][i].m_Color,
-// 				m_AngleArc[m_nIndex][i].nWidth,
-// 				m_AngleArc[m_nIndex][i].nPenStyle);
-// 
-// 		}
-// 	}
-// 	if (m_bFlag == TRUE)
-// 	{
-// 		CPen Pen;//　画笔	
-// 		CPen *oldPen;
-// 		Pen.CreatePen(PS_DASH,1,RGB(0,255,28));
-// 		oldPen = MemDC.SelectObject(&Pen);
-// 		MemDC.SelectStockObject(NULL_BRUSH);
-// 		CPoint m_ptStart, m_ptEnd,m_ptStart2, m_ptEnd2;
-// 		
-// 		m_ptStart.x = m_ptFlag.x;
-// 		m_ptStart.y = m_ptFlag.y - SUKER_SIZE/2;
-// 		m_ptEnd.x = m_ptFlag.x;
-// 		m_ptEnd.y = m_ptFlag.y + SUKER_SIZE/2;
-// 		
-// 		m_ptStart2.x = m_ptFlag.x - SUKER_SIZE/2;
-// 		m_ptStart2.y = m_ptFlag.y;
-// 		m_ptEnd2.x = m_ptFlag.x + SUKER_SIZE/2;
-// 		m_ptEnd2.y = m_ptFlag.y;
-// 		
-// 		MemDC.MoveTo(m_ptStart);
-// 		MemDC.LineTo(m_ptEnd);
-// 		MemDC.MoveTo(m_ptStart2);
-// 		MemDC.LineTo(m_ptEnd2);
-// 		MemDC.SelectObject(oldPen);
-// 	}
-// 
-// 	if (m_bIsShowChipPos == TRUE)
-// 	{
-// 		DrawRectBox(&MemDC);
-// 	}
-// 	
-// 	if (m_bFlagBox ==  TRUE)
-// 	{
-// 		CPoint m_ptStart, m_ptEnd,m_ptStart2, m_ptEnd2;
-// 		CPoint pt;
-// 		CPen pen;
-// 		CPen *oldPen;
-// 		pen.CreatePen(PS_SOLID,1,RGB(0,0,255));
-// 		oldPen = MemDC.SelectObject(&pen);
-// 		MemDC.SelectStockObject(NULL_BRUSH);
-// 		for (int i=0; i<4; i++)
-// 		{
-// 			pt = m_ptFlagBox[i];
-// 			if (pt.x == 0 && pt.y == 0)
-// 			{
-// 				break;
-// 			}
-// 			m_ptStart.x = pt.x;
-// 			m_ptStart.y = pt.y - 10/2;
-// 			m_ptEnd.x = pt.x;
-// 			m_ptEnd.y = pt.y + 10/2;
-// 			
-// 			m_ptStart2.x = pt.x - 10/2;
-// 			m_ptStart2.y = pt.y;
-// 			m_ptEnd2.x = pt.x + 10/2;
-// 			m_ptEnd2.y = pt.y;
-// 			
-// 			MemDC.MoveTo(m_ptStart);
-// 			MemDC.LineTo(m_ptEnd);
-// 			MemDC.MoveTo(m_ptStart2);
-// 			MemDC.LineTo(m_ptEnd2);
-// 		}
-// 		MemDC.SelectObject(oldPen);
-// 	}
-// 
-// 	if (TRUE == m_bIsDrawHighARect)
-// 	{
-// 		CRect rt[MAX_CHILD_CONTROL_NUM];
-// 		//画出检测区域矩形
-// 		CPen Pen;//　画笔	
-// 		CPen *oldPen;
-// 		Pen.CreatePen(PS_DASH,1,RGB(255,0,0));
-// 		oldPen = MemDC.SelectObject(&Pen);
-// 		MemDC.SelectStockObject(NULL_BRUSH);
-// 		int w ;
-// 		int h ;
-// 		for (int i=0;i<MAX_CHILD_CONTROL_NUM;i++)
-// 		{
-//  			if (!m_HighARect[i].IsRectEmpty())
-//  			{
-//  				w = abs(m_HighARect[i].right - m_HighARect[i].left) ;
-//  				h = abs(m_HighARect[i].bottom - m_HighARect[i].top) ;
-//   				rt[i].left = (m_ptCenter[i].x - w/2.0)/**ImageScale*/;
-//   				rt[i].top = (m_ptCenter[i].y - h/2.0)/**ImageScale*/;
-//   				rt[i].right = (m_ptCenter[i].x + w/2.0)/**ImageScale*/;
-//   				rt[i].bottom = (m_ptCenter[i].y + h/2.0)/**ImageScale*/;
-//  				MemDC.Rectangle(rt[i]);
-//  				if (w < 10 )
-//  				{
-//  					w = w/2 ;
-//  				}
-//  				else
-//  				{
-//  					w = 10;
-//  				}
-//  				if (h < 10)
-//  				{
-//  					h = h/2;
-//  				}
-//  				else
-//  				{
-//  					h = 10;
-//  				}
-//  				MemDC.MoveTo(m_ptCenter[i].x, m_ptCenter[i].y - h);
-//  				MemDC.LineTo(m_ptCenter[i].x, m_ptCenter[i].y + h);
-//  				MemDC.MoveTo(m_ptCenter[i].x - w, m_ptCenter[i].y );
-//  				MemDC.LineTo(m_ptCenter[i].x + w, m_ptCenter[i].y);
-//  
-//  			}
-// 		}
-// 
-// 		//whq
-// 		CRect rtS;
-// //   		w = abs(m_HighSelectRect[0].right - m_HighSelectRect[0].left) ;
-// //   		h = abs(m_HighSelectRect[0].bottom - m_HighSelectRect[0].top) ;
-//    		rtS.left		= m_HighSelectRect.left;//(m_ptCenterTemp.x - w)/**ImageScale*/;
-//    		rtS.top		= m_HighSelectRect.top;//(m_ptCenterTemp.y - h)/**ImageScale*/;
-//    		rtS.right		= m_HighSelectRect.right;//(m_ptCenterTemp.x + w)/**ImageScale*/;
-//    		rtS.bottom	= m_HighSelectRect.bottom;//(m_ptCenterTemp.y + h)/**ImageScale*/;
-//  
-//  
-//  
-//  		MemDC.Rectangle(rtS);
-// // 		if (w < 10 )
-// // 		{
-// // 			w = w/2 ;
-// // 		}
-// // 		else
-// // 		{
-// // 			w = 10;
-// // 		}
-// // 		if (h < 10)
-// // 		{
-// // 			h = h/2;
-// // 		}
-// // 		else
-// // 		{
-// // 			h = 10;
-// // 		}
-// //  		MemDC.MoveTo(m_ptCenterTemp.x, m_ptCenterTemp.y - h);
-// //  		MemDC.LineTo(m_ptCenterTemp.x, m_ptCenterTemp.y + h);
-// //  		MemDC.MoveTo(m_ptCenterTemp.x - w, m_ptCenterTemp.y );
-// //  		MemDC.LineTo(m_ptCenterTemp.x + w, m_ptCenterTemp.y);
-// 
-// 
-// 		//////////////////////////////////////////////////////////////////////////
-// 		//显示高精度相机的检测区域
-// 		//@whq 2016-5-10
-// 		//////////////////////////////////////////////////////////////////////////
-// 		CPen GreenPen;
-// 		GreenPen.CreatePen(PS_DASH,1,RGB(0,255,0));
-// 		MemDC.SelectObject(&GreenPen);
-// 		for (int i=0;i<MAX_FIND_POINT;i++)
-// 		{
-// 			if (!m_HighDetRect[i].IsRectEmpty())
-// 			{
-// 				rt[i].left = m_HighDetRect[i].left;
-// 				rt[i].top = m_HighDetRect[i].top;
-// 				rt[i].right = m_HighDetRect[i].right;
-// 				rt[i].bottom = m_HighDetRect[i].bottom;
-// 				MemDC.Rectangle(rt[i]);
-// 			}
-// 		}
-// 
-// 		MemDC.SelectObject(oldPen);
-// 	}
-// 	pDC->BitBlt(0, 0, rect.Width(), rect.Height(), &MemDC, 0, 0, SRCCOPY);
-// 	MemBitmap.DeleteObject(); 
-// 	MemDC.DeleteDC();
-// 	ReleaseDC(pDC);
-// 	m_g_cs.Unlock();//解锁@whq
-// 	//TRACE("showimage:index= %d,Unlock:lockcount=%d\n",m_nIndex,m_g_cs.m_sect.LockCount);
-// 	Sleep(1);//@whq
+			//双缓冲绘图结束,释放资源
+			pDC->BitBlt(0,0,rect.Width(),rect.Height(),  
+				&dcMem,0,0,SRCCOPY);//将内存DC上的图象拷贝到前台  
+			dcMem.DeleteDC(); //删除DC  
+			bmp.DeleteObject(); //删除位图  
+			ReleaseDC(pDC); 
+		}//end of if(m_pImg != NULL)
+#endif
 }
 void CImageStatic::GetMyHdc()
 {
@@ -714,7 +328,7 @@ int CImageStatic::myCircle(CDC *pMemDC,int m_CircleCX,int m_CircleCY,int m_Circl
 	CFloatPt pt = CFloatPt(m_CircleCX,m_CircleCY);
 	PointChange(pt,center,1);
 	m_CircleR *= ImageScale2; 
-	if(center.x>=0&&center.y>=0)
+	//if(center.x>=0&&center.y>=0)
 	pMemDC->Ellipse(center.x - m_CircleR, center.y - m_CircleR,center.x + m_CircleR, center.y + m_CircleR);
 	pMemDC->SelectObject(oldPen);
 	return 0;
@@ -1000,6 +614,10 @@ int CImageStatic::myLine(C3FloatPt Pt1,C3FloatPt Pt2,COLORREF crColor, int nWidt
 	m_Lines[m_nIndex].push_back(m_DrawLine);
 }
 void CImageStatic::PointChange(C3FloatPt srcpt,C3FloatPt &dstpt,int changeType){
+	if(scalx == 0|| scaly == 0 || ImageScale2 == 0)
+	{
+		return;
+	}
 	//假如是cv转crect
 	if(changeType == 1){
 		//减去ROI起始点,获得偏移量
@@ -1017,6 +635,10 @@ void CImageStatic::PointChange(C3FloatPt srcpt,C3FloatPt &dstpt,int changeType){
 
 }
 void CImageStatic::PointChange(CFloatPt srcpt,CFloatPt &dstpt,int changeType){
+	if(scalx == 0|| scaly == 0 || ImageScale2 == 0)
+	{
+		return;
+	}
 	//假如是cv转crect
 	if(changeType == 1){
 	//减去ROI起始点,获得偏移量
@@ -1202,6 +824,8 @@ void CImageStatic::ChangeImg(IplImage* img,BOOL bchangescale)
 	}
 	ClearDraw();
 	//m_ROIrect = CDRect(0,0,m_pImg->width,m_pImg->height);
+	m_bGL = FALSE;
+	m_gl3D.ResizeBack();
 	ShowImage();
 }
 
@@ -1221,45 +845,54 @@ void CImageStatic::ChangeImg(CString path,BOOL bchangescale)
 
 void CImageStatic::OnLButtonDown(UINT nFlags, CPoint point)
 {
+	if(!CheckValue())
+	{
+		return;
+	}
+	if(m_bGL)
+	{
+		m_gl3D.OnLButtonDown(nFlags,point);
+		return;
+	}
+		
 	m_LDownPt = point;
 }
 
 
 void CImageStatic::OnLButtonUp(UINT nFlags, CPoint point)
 {
+	if(!CheckValue())
+	{
+		return;
+	}
+	if(m_bGL)
+	{
+		m_gl3D.OnLButtonUp(nFlags,point);
+		return;
+	}
 	m_LDownPt = CPoint(-1,-1);
 }
 
 
 void CImageStatic::OnMouseMove(UINT nFlags, CPoint point)
 {
+	if(!CheckValue())
+	{
+		return;
+	}
+	if(m_bGL)
+	{
+		m_gl3D.OnMouseMove(nFlags,point);
+		return;
+	}
 	if (m_LDownPt.x > 0 && m_LDownPt.y > 0)
 	{
 		int movex = point.x - m_LDownPt.x;
 		int movey = point.y - m_LDownPt.y;
-		//计算新的额ROI
-		double dmovex = -movex/scalx/ImageScale2 + m_ROIrect.x;
-		double dmovey = -movey/scaly/ImageScale2 + m_ROIrect.y;
-		double width = Width()/scalx / ImageScale2;
-		double height = Height()/scaly / ImageScale2;
-		//控件宽高表示的实际长度
-		if(dmovex + width <= m_pImg->width){//图像与右边界比较
-			if (dmovey + height<=m_pImg->height)
-			{
-				if (dmovex >= 0)
-				{
-					if (dmovey >= 0)
-					{
-						m_ROIrect.x = dmovex;
-						m_ROIrect.y = dmovey;
-						m_ROIrect.width = width;
-						m_ROIrect.height = height;
-						ShowImage();
-					}
-				}
-			}
-		}
+		MoveDis(movex, movey);
+
 		m_LDownPt = point;
+
 		ShowImage();
 	}
 }
@@ -1267,17 +900,23 @@ void CImageStatic::OnMouseMove(UINT nFlags, CPoint point)
 
 BOOL CImageStatic::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 {
+	if(!CheckValue())
+	{
+		return FALSE;
+	}
+	if(m_bGL)
+	{
+		m_gl3D.OnMouseWheel(nFlags,zDelta,pt);
+		return FALSE;
+	}
 	double tmpscale;
-	if (zDelta >= 120)
-	{
-		tmpscale = ImageScale2 + 0.01;
-	}
-	else if (zDelta <= -120)
-	{
-		tmpscale = ImageScale2 - 0.01;
-	}
+	int abs1 = 0;
+	if(zDelta!=0)
+		abs1 = zDelta/abs(zDelta);
 	else
-		return  FALSE;
+		return FALSE;
+	tmpscale = ImageScale2*100.0 + abs1*sqrt(ImageScale2*100.0);
+	tmpscale /= 100.0;
 	if(tmpscale < 1)
 		return FALSE;
 
@@ -1289,6 +928,8 @@ BOOL CImageStatic::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	double height = Height()/scaly / tmpscale;
 
 	//控件宽高表示的实际长度
+	BOOL bmovex = FALSE;
+	BOOL bmovey = TRUE;
 	if(movex + width <= m_pImg->width){//图像与右边界比较
 		if (movey + height<=m_pImg->height)
 		{
@@ -1303,10 +944,50 @@ BOOL CImageStatic::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 					ImageScale2 = tmpscale;
 					ShowImage();
 				}
+				else
+				{
+					bmovey = TRUE;;
+				}
+			}
+			else
+			{
+				bmovex = TRUE;
 			}
 		}
+		else//移动y
+		{
+			bmovey = TRUE;
+		}
 	}
-
+	else//移动x
+	{
+		bmovex = TRUE;
+	}
+	if(bmovex||bmovey)
+	{
+		//首先新的宽高要比原始的小
+		if(width > m_pImg->width||height > m_pImg->height)
+			return FALSE;
+		//计算新的位置
+		if(movex < 0)
+			movex = 0;
+		if (movex + width > m_pImg->width)
+		{
+			movex = m_pImg->width - width;
+		}
+		if(movey < 0)
+			movey = 0;
+		if (movey + height > m_pImg->height)
+		{
+			movey = m_pImg->height - height;
+		}
+		m_ROIrect.x = movex;
+		m_ROIrect.y = movey;
+		m_ROIrect.width = width;
+		m_ROIrect.height = height;
+		ImageScale2 = tmpscale;
+		ShowImage();
+	}
 
 }
 
@@ -1384,6 +1065,17 @@ void CImageStatic::ChangingStyle(int changingType)
 {
 	m_move.m_bDrawingDeteRC = changingType;
 }
+
+void CImageStatic::OnSize(UINT nType, int cx, int cy)
+{
+	CStatic::OnSize(nType, cx, cy);
+// #if USE_OPENGL == 1
+// 	m_gl3D.OnSize(cx,cy);
+// #endif
+	
+}
+
+
 
 void MovePara::MyLButtonDown(UINT nFlags, CWnd* papa,CPoint point)
 {
@@ -1491,3 +1183,959 @@ void MovePara::MyInit(CWnd* papa)
 	m_show->GetWindowRect(m_ShowRC);
 	papa->ScreenToClient(m_ShowRC);
 };
+
+
+/************************************************************************/
+/*                           opengl 3D显示                              */
+/************************************************************************/
+
+void CImageStatic::ChangeImgGL(cv::Mat img)
+{
+	if(CV_8U == img.depth())
+	{
+		m_gl3D.m_pic = img.clone();
+	}
+	else if(CV_32F == img.depth())
+	{
+		m_gl3D.m_pic3D = img.clone();
+	}
+	else
+	{
+		return;
+	}
+	m_gl3D.GetMinMax();
+	m_bGL = TRUE;
+	m_gl3D.Resize();
+	ClearDraw();
+	ShowImageGL();
+}
+
+void CImageStatic::ShowImageGL()
+{
+	m_gl3D.DrawImage();
+}
+
+
+void GL3DPara::OnSize(int X,int Y)
+{
+	m_viewx=X;
+	m_viewy=Y;
+}
+void GL3DPara::LM()
+{
+	glLightModelf(GL_LIGHT_MODEL_LOCAL_VIEWER,GL_TRUE);
+	glLightModelf(GL_LIGHT_MODEL_TWO_SIDE,GL_TRUE);
+
+	GLfloat lightambient[]={0.1f, 0.1f, 0.1f, 0.0f};
+	GLfloat lightdiffuse[]={0.1f, 0.1f, 0.1f, 0.0f};
+	GLfloat lightposition[]={0.0,0.0,0.0,0.0};
+	GLfloat lightSpecular[]={0.1f, 0.1f, 0.1f, 0.0f};
+
+	glLightfv(GL_LIGHT0,GL_AMBIENT,lightambient);
+	glLightfv(GL_LIGHT0,GL_DIFFUSE,lightdiffuse);
+	glLightfv(GL_LIGHT0,GL_SPECULAR,lightSpecular); 
+	glLightfv(GL_LIGHT0,GL_POSITION,lightposition); 
+
+
+	glDisable(GL_LIGHTING);
+
+	GLfloat mat_specular[] = { 1.f, 1.f, 1.f, 1.f };
+	GLfloat mat_diffuse[] = { 1.f, 1.f, 1.f, 1.f };
+	GLfloat mat_shininess[] = { 10000.f };
+	GLfloat mat_ambient[] = { 0.8f, 0.8f, 0.8f, 1.f };
+	glMaterialfv( GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular );
+	glMaterialfv( GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diffuse );
+	glMaterialfv( GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess );
+	glMaterialfv( GL_FRONT_AND_BACK, GL_AMBIENT, mat_ambient );
+
+	glEnable( GL_LIGHTING );
+	glEnable( GL_LIGHT0 );
+	glEnable( GL_DEPTH_TEST );
+	glEnable(GL_COLOR_MATERIAL);
+	glColorMaterial(GL_FRONT_AND_BACK,GL_DIFFUSE);
+	glShadeModel( GL_SMOOTH );
+
+	glDisable(GL_LIGHTING);
+
+}
+HFONT hFont; 
+void myFont()
+{
+	CFont *m_pFontSelected=NULL; 
+	LOGFONT lf ; 
+	memset(&lf,0,sizeof(LOGFONT)); 
+	lf.lfHeight = 0 ; 
+	lf.lfWidth = 0 ; 
+	lf.lfEscapement = 0 ; 
+	lf.lfOrientation = 0 ; 
+	lf.lfWeight = FW_NORMAL ; 
+	lf.lfItalic = FALSE ; 
+	lf.lfUnderline = FALSE ; 
+	lf.lfStrikeOut = FALSE ; 
+	lf.lfCharSet = ANSI_CHARSET ; 
+	lf.lfOutPrecision = OUT_TT_PRECIS ; 
+	lf.lfClipPrecision= CLIP_DEFAULT_PRECIS ; 
+	lf.lfQuality = PROOF_QUALITY ; 
+	lf.lfPitchAndFamily = VARIABLE_PITCH | TMPF_TRUETYPE | FF_MODERN ; 
+	lstrcpy (lf.lfFaceName, "Arial") ; 
+	//设置当前字体
+	hFont = CreateFontIndirect(&lf);
+}
+void   glDrawString(char *str)     
+{  
+
+	SelectObject(wglGetCurrentDC(),hFont);
+	GLYPHMETRICSFLOAT agmf[128]; 
+	unsigned int ich=0; 
+	unsigned int j=0; 
+	char COText[128]; 
+	const GLuint FListBase=1; 
+	unsigned int i=0; 
+	int nListNum;
+
+	strcpy(COText,str); 
+	i=0; 
+
+	while(i<strlen((char   *)COText)){ ///判断是否为双字节 
+		if (IsDBCSLeadByte(COText[i])){
+			ich=COText[i]; 
+			ich=(ich<<8)+256; ////256为汉字内码“偏移量” 
+			ich=ich+COText[i+1]; 
+			i++;
+		} 
+		else{ 
+			ich=COText[i];
+		}
+		nListNum = glGenLists(1);
+		wglUseFontOutlines(wglGetCurrentDC(), /////字体轮廓设备联系DC 
+			ich, /////要转换为显示列表的第一个字符 
+			1, /////要转换为显示列表的字符数 
+			nListNum , /////显示列表的基数 
+			0.0f, /////指定与实际轮廓的最大偏移量 
+			0.05f, /////在Z轴负方向的值 
+			1, /////指定显示列表线段或多边形 
+			&agmf[1]); /////接受字符的地址 
+		i++; 
+		glCallList(nListNum); glDeleteLists(nListNum, 1);
+	}
+}
+void GL3DPara::DrawCoordinate()
+{
+	GLUquadricObj* quadObj;
+	float dLen;
+	dLen = 100.0;
+	// 	glLineWidth(1.0f);
+	glColor3f(0.0,1.0,0.0);
+	//坐标线
+	glBegin(GL_LINES);
+	glColor3f(0.0,0.0,1.0);
+	glVertex3d(0.0,0.0,0.0);
+	glVertex3d(0.0,0.0,dLen);
+
+	glColor3f(1.0,0.0,0.0);    
+	glVertex3d(0.0,0.0,0.0);
+	glVertex3d(dLen,0.0,0.0);
+
+	glColor3f(0.0f,0.80f,0.8f); 
+	glVertex3d(0.0,0.0,0.0);
+	glVertex3d(0.0,dLen,0.0);
+	glEnd();
+	//***********************标记x,y,z轴********************************//
+	glPushMatrix();
+	glTranslatef(dLen+10,0.0,0.0);
+	glRotatef(m_RotX, 1.0f, 0.0f, 0.0f);
+	glRotatef(m_RotY, 0.0f, 1.0f, 0.0f);
+	// 		double tempx;
+	// 		if(m_RotX != 0)
+	// 			tempx = sqrt(fabs(m_RotZ*m_RotZ - m_RotX*m_RotX)) * m_RotX / fabs(m_RotX);
+	// 		else
+	// 			tempx = m_RotZ;
+	// 		glRotatef(tempx, 1.0f, 0.0f, 0.0f);
+	// 		double tempy;
+	// 		if(m_RotY != 0)
+	// 			tempy = sqrt(fabs(m_RotZ*m_RotZ - m_RotY*m_RotY)) * m_RotY / fabs(m_RotY);
+	// 		else
+	// 			tempy = m_RotZ;
+	// 		glRotatef(tempy, 0.0f, 1.0f, 0.0f);
+	//		glRotatef(sqrt(fabs(m_RotZ*m_RotZ - m_RotY*m_RotY)), 0.0f, 1.0f, 0.0f);
+	//		glRotatef(90,1.f,0.f,0.f);
+	glScalef(20.0,20.0,20.0);
+	glColor3f(0.0f,0.80f,0.0f); // 根据字体位置设置颜色
+	glDrawString("x");
+	glPopMatrix(); 
+
+	glPushMatrix();
+	glTranslatef(0.0,dLen+10,0.0);
+	glRotatef(m_RotX, 1.0f, 0.0f, 0.0f);
+	glRotatef(m_RotY, 0.0f, 1.0f, 0.0f);
+	//		glRotatef(m_RotZ, 0.0f, 1.0f, 0.0f);
+	//		glRotatef(90,1.f,0.f,0.f);
+	//		glRotatef(180,0.f,1.f,0.f);
+	glScalef(20.0,20.0,20.0);
+	glColor3f(0.0f,0.80f,0.8f); // 根据字体位置设置颜色
+	glDrawString("y");
+	glPopMatrix(); 
+
+	glPushMatrix();
+	glTranslatef(0.0,-10.0,dLen+10);
+	//		glRotatef(-90,1.f,0.f,0.f);
+	glRotatef(m_RotX, 1.0f, 0.0f, 0.0f);
+	glRotatef(m_RotY, 0.0f, 1.0f, 0.0f);
+	//		glRotatef(m_RotZ, 0.0f, 1.0f, 0.0f);
+	glScalef(20.0,20.0,20.0);
+	glColor3f(0.0f,0.80f,0.0f); // 根据字体位置设置颜色
+	glDrawString("z");
+	glPopMatrix(); 
+	//********************************************************************//
+	//圆锥
+	//z方向
+	glPushMatrix();
+	glColor3f(0.0,0.0,1.0);
+	glTranslatef(0.0f,0.0f,dLen);
+	quadObj=gluNewQuadric();
+	gluQuadricDrawStyle(quadObj,GLU_FILL);
+	gluQuadricNormals(quadObj,GLU_FLAT);
+	gluCylinder(quadObj,2.0,0.0,10.0,6,6);
+	gluDeleteQuadric(quadObj);
+	glPopMatrix();
+	//y方向
+	glPushMatrix();
+	glColor3f(0.0f,0.80f,0.8f); 
+	glTranslatef(0.0,dLen,0.0);
+	glRotatef(-90.0,1.0,0.0,0.0);
+	quadObj=gluNewQuadric();
+	gluQuadricDrawStyle(quadObj,GLU_FILL);
+	gluQuadricNormals(quadObj,GLU_FLAT);
+	gluCylinder(quadObj,2.0,0.0,10.0,6,6);
+	gluDeleteQuadric(quadObj);
+	glPopMatrix();
+	//x方向
+	glPushMatrix();
+	glColor3f(1.0,0.0,0.0);
+	glTranslatef(dLen,0.0,0.0);
+	glRotatef(90.0,0.0,1.0,0.0);
+	quadObj=gluNewQuadric();
+	gluQuadricDrawStyle(quadObj,GLU_FILL);
+	gluQuadricNormals(quadObj,GLU_FLAT);
+	gluCylinder(quadObj,2.0,0.0,10.0,6,6);
+	gluDeleteQuadric(quadObj);
+	glPopMatrix();
+
+}
+void GL3DPara::DrawImage()
+{
+	static BOOL  bBusy;		//检测是否正在绘制
+	if(bBusy) 	return;
+	bBusy = TRUE;
+	DrawBar();
+	OnSize(papaRect.Width(),papaRect.Height());
+	glClearColor(1.0,1.0,1.0,1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);      //clear color and depth buffers
+	glClearDepth(1.0);
+	glShadeModel(GL_SMOOTH);
+	glEnable(GL_DEPTH_TEST);
+
+
+	glViewport(0, 0, m_viewx, m_viewy);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(40.0, 1.0*(GLfloat)m_viewx/(GLfloat)m_viewy, 1.0, 20000.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();  	
+	//reset modelview matrix
+	gluLookAt( m_camera.vEye.x,		
+		m_camera.vEye.y,		
+		m_camera.vEye.z,
+		m_camera.vCenter.x,	
+		m_camera.vCenter.y,	
+		m_camera.vCenter.z,
+		m_camera.vUp.x,		
+		m_camera.vUp.y,		
+		m_camera.vUp.z);
+	LM();	
+	glPushMatrix();
+	DrawCoordinate();
+	DrawObj();	
+	glPopMatrix();
+	glFinish();
+	SwapBuffers(wglGetCurrentDC());  
+	//m_father->MoveWindow(papaRect);
+	bBusy = FALSE;
+}
+BOOL GL3DPara::bSetupPixelFormat()
+{
+	static PIXELFORMATDESCRIPTOR pfd = 
+	{
+		sizeof(PIXELFORMATDESCRIPTOR),  // size of this pfd
+		1,                              // version number
+		PFD_DRAW_TO_WINDOW |            // support window
+		PFD_SUPPORT_OPENGL|            // support OpenGL
+		PFD_DOUBLEBUFFER,             // double buffered,			
+		PFD_TYPE_RGBA,                  // RGBA type
+		24,                             // 24-bit color depth
+		0, 0, 0, 0, 0, 0,               // color bits ignored
+		0,                              // no alpha buffer
+		0,                              // shift bit ignored
+		0,                              // no accumulation buffer
+		0, 0, 0, 0,                     // accum bits ignored
+		32,                             // 32-bit z-buffer
+		1,                              // no stencil buffer
+		1,                              // no auxiliary buffer
+		PFD_MAIN_PLANE,                 // main layer
+		1,                              // reserved
+		0, 0, 0                         // layer masks ignored
+	};
+
+	int pixelformat;
+
+	if ( (pixelformat = ChoosePixelFormat(m_pDC->GetSafeHdc(), &pfd)) == 0 )
+	{
+		AfxMessageBox("ChoosePixelFormat failed");
+		return FALSE;
+	}
+
+	if (SetPixelFormat(m_pDC->GetSafeHdc(), pixelformat, &pfd) == FALSE)
+	{
+		AfxMessageBox("SetPixelFormat failed");
+		return FALSE;
+	}
+
+	return TRUE;
+
+}
+void GL3DPara::Init(CWnd *father)
+{
+	m_father = father;
+	PIXELFORMATDESCRIPTOR pfd;
+	int         n;
+	HGLRC		hrc;
+	m_pDC = new CClientDC(m_father);
+	ASSERT(m_pDC != NULL);
+
+
+	if (!bSetupPixelFormat())
+		return;
+
+	n =::GetPixelFormat(m_pDC->GetSafeHdc());
+	::DescribePixelFormat(m_pDC->GetSafeHdc(), n, sizeof(pfd), &pfd);
+	hrc = wglCreateContext(m_pDC->GetSafeHdc());
+	wglMakeCurrent(m_pDC->GetSafeHdc(), hrc);
+	myFont();
+	hHandWantGrab		= LoadCursorFromFile("res\\cursor1.cur");
+	return;
+}
+
+void GL3DPara::Release()
+{
+	HGLRC	hrc;
+	hrc = ::wglGetCurrentContext();
+	::wglMakeCurrent(NULL,  NULL);
+	if (hrc)
+		::wglDeleteContext(hrc);
+	if (m_pDC)
+		delete m_pDC;
+	m_father = NULL;
+	if(m_cs!=NULL)
+	{
+		delete m_cs;
+		m_cs = NULL;
+	}
+}
+
+void GL3DPara::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: Add your message handler code here and/or call default
+	SetCursor( hHandWantGrab ); 
+	m_bDown = true;
+	m_pointDown= point;
+	m_thetaOld=m_theta;
+	m_cameraOld=m_camera;
+	m_oldRotX = m_RotX;
+	m_oldRotY = m_RotY;
+	m_oldRotZ = m_RotZ;
+	m_father->SetCapture();	
+}
+
+void GL3DPara::OnMouseMove(UINT nFlags, CPoint point)
+{
+	// TODO: Add your message handler code here and/or call default
+	double theta;
+	VECTOR PxOld, axis, x1, y1, p;
+
+	//////////////////////////////视点旋转//////////////////////////////////////////////	
+	if(m_bDown)
+		if(1/*m_bRotate*/)
+		{
+			m_camera = m_cameraOld;
+			PxOld = (m_cameraOld.vCenter-m_cameraOld.vEye)%m_cameraOld.vUp;
+			PxOld = PxOld/Module(PxOld);
+			y1 = (point.y-m_pointDown.y)*m_cameraOld.vUp;
+			x1 = -(point.x-m_pointDown.x)*PxOld;
+			p = x1+y1;
+			theta =sqrt(p.y*p.y + p.x*p.x)/100;
+			if(theta<0.001)return ;
+			axis = (x1+y1)%(m_cameraOld.vCenter-m_cameraOld.vEye);
+			axis = axis/Module(axis);//旋转轴
+			RotateAxis(axis, m_camera.vCenter, theta, &m_camera.vEye);
+			RotateAxis(axis, theta, &m_camera.vUp);
+			m_RotX = m_oldRotX + RAD2ANG(theta) * axis.x;
+			m_RotY = m_oldRotY + RAD2ANG(theta) * axis.y;
+			m_RotZ = m_oldRotZ + RAD2ANG(theta) * axis.z;
+			if(m_RotX > 360 || m_RotX < -360)
+				m_RotX = (fabs(m_RotX) - 360)*m_RotX / fabs(m_RotX);
+			if(m_RotY > 360 || m_RotY < -360)
+				m_RotY = (fabs(m_RotY) - 360)*m_RotY / fabs(m_RotY);
+			if(m_RotZ > 360 || m_RotZ < -360)
+				m_RotZ = (fabs(m_RotZ) - 360)*m_RotZ / fabs(m_RotZ);
+		}	
+		
+}
+
+void GL3DPara::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	m_bDown = false;
+	ReleaseCapture();
+}
+void GL3DPara::ZoomIn(int abs)
+{
+	double EyeR,EyeB,EyeL;
+
+	EyeR=sqrt(m_camera.vEye.x*m_camera.vEye.x+
+		m_camera.vEye.y*m_camera.vEye.y+m_camera.vEye.z*m_camera.vEye.z);
+	EyeB=atan2(m_camera.vEye.z,sqrt(m_camera.vEye.x*m_camera.vEye.x+m_camera.vEye.y*m_camera.vEye.y));
+	EyeL=atan2(m_camera.vEye.y,m_camera.vEye.x);
+	EyeR=EyeR-abs*sqrt(EyeR);
+	if(EyeR<40000&&EyeR>1)
+	{
+		m_camera.vEye.x=EyeR*cos(EyeB)*cos(EyeL);	
+		m_camera.vEye.y=EyeR*cos(EyeB)*sin(EyeL);
+		m_camera.vEye.z=EyeR*sin(EyeB);
+	}
+
+}
+
+void TestDrawCube()
+{
+  	glBegin(GL_QUAD_STRIP);//填充凸多边形
+  	glVertex3f(0.0f, 0.0f, 0.0f);  
+  	glVertex3f(0.0f, 1.0f, 0.0f);  
+  	glVertex3f(1.0f, 0.0f, 0.0f);  
+  	glVertex3f(1.0f, 1.0f, 0.0f);  
+  	glVertex3f(1.0f, 0.0f, 1.0f);  
+  	glVertex3f(1.0f, 1.0f, 1.0f);  
+  	glVertex3f(0.0f, 0.0f, 1.0f);  
+  	glVertex3f(0.0f, 1.0f, 1.0f);  
+  	glVertex3f(0.0f, 0.0f, 0.0f);  
+  	glVertex3f(0.0f, 1.0f, 0.0f);  
+  	glEnd();  
+  	glBegin(GL_QUAD_STRIP);  
+  	glVertex3f(0.0f, 0.0f, 0.0f);
+  	glVertex3f(1.0f, 0.0f, 0.0f);
+  	glVertex3f(0.0f, 0.0f, 1.0f);
+  	glVertex3f(1.0f, 0.0f, 1.0f);
+  	glVertex3f(0.0f, 1.0f, 0.0f);
+  	glVertex3f(1.0f, 1.0f, 0.0f);
+  	glVertex3f(0.0f, 1.0f, 1.0f);
+  	glVertex3f(1.0f, 1.0f, 1.0f);
+  	glEnd();  
+}
+void GL3DPara::GetColor(double r, double &red, double &green, double &blue)
+{
+	int maxRadius = 0;
+	int minRadius = 0;
+
+	if(co1 == -1||co0 == -1)
+	{
+		if(co1 != 0)
+		{
+			maxRadius = (m_valmax-co0)/co1;
+			minRadius = (m_valmin-co0)/co1;
+		}
+	}
+	if(maxRadius == 0&&minRadius == 0)
+	{
+		maxRadius= m_valmax;
+		minRadius= m_valmin;
+	}
+	double ave = (maxRadius - minRadius)/6;
+	double ratio = (r - minRadius)/ave;
+	int flat = int(ratio);
+	double temp = ratio - flat;
+	if(ColorRG0)
+	{
+		temp = (r - minRadius)/(maxRadius - minRadius);
+		red = 1-temp;
+		green = temp;
+		blue = 0;
+		return;
+	}
+
+
+	switch(flat) 
+	{
+	case 0:
+		{
+
+			red = 128 * (1-temp)/255.0;
+			green = 0;
+			blue = 128/255.0;
+			break;
+		}
+	case 1:
+		{
+			red = 0;
+			green = 0;
+			blue = 128/255.0 + 128/255.0*temp;
+			break;
+		}
+	case 2:
+		{
+			red = 0;
+			green = 1*temp;
+			blue = 1;
+			break;
+		}
+	case 3:
+		{
+			red = 0;
+			green = 1;
+			blue = 1*(1-temp);
+			break;
+		}
+	case 4:
+		{
+			red = 1*temp;
+			green = 1;
+			blue = 0;
+			break;
+		}
+	case 5:
+		{
+			red = 1;
+			green = 1*(1-temp);
+			blue = 0;
+			break;
+		}
+	default:
+		{
+			red = 1;
+			green = 0;
+			blue = 0;
+			break;
+		}
+	}
+}
+
+void GL3DPara::DrawObj()
+{
+	int i,j;
+	double x,y,z,radius;
+	double toppointx=0,toppointy=0,toppointz=0;
+	double bottompointx=0,bottompointy=0,bottompointz=0;
+	double colorr,colorg,colorb;
+	colorr = colorg = colorr = 0;
+	for (int i = 1; i < m_pic.rows;i++)
+	{
+ 		glBegin(GL_QUAD_STRIP);  
+		for (int j = 0; j < m_pic.cols;j++)
+		{
+			double val = YX_BYTE_MAT(m_pic,i,j);
+			double vals = YX_BYTE_MAT(m_pic,i - 1,j);
+// 			if(val == 0||vals ==0)
+// 				continue;
+			GetColor(val,colorr,colorg,colorb);
+			glColor3f(colorr, colorg, colorb);
+			glVertex3f(j, i, val);
+
+			GetColor(vals,colorr,colorg,colorb);
+			glColor3f(colorr, colorg, colorb);
+			glVertex3f(j, i - 1, vals);
+		}
+		glEnd(); 
+	}
+
+	///////////////////////////////////////绘制经纬线///////////////////////////////////////////
+	glPushMatrix();
+
+	glPopMatrix();
+	/////////////////////////////////////////////////////////////////////////////////////////*/
+}
+void GL3DPara::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
+{
+	if(zDelta!=0)
+	{
+		ZoomIn((zDelta/abs(zDelta)));
+	}
+		
+}
+
+void GL3DPara::GetMinMax()
+{
+	int tmpmin = INT_MAX;
+	int tmpmax = -1;
+
+	for (int i = 0 ; i < m_pic.rows;i++)
+	{
+		for (int j = 0 ; j < m_pic.cols;j++)
+		{
+			int val = YX_BYTE_MAT(m_pic,i,j);
+			if(val == 0)
+				continue;
+			tmpmax = val > tmpmax?val:tmpmax;
+			tmpmin = val < tmpmin?val:tmpmin;
+		}
+	}
+	m_valmin = tmpmin;
+	m_valmax = tmpmax;
+}
+void GL3DPara::DrawColorBlock(CDC* pDC,CRect r, COLORREF cr1, COLORREF cr2)
+{
+	int r1=GetRValue(cr1);
+	int g1=GetGValue(cr1);
+	int b1=GetBValue(cr1);
+	int r2=GetRValue(cr2);
+	int g2=GetGValue(cr2);
+	int b2=GetBValue(cr2);
+
+	int rdeta=r2-r1;
+	int gdeta=g2-g1;
+	int bdeta=b2-b1;
+	int nHeight=r.Height();
+	int rvariate,gvariate,bvariate;
+	CRect drawrect;
+
+	for(int i=0;i<nHeight;i++)
+	{
+		rvariate=r1+MulDiv(i,rdeta,nHeight);
+		gvariate=g1+MulDiv(i,gdeta,nHeight);
+		bvariate=b1+MulDiv(i,bdeta,nHeight);
+		drawrect.SetRect(r.left,r.top+i,r.right,r.top+i+1);
+		pDC->FillSolidRect(drawrect,RGB(rvariate,gvariate,bvariate));
+	}
+}
+
+void GL3DPara::DrawBar()
+{
+//	CStatic barstatic;
+	CRect PicRect;
+	//获取父窗口大小
+	papaRect = CWGetWndRect(m_father);
+	double height = papaRect.Height() *0.85/6.0; //PicRect.Height() / 6.0;
+	double width = height*0.1;
+	CPoint pt;
+	pt.x = papaRect.Width() - 8.0*width;
+	pt.y = papaRect.Height() *0.07;
+	CPoint ltpt, rbpt;
+	CDC* dc = NULL;
+	CDC *dcMem = NULL; //用于缓冲作图的内存DC  
+
+	CRect rect;
+	CBitmap bmp; //内存中承载临时图象的位图  
+	CDC dctmp;
+	if(1)//双缓冲,已经放弃
+	{
+		
+		if(m_cs == NULL)
+			return;
+		dc = m_cs->GetDC();
+		CDC* tmpfatherdc = m_father->GetDC();
+		dcMem = &dctmp; //用于缓冲作图的内存DC  
+		CRect papainGrandFather;
+		m_father->GetWindowRect(&papainGrandFather);//获取控件相对于屏幕的位置
+		m_Grandfather->ScreenToClient(papainGrandFather);
+		ltpt.x = papaRect.Width() + papainGrandFather.left;
+		ltpt.y = papainGrandFather.top;
+		rbpt.x = ltpt.x + 9.0*width;
+		rbpt.y = ltpt.y + papaRect.Height();
+
+		rect.SetRect(ltpt, rbpt);			//初始化双缓冲绘图
+		//m_cs->MoveWindow(&rect);
+		dcMem->CreateCompatibleDC(dc); //依附窗口DC创建兼容内存DC  
+		bmp.CreateCompatibleBitmap(dc,rect.Width(),rect.Height());//创建兼容位图  
+		dcMem->SelectObject(&bmp); //将位图选择进内存DC  
+		dcMem->FillSolidRect(CRect(0,0,rect.Width(),rect.Height()),RGB(255,255,255));  //按原来背景填充客户区，不然会是黑色  
+		m_father->ReleaseDC(tmpfatherdc);
+		pt.x = width;
+		pt.y = papaRect.Height() *0.07;
+	}
+	else
+	{
+		dc = m_father->GetDC();
+		dcMem = dc;
+	}
+
+
+
+	///1
+	ltpt.x = pt.x;
+	ltpt.y = pt.y;
+	rbpt.x = pt.x + width;
+	rbpt.y = int(pt.y + height);
+	CRect rect1;
+	rect1.SetRect(ltpt, rbpt);
+	DrawColorBlock(dcMem, rect1, RGB(255,0,0), RGB(255,255,0));
+	///2
+	ltpt.y = rbpt.y;
+	rbpt.y = int(pt.y + height*2);
+	rect1.SetRect(ltpt, rbpt);
+	DrawColorBlock(dcMem, rect1, RGB(255,255,0), RGB(0,255,0));
+	///3
+	ltpt.y = rbpt.y;
+	rbpt.y = int(pt.y + height*3);
+	rect1.SetRect(ltpt, rbpt);
+	DrawColorBlock(dcMem, rect1, RGB(0,255,0), RGB(0,255,255));
+	///4
+	ltpt.y = rbpt.y;
+	rbpt.y = int(pt.y + height*4);
+	rect1.SetRect(ltpt, rbpt);
+	DrawColorBlock(dcMem, rect1, RGB(0,255,255), RGB(0,0,255));
+	///5
+	ltpt.y = rbpt.y;
+	rbpt.y = int(pt.y + height*5);
+	rect1.SetRect(ltpt, rbpt);
+	DrawColorBlock(dcMem, rect1, RGB(0,0,255), RGB(0,0,128));
+	///6
+	ltpt.y = rbpt.y;
+	rbpt.y = int(pt.y + height*6);
+	rect1.SetRect(ltpt, rbpt);
+	DrawColorBlock(dcMem, rect1, RGB(0,0,128), RGB(128,0,128));
+
+
+
+	//以下画半径值
+	double R_max = m_valmax;
+	double R_min = m_valmin;
+	CRect TextRect = CRect(pt.x + 2.0*width,pt.y,pt.x + width*6.0,papaRect.Height());
+	CStatic* TextStaic = NULL;
+	dcMem->SetBkMode( TRANSPARENT );
+	dcMem->SetTextColor( RGB(0, 0, 0) );
+	double TextHeight = height * 6.0 / 8.0;
+	double tempR = (R_max - R_min) / 8.0;
+	double temptop = TextRect.top;
+	CString str;
+	//1
+	str.Format("%.4f", double(R_max));
+	dcMem->DrawText(str, TextRect, DT_LEFT);
+	//2
+	str.Format("%.4f", double(R_max-tempR));
+	TextRect.top = int(temptop + TextHeight);
+	dcMem->DrawText(str, TextRect, DT_LEFT);
+	//3
+	str.Format("%.4f", double(R_max-2*tempR));
+	TextRect.top = int(temptop + 2*TextHeight);
+	dcMem->DrawText(str, TextRect, DT_LEFT);
+	//4
+	str.Format("%.4f", double(R_max-3*tempR));
+	TextRect.top = int(temptop + 3*TextHeight);
+	dcMem->DrawText(str, TextRect, DT_LEFT);
+	//5
+	str.Format("%.4f", double(R_max-4*tempR));
+	TextRect.top = int(temptop + 4*TextHeight);
+	dcMem->DrawText(str, TextRect, DT_LEFT);
+	//6
+	str.Format("%.4f", double(R_max-5*tempR));
+	TextRect.top = int(temptop + 5*TextHeight);
+	dcMem->DrawText(str, TextRect, DT_LEFT);
+	//7
+	str.Format("%.4f", double(R_max-6*tempR));
+	TextRect.top = int(temptop + 6*TextHeight);
+	dcMem->DrawText(str, TextRect, DT_LEFT);
+	//8
+	str.Format("%.4f", double(R_max-7*tempR));
+	TextRect.top = int(temptop + 7*TextHeight);
+	dcMem->DrawText(str, TextRect, DT_LEFT);
+	//9
+	str.Format("%.4f", double(R_min));
+	TextRect.top = int(temptop + 8*TextHeight);//APP->m_nHeight;
+	dcMem->DrawText(str, TextRect, DT_LEFT);
+	if(1)
+	{
+		dc->BitBlt(0,0,rect.Width(),rect.Height(),  
+			dcMem,0,0,SRCCOPY);//将内存DC上的图象拷贝到前台  
+		dcMem->DeleteDC(); //删除DC  
+		bmp.DeleteObject(); //删除位图  
+	}
+
+// 	str.Format("XROT = %.4f\tYROT = %.4f\tZROT = %.4f", m_RotX,m_RotY,m_RotZ);
+// 	TextRect.left = 0.05*papaRect.Width();
+// 	TextRect.right = 0.95*papaRect.Width();
+// 	TextRect.top = 0.90*papaRect.Height();
+// 	TextRect.bottom= papaRect.Height();
+// 	dcMem->DrawText(str, TextRect, DT_LEFT);
+
+
+// 	CRect PowerRect;
+// 	CStatic* PowerStaic = (CStatic*)GetDlgItem( IDC_POWERTEXT );
+// 	CFont vertFont;
+// 	CString strText=" Power(dBm) "; 
+// 	CPaintDC dc2( PowerStaic );
+// 	vertFont.CreateFont(16, 0, 900, 900, FW_BOLD,0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+// 		CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH, "Arial");
+// 	CFont *pOldFont = dc2.SelectObject(&vertFont);
+// 	PowerStaic->GetClientRect( PowerRect );
+// 	dc2.SetBkMode( TRANSPARENT );
+// 	dc2.SetTextColor( RGB(0, 0, 0) );
+// 	//	dc2.DrawText(strText, PowerRect, DT_CENTER);
+	// 	dc2.TextOut(PowerRect.left, int(APP->m_nHeight/2+50), strText);
+	m_father->ReleaseDC(dc);
+}
+
+void GL3DPara::InitGrandPa(CWnd *grandpa)
+{
+	if(m_cs!= NULL)
+	{
+		delete m_cs;
+		m_cs = NULL;
+	}
+	m_cs = new CStatic();  
+	m_Grandfather = grandpa;
+	m_cs->Create(" ", WS_OVERLAPPED|WS_VISIBLE|SS_CENTER, CRect(0,0,1,1),grandpa);  
+	m_cs->ShowWindow(SW_SHOW);
+}
+
+void GL3DPara::Resize()
+{
+	if(m_cs == NULL)
+	{
+		return;
+	}
+	CPoint ltpt,rbpt;
+	CRect papaRect1 = CWGetWndRect(m_father);
+	CRect papainGrandFather,rect;
+	double height = papaRect1.Height() *0.85/6.0; //PicRect.Height() / 6.0;
+	double width = height*0.1;
+	m_father->GetWindowRect(&papainGrandFather);//获取控件相对于屏幕的位置
+	m_Grandfather->ScreenToClient(papainGrandFather);
+	m_father->MoveWindow(CRect(papainGrandFather.left,papainGrandFather.top,papainGrandFather.right - 9.0*width,papainGrandFather.bottom));
+	ltpt.x = papaRect1.Width() + papainGrandFather.left - 9.0*width;
+	ltpt.y = papainGrandFather.top;
+	rbpt.x = ltpt.x + 9.0*width;
+	rbpt.y = ltpt.y + papaRect1.Height();
+
+	rect.SetRect(ltpt, rbpt);			//初始化双缓冲绘图
+	m_cs->MoveWindow(&rect);
+	m_cs->ShowWindow(SW_SHOW);
+}
+
+void GL3DPara::ResizeBack()
+{
+	if(m_cs == NULL)
+	{
+		return;
+	}
+	CPoint ltpt,rbpt;
+	CRect papaRect1 = CWGetWndRect(m_father);
+	CRect papainGrandFather,rect;
+	double height = papaRect1.Height() *0.85/6.0; //PicRect.Height() / 6.0;
+	double width = height*0.1;
+	m_father->GetWindowRect(&papainGrandFather);//获取控件相对于屏幕的位置
+	m_Grandfather->ScreenToClient(papainGrandFather);
+	m_father->MoveWindow(CRect(papainGrandFather.left,papainGrandFather.top,papainGrandFather.right + 9.0*width,papainGrandFather.bottom));
+// 	ltpt.x = papaRect1.Width() + papainGrandFather.left - 9.0*width;
+// 	ltpt.y = papainGrandFather.top;
+// 	rbpt.x = ltpt.x + 9.0*width;
+// 	rbpt.y = ltpt.y + papaRect1.Height();
+// 
+// 	rect.SetRect(ltpt, rbpt);			//初始化双缓冲绘图
+//	m_cs->MoveWindow(&rect);
+	m_cs->ShowWindow(SW_HIDE);
+}
+
+void GL3DPara::SetCo(double co1q,double co0q)
+{
+	co1 =co1q;
+	co0 = co0q;
+}
+
+
+/************************************************************************/
+/*                           opengl 3D显示 结束                         */
+/************************************************************************/
+
+
+
+void CImageStatic::PreSubclassWindow()
+{
+
+#if USE_OPENGL == 1
+	m_gl3D.Init(this);
+	SetTimer(1, 30, NULL);
+#endif
+	CStatic::PreSubclassWindow();
+}
+
+
+void CImageStatic::OnTimer(UINT_PTR nIDEvent)
+{
+	
+	Invalidate(false);
+	CStatic::OnTimer(nIDEvent);
+}
+
+BOOL CImageStatic::CheckValue()
+{
+	if(m_pImg == NULL&&m_bGL == FALSE)
+		return FALSE;
+}
+
+void CImageStatic::MoveDis(int movex, int movey)
+{
+	//计算新的额ROI
+	if(m_bGL == FALSE)
+	{
+		double dmovex = -movex/scalx/ImageScale2 + m_ROIrect.x;
+		double dmovey = -movey/scaly/ImageScale2 + m_ROIrect.y;
+		double width = Width()/scalx / ImageScale2;
+		double height = Height()/scaly / ImageScale2;
+		//控件宽高表示的实际长度
+		if(dmovex + width <= m_pImg->width){//图像与右边界比较
+			if (dmovey + height<=m_pImg->height)
+			{
+				if (dmovex >= 0)
+				{
+					if (dmovey >= 0)
+					{
+						m_ROIrect.x = dmovex;
+						m_ROIrect.y = dmovey;
+						m_ROIrect.width = width;
+						m_ROIrect.height = height;
+						ShowImage();
+					}
+				}
+			}
+		}
+	}
+}
+
+BOOL CImageStatic::SaveToFile(CString path)
+{
+	//CWnd* bmpShow = GetDlgItem(ID);  
+	CDC *pdc = GetDC();  
+	CImage  imag;  
+	CRect rect;  
+	GetClientRect(&rect);        //获取画布大小  
+	GetWindowRect(&rect);  
+	imag.Create(rect.Width(), rect.Height(), 32);  
+	::BitBlt(imag.GetDC(), 0, 0, rect.Width(), rect.Height(), pdc->m_hDC, 0, 0, SRCCOPY);  
+// 	TCHAR szFilter[] = _T("jpg file(*.jpg)|*.jpg|bmp file(*.bmp)|*.bmp|所有文件(*.*)|*.*||");  //文件格式过滤  
+// 	// 构造保存文件对话框      
+// 	CFileDialog fileDlg(FALSE, _T("jpg"), _T("*.jpg"), OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, szFilter, this);  
+// 	fileDlg.m_ofn.lpstrTitle = _T("保存直方图");  //保存对话窗口标题名  
+// 	CString picturePath;  
+// 	if (IDOK == fileDlg.DoModal())  //按下确认键  
+// 	{  
+// 		picturePath = fileDlg.GetPathName();  //文件路径  
+// 	}  
+
+	HRESULT hResult = imag.Save(path); //保存图片  
+	ReleaseDC(pdc);  
+	imag.ReleaseDC();  
+	return TRUE;
+}
+
+void CImageStatic::Init(CWnd* papa)
+{
+	m_move.MyInit(papa);
+	m_gl3D.Init(this);
+	m_gl3D.InitGrandPa(papa);
+}

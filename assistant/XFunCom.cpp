@@ -2598,6 +2598,15 @@ BOOL test_rtree()
 
 }
 
+CRect CWGetWndRect(CWnd *cwwnd,int ptType /*= 0*/)
+{
+	CRect rect;
+	cwwnd->GetWindowRect(&rect);//获取控件相对于屏幕的位置
+	cwwnd->ScreenToClient(rect);
+	cwwnd->GetClientRect(&rect);
+	return rect;
+}
+
 
 
 

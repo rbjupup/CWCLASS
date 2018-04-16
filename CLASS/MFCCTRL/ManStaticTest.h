@@ -29,4 +29,6 @@ public:
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg void OnBnClickedButton2();
 	virtual BOOL OnInitDialog();
+	afx_msg void OnBnClickedButton3();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };

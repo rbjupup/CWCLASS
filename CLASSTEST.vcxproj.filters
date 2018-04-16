@@ -64,6 +64,12 @@
     <None Include="res\bg2.png">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="POINTER_COPY.cur">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="res\cursor1.cur">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CLASSTEST.h">
@@ -180,6 +186,9 @@
     <ClInclude Include="DlgDouYin.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="CLASS\MFCCTRL\VectorOperator.h">
+      <Filter>CLASS\MFCCTRL\tab</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CLASSTEST.cpp">
@@ -277,6 +286,9 @@
     </ClCompile>
     <ClCompile Include="DlgDouYin.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CLASS\MFCCTRL\VectorOperator.cpp">
+      <Filter>CLASS\MFCCTRL\tab</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

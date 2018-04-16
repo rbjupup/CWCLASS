@@ -67,8 +67,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>assistant;CLASS\ROB;CLASS\CAM;CLASS\CAM\KSJApiInc;CLASS\CAM\IMGInc;CLASS\CAM\DSInc;CLASS\CAM\PTGInc;$(ProjectDir)EXTERN\BCGCBPro;$(ProjectDir)CLASS\COM;$(ProjectDir)CLASS\SOCKET;$(ProjectDir);$(ProjectDir)INC;$(ProjectDir)INC\MotionCard;$(ProjectDir)EXTERN\KDXF\include;$(ProjectDir)EXTERN\opencv\build\include5;$(ProjectDir)EXTERN\opencv\build\include\opencv5;$(ProjectDir)EXTERN\opencv\build\include\opencv25;C:\Program Files\opencv2.3.1\build\include;C:\Program Files\opencv2.3.1\build\include\opencv;C:\Program Files\opencv2.3.1\build\include\opencv2;EXTERN\MotionCard\INC;$(IncludePath)</IncludePath>
-    <LibraryPath>CLASS\CAM\IMGLib;CLASS\CAM\KSJApiLib;CLASS\CAM\PTGLib;CLASS\CAM\DSLib;$(ProjectDir)LIB\MotionCard;$(ProjectDir)EXTERN\KDXF\libs;C:\Program Files\opencv2.3.1\build\x86\vc10\lib;$(ProjectDir)EXTERN\opencv\build\x86\vc10\lib5;$(ProjectDir)EXTERN\BCGCBPro\lib;EXTERN\MotionCard\LIB;$(LibraryPath)</LibraryPath>
+    <IncludePath>assistant;D:\OpenGl;CLASS\CV;CLASS\ROB;CLASS\CAM;CLASS\CAM\KSJApiInc;CLASS\CAM\IMGInc;CLASS\CAM\DSInc;CLASS\CAM\PTGInc;$(ProjectDir)EXTERN\BCGCBPro;$(ProjectDir)CLASS\COM;$(ProjectDir)CLASS\SOCKET;$(ProjectDir);$(ProjectDir)INC;$(ProjectDir)INC\MotionCard;$(ProjectDir)EXTERN\KDXF\include;$(ProjectDir)EXTERN\opencv\build\include5;$(ProjectDir)EXTERN\opencv\build\include\opencv5;$(ProjectDir)EXTERN\opencv\build\include\opencv25;C:\Program Files\opencv2.3.1\build\include;C:\Program Files\opencv2.3.1\build\include\opencv;C:\Program Files\opencv2.3.1\build\include\opencv2;EXTERN\MotionCard\INC;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\OpenGl;CLASS\CAM\IMGLib;CLASS\CAM\KSJApiLib;CLASS\CAM\PTGLib;CLASS\CAM\DSLib;$(ProjectDir)LIB\MotionCard;$(ProjectDir)EXTERN\KDXF\libs;C:\Program Files\opencv2.3.1\build\x86\vc10\lib;$(ProjectDir)EXTERN\opencv\build\x86\vc10\lib5;$(ProjectDir)EXTERN\BCGCBPro\lib;EXTERN\MotionCard\LIB;$(LibraryPath)</LibraryPath>
     <EmbedManifest>false</EmbedManifest>
     <GenerateManifest>false</GenerateManifest>
     <SourcePath>$(SourcePath)</SourcePath>
@@ -76,8 +76,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>assistant;CLASS\ROB;CLASS\CAM;CLASS\CAM\KSJApiInc;CLASS\CAM\IMGInc;CLASS\CAM\DSInc;CLASS\CAM\PTGInc;$(ProjectDir)EXTERN\BCGCBPro;$(ProjectDir)CLASS\COM;$(ProjectDir)CLASS\SOCKET;$(ProjectDir);$(ProjectDir)INC;$(ProjectDir)INC\MotionCard;$(ProjectDir)EXTERN\KDXF\include;E:\OPENCV231\opencv\build\include;E:\OPENCV231\opencv\build\include\opencv;E:\OPENCV231\opencv\build\include\opencv2;$(ProjectDir)EXTERN\opencv\build\include;$(ProjectDir)EXTERN\opencv\build\include\opencv;$(ProjectDir)EXTERN\opencv\build\include\opencv2;EXTERN\MotionCard\INC;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\OPENCV231\lib\Debug;CLASS\CAM\IMGLib;CLASS\CAM\KSJApiLib;CLASS\CAM\PTGLib;CLASS\CAM\DSLib;$(ProjectDir)LIB\MotionCard;$(ProjectDir)EXTERN\KDXF\libs;$(ProjectDir)EXTERN\BCGCBPro\lib;EXTERN\MotionCard\LIB;$(ProjectDir)EXTERN\opencv\build\x64\vc10\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\OpenGl;CLASS\CV;assistant;CLASS\ROB;CLASS\CAM;CLASS\CAM\KSJApiInc;CLASS\CAM\IMGInc;CLASS\CAM\DSInc;CLASS\CAM\PTGInc;$(ProjectDir)EXTERN\BCGCBPro;$(ProjectDir)CLASS\COM;$(ProjectDir)CLASS\SOCKET;$(ProjectDir);$(ProjectDir)INC;$(ProjectDir)INC\MotionCard;$(ProjectDir)EXTERN\KDXF\include;EXTERN\MotionCard\INC;C:\Program Files\opencv2.3.1\build\include;C:\Program Files\opencv2.3.1\build\include\opencv;C:\Program Files\opencv2.3.1\build\include\opencv2;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files\opencv2.3.1\build\x64\vc10\lib;D:\OpenGl\lib64;CLASS\CAM\IMGLib;CLASS\CAM\KSJApiLib;CLASS\CAM\PTGLib;CLASS\CAM\DSLib;$(ProjectDir)LIB\MotionCard;$(ProjectDir)EXTERN\KDXF\libs;$(ProjectDir)EXTERN\BCGCBPro\lib;EXTERN\MotionCard\LIB;$(ProjectDir)EXTERN\opencv\build\x64\vc10\lib;E:\OPENCV231\lib\Debug;$(LibraryPath)</LibraryPath>
     <EmbedManifest>false</EmbedManifest>
     <GenerateManifest>false</GenerateManifest>
     <SourcePath>$(SourcePath)</SourcePath>
@@ -188,11 +188,13 @@
   <ItemGroup>
     <None Include="bg1.png" />
     <None Include="bg2.png" />
+    <None Include="POINTER_COPY.cur" />
     <None Include="ReadMe.txt" />
     <None Include="res\bg1.png" />
     <None Include="res\bg2.png" />
     <None Include="res\CLASSTEST.ico" />
     <None Include="res\CLASSTEST.rc2" />
+    <None Include="res\cursor1.cur" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="assistant\Smtp.h" />
@@ -211,6 +213,7 @@
     <ClInclude Include="CLASS\MFCCTRL\tab\W.h" />
     <ClInclude Include="CLASS\MFCCTRL\tab\WAONE.h" />
     <ClInclude Include="CLASS\MFCCTRL\tab\WATWO.h" />
+    <ClInclude Include="CLASS\MFCCTRL\VectorOperator.h" />
     <ClInclude Include="CLASS\MFCCTRL\WMFCBtn.h" />
     <ClInclude Include="CLASS\MONITOR\explorer1.h" />
     <ClInclude Include="CLASS\MONITOR\MyBrower.h" />
@@ -251,6 +254,7 @@
     <ClCompile Include="CLASS\MFCCTRL\tab\W.cpp" />
     <ClCompile Include="CLASS\MFCCTRL\tab\WAONE.cpp" />
     <ClCompile Include="CLASS\MFCCTRL\tab\WATWO.cpp" />
+    <ClCompile Include="CLASS\MFCCTRL\VectorOperator.cpp" />
     <ClCompile Include="CLASS\MFCCTRL\WMFCBtn.cpp" />
     <ClCompile Include="CLASS\MONITOR\explorer1.cpp" />
     <ClCompile Include="CLASS\MONITOR\MyBrower.cpp" />

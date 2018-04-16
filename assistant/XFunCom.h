@@ -79,6 +79,7 @@ using namespace std;
 	使用正则表达式进行匹配
 	内存整理
 	等待某个变量为真或者为否再继续执行接下去的代码
+	坐标转换,转换成控件坐标0表示传入的点以界面左上角为单位,1表示以屏幕为单位
 
 
 网络
@@ -495,6 +496,8 @@ CRect GetRoundRect(CPoint *pt,int nPointNum);
 BOOL PtInPolygon(CPoint p, CPoint pt[], int nCount);
 //坐标转换,转换成控件坐标0表示传入的点以界面左上角为单位,1表示以屏幕为单位
 BOOL TranParentToChild(CWnd &cwwnd, CWnd* papa,CPoint &point,int ptType = 0);
+//获取控件的位置
+CRect CWGetWndRect(CWnd *cwwnd,int ptType = 0);
 //CRect转CvRect
 CvRect ChangeRect(CRect rect);
 /************************************************************************/

@@ -16,7 +16,7 @@ MFace::~MFace(void)
 {
 }
 CvHaarClassifierCascade* MFace::Loadhaar(CString path){
-	return (CvHaarClassifierCascade*)cvLoad(path);
+	return NULL;//return (CvHaarClassifierCascade*)cvLoad(path);
 }
 
 int MFace::FindAndDraw(CString image,CvHaarClassifierCascade* cascade,int pyrdown){
@@ -64,7 +64,7 @@ void MFace::FindFace(IplImage* mainImage,int pyrdown , Facedata &data)
 		cvCopy(mainImage,smallImage);
 	}
 	//绘制找到的地方
-	seq = cvHaarDetectObjects(smallImage,cascade,mem,1.2,2,CV_HAAR_DO_CANNY_PRUNING);
+	//seq = cvHaarDetectObjects(smallImage,cascade,mem,1.2,2,CV_HAAR_DO_CANNY_PRUNING);
 	for (int i = 0; i < seq->total;i++){
 		CvRect center = *(CvRect*)cvGetSeqElem(seq,i);
 		if(!pyrdown)

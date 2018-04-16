@@ -7,11 +7,34 @@
 // ImageStatic.h : header file
 //
 #define STATIC_CV
+#define USE_OPENGL 1
+
 #include "def.h"
 #include <afxmt.h>
 #ifdef STATIC_CV
 #include "cv.h"
 #endif
+#if USE_OPENGL == 1
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glaux.h>
+#ifdef _WIN64
+#define GLUT_DISABLE_ATEXIT_HACK
+#define GLUT_BUILDING_LIB 
+#pragma comment(lib,"opengl32.lib")  
+#pragma comment(lib,"glu32.lib")  
+#pragma comment (lib, "glut64.lib")   
+#pragma comment(lib,"glew32.lib")
+#else
+#pragma comment(lib,"opengl32.lib")
+#pragma comment(lib,"glu32.lib")
+#pragma comment(lib,"glaux.lib")
+#endif
+
+#endif
+#include <math.h>
+#include "VectorOperator.h"
+#include "XFunCom.h"
 class C3FloatPt 
 {
 public:
@@ -145,6 +168,109 @@ struct DRAWAngleArc//绘圆弧结构体
 	int nPenStyle;
 };
 
+typedef struct tagCAMERA{
+	VECTOR vEye;
+	VECTOR vCenter;
+	VECTOR vUp;
+}CAMERA;
+struct GL3DPara
+{
+
+	cv::Mat m_pic3D;		//小数点图像
+	cv::Mat m_pic;			//没有小数点的图像
+	double m_valmax,m_valmin;	//转灰度图的时候需要知道最大最小值
+	double co1,co0;	//最大最小值转换成深度的计算公式
+	//gray =（val - min）*（255/（max - min）） = val *255/（max - min） - min*255 /（max - min）
+	//     = val*co1+co0
+
+	CWnd *m_father;			//父亲的指针
+	CWnd *m_Grandfather;	//爷爷的指针
+	int m_viewx,m_viewy;	//显示大小
+	CAMERA	m_camera;		//视角
+	CAMERA	m_cameraOld;
+	double   m_RotX, m_RotY, m_RotZ;				//旋转
+	double   m_oldRotX, m_oldRotY, m_oldRotZ;
+	CClientDC	*m_pDC;
+	bool m_bDown;			// = true;左键是否按下
+	CPoint m_pointDown;		//左键按下的位置= point;
+	float	m_theta,m_thetaOld;		//=m_theta;
+	HCURSOR			hHandWantGrab;
+	BOOL ColorRG0;		//颜色阶梯,有2和6两种模式,若该值为真,使用RG模式
+	CStatic *m_cs;//显示条条
+	CRect papaRect;		//opengl绘制位置
+	CRect papaSRect;		//opengl绘制位置
+	GL3DPara()
+	{
+		co1 = co0  = -1;
+		m_cs = NULL;
+		ColorRG0 = FALSE;
+		m_father = NULL;
+		m_pDC = NULL;
+		m_bDown = FALSE;
+		m_theta = m_thetaOld = 0;
+		m_viewx = m_viewy = 0;
+		m_camera.vCenter.x = 0;
+		m_camera.vCenter.y = 0;
+		m_camera.vCenter.z = 0;
+
+		m_camera.vEye.x = 0;
+		m_camera.vEye.y = 0;
+		m_camera.vEye.z = 400;
+
+		m_camera.vUp.x = 0;
+		m_camera.vUp.y = 1;
+		m_camera.vUp.z = 0;
+
+		m_RotX = 0;
+		m_RotY = 0;
+		m_RotZ = 0;
+		m_oldRotX = m_oldRotY = m_oldRotZ = 0;
+		m_valmax = 2.0;
+		m_valmin = 0.0;
+	}
+	//初始化
+	void Init(CWnd *papa);
+	//使用窗体初始化控件
+	void InitGrandPa(CWnd *grandpa);
+	//释放资源
+	void Release();
+	//绘制图像
+	void DrawImage();
+	//重新设置窗口的位置
+	void Resize();
+	void ResizeBack();
+	//设置OPenGL绘制区域
+	void OnSize(int X,int Y);
+	//左键按下
+	void OnLButtonDown(UINT nFlags, CPoint point);
+	//鼠标移动
+	void OnMouseMove(UINT nFlags, CPoint point); 
+	//左键弹起
+	void OnLButtonUp(UINT nFlags, CPoint point);
+	//滚轮滚动
+	void OnMouseWheel(UINT nFlags, short zDelta, CPoint pt) ;
+	//绘制旁边显示用的表示深度的颜色条
+	void DrawBar();
+	//设置打光之类的参数
+	void LM();	
+	//绘制坐标轴
+	void DrawCoordinate();
+	//设置像素的格式
+	BOOL bSetupPixelFormat();
+	//放大缩小
+	void ZoomIn(int abs);
+	//绘制图像
+	void DrawObj();
+	//获取颜色
+	void GetColor(double r, double &red, double &green, double &blue);
+	//获取最大最小值,用来做最后的调色
+	void GetMinMax();
+	//绘制分块颜色
+	void DrawColorBlock(CDC* pDC,CRect r, COLORREF cr1, COLORREF cr2);
+	//设置Co
+	void SetCo(double co1,double co0);
+
+};
 class CImageStatic : public CStatic
 {
 public:
@@ -167,7 +293,10 @@ public:
 	void ChangeImg(CString path,BOOL bchangescale = FALSE);
 	//显示照相机里面的图片
 	void ShowImage();
-
+	//保存到文件
+	BOOL SaveToFile(CString path);
+	//初始化操作
+	void Init(CWnd *papa);
 
 	BOOL m_bNoShowBox;
 	BOOL m_bNoShowCoppeArea;
@@ -208,6 +337,20 @@ public:
 	CCriticalSection m_g_cs;//同步锁
 
 
+/************************************************************************/
+/*                           opengl 3D显示                              */
+/************************************************************************/
+	GL3DPara m_gl3D;//用来保存与gl和3D显示有关的变量
+	//传入一张Mat的图像,之所以用Mat是因为可以自动管理内存
+	void ChangeImgGL(cv::Mat img);
+	//用opengl绘制3D图像
+	void ShowImageGL();
+	//是否是3D
+	BOOL m_bGL;
+
+/************************************************************************/
+/*                           opengl 3D显示 结束                         */
+/************************************************************************/
 
 
 
@@ -232,6 +375,11 @@ public:
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+
+	void MoveDis(int movex, int movey);
+
+	BOOL CheckValue();
+
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 /************************************************************************/
 /*                          缩放平移选项结束                            */
@@ -288,6 +436,9 @@ public:
 
 
 
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+	virtual void PreSubclassWindow();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };
 
 
