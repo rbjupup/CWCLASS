@@ -58,6 +58,10 @@ CImageStatic::CImageStatic()
 	m_nIndex = 0;
 	m_move.m_show = this;
 	m_bGL = FALSE;
+	m_papa = NULL;
+	m_bCanOutImage = FALSE;
+	m_bChangeScalar = FALSE;
+	m_bCanMove = TRUE;
 #ifdef STATIC_CV
 	m_pImg = NULL;
 #endif
@@ -105,13 +109,18 @@ void CImageStatic::OnPaint()
 
 void CImageStatic::ShowImage()
 {
-
+	static int showing = FALSE;
+	if(showing)
+		return;
+	showing = TRUE;
 	int i  =0;
 #ifdef STATIC_CV
 	if(m_pImg != NULL){
-	 		CRect rect;
-	 		GetWindowRect(&rect);//获取控件相对于屏幕的位置
-	 		ScreenToClient(rect);
+		try
+		{
+			CRect rect;
+			GetWindowRect(&rect);//获取控件相对于屏幕的位置
+			ScreenToClient(rect);
 			GetClientRect(&rect);  
 			SetRect(rect,rect.left,rect.top,rect.right,rect.bottom);  
 			CDC *pDC=GetDC();
@@ -128,67 +137,123 @@ void CImageStatic::ShowImage()
 			dcMem.FillSolidRect(rect,pDC->GetBkColor());  //按原来背景填充客户区，不然会是黑色  
 
 			//绘制图像
-			CvvImage cimg;  
-			cvResetImageROI(m_pImg);
-			cvSetImageROI(m_pImg,cvRect(m_ROIrect.x,m_ROIrect.y,m_ROIrect.width,m_ROIrect.height));
-			cimg.CopyOf(m_pImg);  
-			cimg.DrawToHDC(dcMem.GetSafeHdc(),&rect);  
-			cvResetImageROI(m_pImg);
+			if(m_bCanOutImage&&(m_ROIrect.x < 0 || m_ROIrect.y < 0 ||((m_ROIrect.x + m_ROIrect.width)>m_pImg->width) ||((m_ROIrect.y + m_ROIrect.height)>m_pImg->height)))
+			{
+				//创建一张和ROI一样的图片
+				IplImage* tmpForShow = cvCreateImage(cvSize(m_ROIrect.width,m_ROIrect.height),m_pImg->depth,m_pImg->nChannels);
+				cvZero(tmpForShow);
+				//将原图的矩形转到新的坐标系
+				//求两个矩形相交部分
+				//转换回原来的坐标系
+				CvRect imgSmallRoI;
+				imgSmallRoI.x = m_ROIrect.x < 0?0:m_ROIrect.x;
+				imgSmallRoI.y = m_ROIrect.y < 0?0:m_ROIrect.y;
+				//右边减左边,如果(m_ROIrect.x + m_ROIrect.width)>m_pImg.width右边为m_pimg.width
+				imgSmallRoI.width = (((m_ROIrect.x + m_ROIrect.width)>m_pImg->width) ? m_pImg->width:(m_ROIrect.x + m_ROIrect.width))
+					- (m_ROIrect.x < 0?0:m_ROIrect.x);
+				imgSmallRoI.height = (((m_ROIrect.y + m_ROIrect.height)>m_pImg->height)?m_pImg->height:(m_ROIrect.y + m_ROIrect.height))
+					- (m_ROIrect.y < 0?0:m_ROIrect.y);
+				imgSmallRoI.width = min(tmpForShow->width,imgSmallRoI.width);
+				imgSmallRoI.height = min(tmpForShow->height,imgSmallRoI.height);
+				if(imgSmallRoI.width>0&&imgSmallRoI.height>0)
+				{
+					CvRect imgBigROI;
+					imgBigROI.x = m_ROIrect.x < 0?abs(m_ROIrect.x):0;
+					imgBigROI.y = m_ROIrect.y < 0?abs(m_ROIrect.y):0;
+					imgBigROI.width 	= imgSmallRoI.width ;
+					imgBigROI.height 	= imgSmallRoI.height;
+					CvRect tmprect = imgBigROI;
+					tmprect = imgSmallRoI;
+					tmprect = cvRect(m_ROIrect.x,m_ROIrect.y,m_ROIrect.width,m_ROIrect.height);
+					cvResetImageROI(m_pImg);
+					cvSetImageROI(tmpForShow,imgBigROI);
+					cvSetImageROI(m_pImg,imgSmallRoI);
+					cvCopy(m_pImg,tmpForShow);
+					cvResetImageROI(tmpForShow);
+				}
+				CvvImage cimg;  
+				if(tmpForShow->width>10000||tmpForShow->height>10000)
+				{
+					cvSetImageROI(tmpForShow,cvRect(0,0,min(tmpForShow->width,9999),min(tmpForShow->height,9999)));
+				}
+				cimg.CopyOf(tmpForShow);  
+				cimg.DrawToHDC(dcMem.GetSafeHdc(),&rect);  
+				if(tmpForShow != NULL)
+				{
+					cvReleaseImage(&tmpForShow);
+					tmpForShow = NULL;
+				}
+
+			}
+			else
+			{
+				if(m_ROIrect.width>0&&m_ROIrect.height>0)
+				{
+					CvvImage cimg;  
+					cvResetImageROI(m_pImg);
+					cvSetImageROI(m_pImg,cvRect(m_ROIrect.x,m_ROIrect.y,m_ROIrect.width,m_ROIrect.height));
+					cimg.CopyOf(m_pImg);  
+					cimg.DrawToHDC(dcMem.GetSafeHdc(),&rect);  
+					cvResetImageROI(m_pImg);
+				}
+			}
+
+
 			//绘制其它
 			m_nIndex = 0;
-	 		if (m_nIndex >=0 &&m_nIndex<CameraNum)
-	 		{	
-	 			for (i=0; i<m_Rects[m_nIndex].size(); i++)//绘制所有区域
-	 			{
-	 				if(m_bNoShowBox == TRUE)
-	 					break;
-	 				myRectangle(&dcMem,m_Rects[m_nIndex][i].m_Rect,m_Rects[m_nIndex][i].m_Color,m_Rects[m_nIndex][i].nWidth,m_Rects[m_nIndex][i].nPenStyle);
-	 			}
-	 			for (i=0; i<m_Lines[m_nIndex].size(); i++)//绘制所有直线
-	 			{
-	 				myLine(&dcMem,m_Lines[m_nIndex][i].Pt1,m_Lines[m_nIndex][i].Pt2,m_Lines[m_nIndex][i].m_Color,m_Lines[m_nIndex][i].nWidth,m_Lines[m_nIndex][i].nPenStyle,m_Lines[m_nIndex][i].IsShow);
-	 			}
-	 			for (i=0; i< m_Circle[m_nIndex].size(); i++)//绘制文字
-	 			{	
-	 				myCircle(&dcMem,
-	 					m_Circle[m_nIndex][i].m_CircleCX,
-	 					m_Circle[m_nIndex][i].m_CircleCY,
-	 					m_Circle[m_nIndex][i].m_CircleR,
-	 					m_Circle[m_nIndex][i].m_Color,
-	 					m_Circle[m_nIndex][i].nWidth,
-	 					m_Circle[m_nIndex][i].nPenStyle);
-	 
-	 			}
-	 			for (i=0; i< DetRects[m_nIndex].size(); i++)//绘制所有检测区域
-	 			{
-	 				if((m_bNoShowCoppeArea == TRUE) || (m_bNoShowSheetArea == TRUE))
-	 					continue;
-	 				myRectangle(&dcMem,DetRects[m_nIndex][i].m_Rect,DetRects[m_nIndex][i].m_Color,DetRects[m_nIndex][i].nWidth,DetRects[m_nIndex][i].nPenStyle);
-	 			}
-	 			for (i=0; i< m_String[m_nIndex].size(); i++)//绘制文字
-	 			{	
-	 				Fun(&dcMem,
-	 					m_String[m_nIndex][i].Pt.x,
-	 					m_String[m_nIndex][i].Pt.y,
-	 					m_String[m_nIndex][i].strText,
-	 					m_String[m_nIndex][i].crColor,
-	 					m_String[m_nIndex][i].lfHeight,
-	 					m_String[m_nIndex][i].strFont,
-	 					m_String[m_nIndex][i].nAngle,
-	 					m_String[m_nIndex][i].nRadius);
-	 			}
-	 			for (i=0; i< m_AngleArc[m_nIndex].size(); i++)//圆弧
-	 			{	
-	 
-	 				myAngleArc(&dcMem,
-	 					m_AngleArc[m_nIndex][i].Pt1,
-	 					m_AngleArc[m_nIndex][i].Pt2,
-	 					m_AngleArc[m_nIndex][i].Pt3,
-	 					m_AngleArc[m_nIndex][i].m_Color,
-	 					m_AngleArc[m_nIndex][i].nWidth,
-	 					m_AngleArc[m_nIndex][i].nPenStyle);
-	 
-	 			}
+			if (m_nIndex >=0 &&m_nIndex<CameraNum)
+			{	
+				for (i=0; i<m_Rects[m_nIndex].size(); i++)//绘制所有区域
+				{
+					if(m_bNoShowBox == TRUE)
+						break;
+					myRectangle(&dcMem,m_Rects[m_nIndex][i].m_Rect,m_Rects[m_nIndex][i].m_Color,m_Rects[m_nIndex][i].nWidth,m_Rects[m_nIndex][i].nPenStyle);
+				}
+				for (i=0; i<m_Lines[m_nIndex].size(); i++)//绘制所有直线
+				{
+					myLine(&dcMem,m_Lines[m_nIndex][i].Pt1,m_Lines[m_nIndex][i].Pt2,m_Lines[m_nIndex][i].m_Color,m_Lines[m_nIndex][i].nWidth,m_Lines[m_nIndex][i].nPenStyle,m_Lines[m_nIndex][i].IsShow);
+				}
+				for (i=0; i< m_Circle[m_nIndex].size(); i++)//绘制文字
+				{	
+					myCircle(&dcMem,
+						m_Circle[m_nIndex][i].m_CircleCX,
+						m_Circle[m_nIndex][i].m_CircleCY,
+						m_Circle[m_nIndex][i].m_CircleR,
+						m_Circle[m_nIndex][i].m_Color,
+						m_Circle[m_nIndex][i].nWidth,
+						m_Circle[m_nIndex][i].nPenStyle);
+
+				}
+				for (i=0; i< DetRects[m_nIndex].size(); i++)//绘制所有检测区域
+				{
+					if((m_bNoShowCoppeArea == TRUE) || (m_bNoShowSheetArea == TRUE))
+						continue;
+					myRectangle(&dcMem,DetRects[m_nIndex][i].m_Rect,DetRects[m_nIndex][i].m_Color,DetRects[m_nIndex][i].nWidth,DetRects[m_nIndex][i].nPenStyle);
+				}
+				for (i=0; i< m_String[m_nIndex].size(); i++)//绘制文字
+				{	
+					Fun(&dcMem,
+						m_String[m_nIndex][i].Pt.x,
+						m_String[m_nIndex][i].Pt.y,
+						m_String[m_nIndex][i].strText,
+						m_String[m_nIndex][i].crColor,
+						m_String[m_nIndex][i].lfHeight,
+						m_String[m_nIndex][i].strFont,
+						m_String[m_nIndex][i].nAngle,
+						m_String[m_nIndex][i].nRadius);
+				}
+				for (i=0; i< m_AngleArc[m_nIndex].size(); i++)//圆弧
+				{	
+
+					myAngleArc(&dcMem,
+						m_AngleArc[m_nIndex][i].Pt1,
+						m_AngleArc[m_nIndex][i].Pt2,
+						m_AngleArc[m_nIndex][i].Pt3,
+						m_AngleArc[m_nIndex][i].m_Color,
+						m_AngleArc[m_nIndex][i].nWidth,
+						m_AngleArc[m_nIndex][i].nPenStyle);
+
+				}
 			}// end of if (m_nIndex >=0 &&m_nIndex<CameraNum)
 
 			//双缓冲绘图结束,释放资源
@@ -197,7 +262,26 @@ void CImageStatic::ShowImage()
 			dcMem.DeleteDC(); //删除DC  
 			bmp.DeleteObject(); //删除位图  
 			ReleaseDC(pDC); 
+		}
+		catch(cv::Exception e)
+		{
+			AfxMessageBox(e.msg.c_str());
+		}
 		}//end of if(m_pImg != NULL)
+	else
+	{
+		CRect rect;
+		GetWindowRect(&rect);//获取控件相对于屏幕的位置
+		ScreenToClient(rect);
+		GetClientRect(&rect);  
+		CClientDC dc(this);  
+		CBrush brush1(RGB(0,0,0));
+		CBrush* pOldBrush=dc.SelectObject(&brush1);       
+		dc.Rectangle(0,0,rect.Width(),rect.Height());  
+		dc.SelectObject(pOldBrush);  
+	}
+	showing = FALSE;
+	Sleep(100);
 #endif
 }
 void CImageStatic::GetMyHdc()
@@ -810,22 +894,54 @@ void CImageStatic::ChangeImg(IplImage* img,BOOL bchangescale)
 	CRect rect;
 	GetClientRect(&rect);
 	ImageScale2 = 1;
+	m_bChangeScalar = bchangescale;
 	if(bchangescale == FALSE){
-		int roiwidth = min(m_pImg->width,m_pImg->height);
-		scalx = (double)rect.Width()/(double)roiwidth;//m_pImg->width;
-		scaly = (double)rect.Height()/(double)roiwidth;//m_pImg->height;
-		m_ROIrect = CDRect(0,0,roiwidth,roiwidth*scaly/scalx);
+		m_bCanOutImage = TRUE;
+		BOOL widths = TRUE;
+		for (int i = 0; i < 2;i++)
+		{
+			if(widths)
+			{
+				int roiwidth = m_pImg->width;
+				scaly = scalx = (double)rect.Width()/(double)roiwidth;//m_pImg->width;
+				m_ROIrect = CDRect(0,0,roiwidth,rect.Height()/scaly);
+			}
+			else
+			{
+				int roiwidth = m_pImg->height;
+				scaly = scalx = (double)rect.Height()/(double)roiwidth;//m_pImg->width;
+				m_ROIrect = CDRect(0,0,rect.Width()/scalx,roiwidth);
+			}
+			if(m_ROIrect.width > m_pImg->width||m_ROIrect.height > m_pImg->height)
+			{
+				widths = FALSE;
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+	else if(bchangescale == 2)
+	{
+		m_bCanOutImage = TRUE;
+		scalx = 1.0;
+		scaly = 1.0;
+		m_ROIrect = CDRect(0,0,rect.Width(),rect.Height());
 	}
 	else
 	{
 		m_ROIrect = CDRect(0,0,m_pImg->width,m_pImg->height);
 		scalx = (double)rect.Width()/m_pImg->width;
 		scaly = (double)rect.Height()/m_pImg->height;
+		m_bCanMove = FALSE;
 	}
 	ClearDraw();
 	//m_ROIrect = CDRect(0,0,m_pImg->width,m_pImg->height);
+	if(m_bGL)
+		m_gl3D.ResizeBack();
 	m_bGL = FALSE;
-	m_gl3D.ResizeBack();
+
 	ShowImage();
 }
 
@@ -917,8 +1033,8 @@ BOOL CImageStatic::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 		return FALSE;
 	tmpscale = ImageScale2*100.0 + abs1*sqrt(ImageScale2*100.0);
 	tmpscale /= 100.0;
-	if(tmpscale < 1)
-		return FALSE;
+// 	if(tmpscale < 1)
+// 		return FALSE;
 
 	//计算新的ROI,前半部分表示放大缩小带来的宽度变化带来的图像像素变化
 
@@ -930,6 +1046,7 @@ BOOL CImageStatic::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	//控件宽高表示的实际长度
 	BOOL bmovex = FALSE;
 	BOOL bmovey = TRUE;
+	BOOL bValid = FALSE;
 	if(movex + width <= m_pImg->width){//图像与右边界比较
 		if (movey + height<=m_pImg->height)
 		{
@@ -937,16 +1054,11 @@ BOOL CImageStatic::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 			{
 				if (movey >= 0)
 				{
-					m_ROIrect.x = movex;
-					m_ROIrect.y = movey;
-					m_ROIrect.width = width;
-					m_ROIrect.height = height;
-					ImageScale2 = tmpscale;
-					ShowImage();
+					bValid = TRUE;
 				}
 				else
 				{
-					bmovey = TRUE;;
+					bmovey = TRUE;
 				}
 			}
 			else
@@ -963,7 +1075,23 @@ BOOL CImageStatic::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	{
 		bmovex = TRUE;
 	}
-	if(bmovex||bmovey)
+	if(m_bCanOutImage||bValid)
+	{
+		if(width > 0&&height>0&&width < 9999&&height<9999)
+		{
+			m_ROIrect.x = movex;
+			m_ROIrect.y = movey;
+			m_ROIrect.width = width;
+			m_ROIrect.height = height;
+			ImageScale2 = tmpscale;
+			ShowImage();
+		}
+		else
+		{
+			int a = 0;
+		}
+	}
+	if(m_bChangeScalar&&(bmovex||bmovey))
 	{
 		//首先新的宽高要比原始的小
 		if(width > m_pImg->width||height > m_pImg->height)
@@ -1204,8 +1332,9 @@ void CImageStatic::ChangeImgGL(cv::Mat img)
 		return;
 	}
 	m_gl3D.GetMinMax();
+	if(!m_bGL)
+		m_gl3D.Resize();
 	m_bGL = TRUE;
-	m_gl3D.Resize();
 	ClearDraw();
 	ShowImageGL();
 }
@@ -1641,22 +1770,11 @@ void TestDrawCube()
 }
 void GL3DPara::GetColor(double r, double &red, double &green, double &blue)
 {
-	int maxRadius = 0;
-	int minRadius = 0;
+	double maxRadius = 0;
+	double minRadius = 0;
 
-	if(co1 == -1||co0 == -1)
-	{
-		if(co1 != 0)
-		{
-			maxRadius = (m_valmax-co0)/co1;
-			minRadius = (m_valmin-co0)/co1;
-		}
-	}
-	if(maxRadius == 0&&minRadius == 0)
-	{
-		maxRadius= m_valmax;
-		minRadius= m_valmin;
-	}
+	maxRadius= m_valmax;
+	minRadius= m_valmin;
 	double ave = (maxRadius - minRadius)/6;
 	double ratio = (r - minRadius)/ave;
 	int flat = int(ratio);
@@ -1822,6 +1940,7 @@ void GL3DPara::DrawBar()
 	papaRect = CWGetWndRect(m_father);
 	double height = papaRect.Height() *0.85/6.0; //PicRect.Height() / 6.0;
 	double width = height*0.1;
+	double rulerwidth = 12.0 * width;
 	CPoint pt;
 	pt.x = papaRect.Width() - 8.0*width;
 	pt.y = papaRect.Height() *0.07;
@@ -1845,7 +1964,7 @@ void GL3DPara::DrawBar()
 		m_Grandfather->ScreenToClient(papainGrandFather);
 		ltpt.x = papaRect.Width() + papainGrandFather.left;
 		ltpt.y = papainGrandFather.top;
-		rbpt.x = ltpt.x + 9.0*width;
+		rbpt.x = ltpt.x + rulerwidth;
 		rbpt.y = ltpt.y + papaRect.Height();
 
 		rect.SetRect(ltpt, rbpt);			//初始化双缓冲绘图
@@ -1855,7 +1974,7 @@ void GL3DPara::DrawBar()
 		dcMem->SelectObject(&bmp); //将位图选择进内存DC  
 		dcMem->FillSolidRect(CRect(0,0,rect.Width(),rect.Height()),RGB(255,255,255));  //按原来背景填充客户区，不然会是黑色  
 		m_father->ReleaseDC(tmpfatherdc);
-		pt.x = width;
+		pt.x = 0;
 		pt.y = papaRect.Height() *0.07;
 	}
 	else
@@ -1903,9 +2022,22 @@ void GL3DPara::DrawBar()
 
 
 	//以下画半径值
-	double R_max = m_valmax;
-	double R_min = m_valmin;
-	CRect TextRect = CRect(pt.x + 2.0*width,pt.y,pt.x + width*6.0,papaRect.Height());
+	double R_max = 0;
+	double R_min = 0;
+	if(co1 != -1&&co0 != -1)
+	{
+		if(co1 != 0)
+		{
+			R_max = (m_valmax-co0)/co1;
+			R_min = (m_valmin-co0)/co1;
+		}
+	}
+	if(R_max == 0&&R_min == 0)
+	{
+		R_max = m_valmax;
+		R_min = m_valmin;
+	}
+	CRect TextRect = CRect(pt.x + 2.0*width,pt.y,pt.x + rulerwidth,papaRect.Height());
 	CStatic* TextStaic = NULL;
 	dcMem->SetBkMode( TRANSPARENT );
 	dcMem->SetTextColor( RGB(0, 0, 0) );
@@ -2004,12 +2136,13 @@ void GL3DPara::Resize()
 	CRect papainGrandFather,rect;
 	double height = papaRect1.Height() *0.85/6.0; //PicRect.Height() / 6.0;
 	double width = height*0.1;
+	int rulerwidth = 12.0*width;
 	m_father->GetWindowRect(&papainGrandFather);//获取控件相对于屏幕的位置
 	m_Grandfather->ScreenToClient(papainGrandFather);
-	m_father->MoveWindow(CRect(papainGrandFather.left,papainGrandFather.top,papainGrandFather.right - 9.0*width,papainGrandFather.bottom));
-	ltpt.x = papaRect1.Width() + papainGrandFather.left - 9.0*width;
+	m_father->MoveWindow(CRect(papainGrandFather.left,papainGrandFather.top,papainGrandFather.right - rulerwidth,papainGrandFather.bottom));
+	ltpt.x = papaRect1.Width() + papainGrandFather.left - rulerwidth;
 	ltpt.y = papainGrandFather.top;
-	rbpt.x = ltpt.x + 9.0*width;
+	rbpt.x = ltpt.x + rulerwidth;
 	rbpt.y = ltpt.y + papaRect1.Height();
 
 	rect.SetRect(ltpt, rbpt);			//初始化双缓冲绘图
@@ -2028,9 +2161,10 @@ void GL3DPara::ResizeBack()
 	CRect papainGrandFather,rect;
 	double height = papaRect1.Height() *0.85/6.0; //PicRect.Height() / 6.0;
 	double width = height*0.1;
+	int rulerwidth = 12.0*width;
 	m_father->GetWindowRect(&papainGrandFather);//获取控件相对于屏幕的位置
 	m_Grandfather->ScreenToClient(papainGrandFather);
-	m_father->MoveWindow(CRect(papainGrandFather.left,papainGrandFather.top,papainGrandFather.right + 9.0*width,papainGrandFather.bottom));
+	m_father->MoveWindow(CRect(papainGrandFather.left,papainGrandFather.top,papainGrandFather.right + rulerwidth,papainGrandFather.bottom));
 // 	ltpt.x = papaRect1.Width() + papainGrandFather.left - 9.0*width;
 // 	ltpt.y = papainGrandFather.top;
 // 	rbpt.x = ltpt.x + 9.0*width;
@@ -2074,7 +2208,7 @@ void CImageStatic::OnTimer(UINT_PTR nIDEvent)
 
 BOOL CImageStatic::CheckValue()
 {
-	if(m_pImg == NULL&&m_bGL == FALSE)
+	if(m_pImg == NULL&&m_bGL == FALSE&&m_bCanMove == TRUE)
 		return FALSE;
 }
 
@@ -2088,6 +2222,7 @@ void CImageStatic::MoveDis(int movex, int movey)
 		double width = Width()/scalx / ImageScale2;
 		double height = Height()/scaly / ImageScale2;
 		//控件宽高表示的实际长度
+		BOOL bValid = FALSE;
 		if(dmovex + width <= m_pImg->width){//图像与右边界比较
 			if (dmovey + height<=m_pImg->height)
 			{
@@ -2095,13 +2230,24 @@ void CImageStatic::MoveDis(int movex, int movey)
 				{
 					if (dmovey >= 0)
 					{
-						m_ROIrect.x = dmovex;
-						m_ROIrect.y = dmovey;
-						m_ROIrect.width = width;
-						m_ROIrect.height = height;
-						ShowImage();
+						bValid = TRUE;
 					}
 				}
+			}
+		}
+		if(m_bCanOutImage||bValid)
+		{
+			if(width > 0&&height>0&&width < 9999&&height<9999)
+			{
+			m_ROIrect.x = dmovex;
+			m_ROIrect.y = dmovey;
+			m_ROIrect.width = width;
+			m_ROIrect.height = height;
+			ShowImage();
+			}
+			else
+			{
+				int a = 0;
 			}
 		}
 	}
@@ -2135,6 +2281,7 @@ BOOL CImageStatic::SaveToFile(CString path)
 
 void CImageStatic::Init(CWnd* papa)
 {
+	m_papa = papa;
 	m_move.MyInit(papa);
 	m_gl3D.Init(this);
 	m_gl3D.InitGrandPa(papa);

@@ -1099,16 +1099,20 @@ BOOL CWPowerCV::GetContour(IplImage* pBinary,double dAreaThre,vector<CvRect> &bo
 	{     
 		// 查找所有轮廓     
 		pStorage = cvCreateMemStorage(0);     
-		cvFindContours(pBinary, pStorage, &pContour, sizeof(CvContour), CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);     
-		// 填充所有轮廓     
-		if (showTestPic)
-			cvDrawContours(ptest, pContour, CV_RGB(255, 255, 255), CV_RGB(255, 255, 255), 2, CV_FILLED, 8, cvPoint(0, 0));    
+		cvFindContours(pBinary, pStorage, &pContour, sizeof(CvContour), CV_RETR_CCOMP, CV_CHAIN_CODE);     
+		// 填充所有轮廓         
 		// 外轮廓循环     
 		int wai = 0;    
 		int nei = 0;    
 		for (; pContour != NULL; pContour = pContour->h_next)     
 		{     
 			wai++;    
+			if (showTestPic)
+			{
+				cvSeqInsert(pContour,pContour->total,cvGetSeqElem(pContour, 0));
+				cvDrawContours(ptest, pContour, CV_RGB(255, 255, 255), CV_RGB(255, 255, 255), 0, CV_FILLED, 8, cvPoint(0, 0));
+			}
+				
 			// 			// 内轮廓循环     
 			// 			for (pConInner = pContour->v_next; pConInner != NULL; pConInner = pConInner->h_next)     
 			// 			{     
@@ -1123,8 +1127,8 @@ BOOL CWPowerCV::GetContour(IplImage* pBinary,double dAreaThre,vector<CvRect> &bo
 
 			CvRect rect = cvBoundingRect(pContour,0);
 			boundrect.push_back(rect);
-			if (showTestPic)
-				cvRectangle(ptest, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(255,255, 255), 1, 8, 0);  
+			//if (showTestPic)
+			//	cvRectangle(ptest, cvPoint(rect.x, rect.y), cvPoint(rect.x + rect.width, rect.y + rect.height),CV_RGB(255,255, 255), 1, 8, 0);  
 		}       
 		cvReleaseMemStorage(&pStorage);     
 		pStorage = NULL;     
@@ -1186,7 +1190,7 @@ BOOL CWPowerCV::GetContour(IplImage* pBinary, double dAreaThre)
 	CvSeq *pContour = NULL;     
 	CvSeq *pConInner = NULL;     
 	CvMemStorage *pStorage = NULL;  
-	BOOL showTestPic = FALSE;
+	BOOL showTestPic = TRUE;
 	IplImage* ptest = NULL;
 	if (showTestPic)
 	{
@@ -1198,10 +1202,7 @@ BOOL CWPowerCV::GetContour(IplImage* pBinary, double dAreaThre)
 	{     
 		// 查找所有轮廓     
 		pStorage = cvCreateMemStorage(0);     
-		cvFindContours(pBinary, pStorage, &pContour, sizeof(CvContour), CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);     
-		// 填充所有轮廓     
-		if (showTestPic)
-			cvDrawContours(ptest, pContour, CV_RGB(255, 255, 255), CV_RGB(255, 255, 255), 2, CV_FILLED, 8, cvPoint(0, 0));    
+		cvFindContours(pBinary, pStorage, &pContour, sizeof(CvContour), CV_RETR_CCOMP, CV_CHAIN_CODE);        
 		// 外轮廓循环     
 		int wai = 0;    
 		int nei = 0;    
@@ -1216,6 +1217,11 @@ BOOL CWPowerCV::GetContour(IplImage* pBinary, double dAreaThre)
 // 				dConArea = fabs(cvContourArea(pConInner, CV_WHOLE_SEQ)); 
 // 			}    
 
+			if (showTestPic)
+			{
+				cvSeqInsert(pContour,pContour->total,cvGetSeqElem(pContour, 0));
+				cvDrawContours(ptest, pContour, CV_RGB(255, 255, 255), CV_RGB(255, 255, 255), 0, CV_FILLED, 8, cvPoint(0, 0));
+			}
 			dConArea = fabs(cvContourArea(pContour, CV_WHOLE_SEQ)); 
 			if(dConArea < dAreaThre)
 				continue;
@@ -1607,7 +1613,7 @@ BOOL CWPowerCV::test_cwcv()
 		//assert(test_cwcvBack());
 		//assert(test_match());
 		//assert(test_Contour());
-		assert(test_cvline());
+		//assert(test_cvline());
 		//assert(test_matchContour());
 	}
 	catch (CMemoryException* e)
@@ -1647,7 +1653,7 @@ BOOL CWPowerCV::test_Contour()
 	BOOL res = TRUE;
 	try
 	{
-		IplImage* psrc = cvLoadImage("F:\\TMP\\Height0.bmp",0);
+		IplImage* psrc = cvLoadImage("D:\\gko1.bmp",0);
 		res = GetContour(psrc,2.0);
 
 	}

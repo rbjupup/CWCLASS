@@ -189,6 +189,15 @@
     <ClInclude Include="CLASS\MFCCTRL\VectorOperator.h">
       <Filter>CLASS\MFCCTRL\tab</Filter>
     </ClInclude>
+    <ClInclude Include="DlgImageProcess.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgTabImgChild1.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Dlgshuzhi.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CLASSTEST.cpp">
@@ -289,6 +298,15 @@
     </ClCompile>
     <ClCompile Include="CLASS\MFCCTRL\VectorOperator.cpp">
       <Filter>CLASS\MFCCTRL\tab</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgImageProcess.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgTabImgChild1.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Dlgshuzhi.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

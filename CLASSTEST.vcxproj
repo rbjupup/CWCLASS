@@ -232,6 +232,9 @@
     <ClInclude Include="CLASSTESTDlg.h" />
     <ClInclude Include="Def.h" />
     <ClInclude Include="DlgDouYin.h" />
+    <ClInclude Include="DlgImageProcess.h" />
+    <ClInclude Include="Dlgshuzhi.h" />
+    <ClInclude Include="DlgTabImgChild1.h" />
     <ClInclude Include="ResDlg.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -275,6 +278,9 @@
     <ClCompile Include="CLASSTESTDlg.cpp" />
     <ClCompile Include="CLASS\RTREE\BigData.cpp" />
     <ClCompile Include="DlgDouYin.cpp" />
+    <ClCompile Include="DlgImageProcess.cpp" />
+    <ClCompile Include="Dlgshuzhi.cpp" />
+    <ClCompile Include="DlgTabImgChild1.cpp" />
     <ClCompile Include="ResDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

@@ -89,6 +89,7 @@ BEGIN_MESSAGE_MAP(CCLASSTESTDlg, CDialog)
 	ON_BN_CLICKED(IDC_BUTTOND, &CCLASSTESTDlg::OnBnClickedButtond)
 	ON_BN_CLICKED(IDC_BUTTON_INPUT2, &CCLASSTESTDlg::OnBnClickedButtonInput2)
 	ON_BN_CLICKED(IDC_BUTTON_INPUT3, &CCLASSTESTDlg::OnBnClickedButtonInput3)
+	ON_BN_CLICKED(IDC_BUTTON_VISION, &CCLASSTESTDlg::OnBnClickedButtonVision)
 END_MESSAGE_MAP()
 
 
@@ -610,4 +611,12 @@ void CCLASSTESTDlg::OnBnClickedButtonInput3()
 	m_ListInput.SetItemText(ncount,1,dirPath);
 	m_strInput = CString("");
 	UpdateData(FALSE);
+}
+
+
+void CCLASSTESTDlg::OnBnClickedButtonVision()
+{
+	//打开对话框,并让其最大化
+	CDlgImageProcess dlg;
+	dlg.DoModal();
 }

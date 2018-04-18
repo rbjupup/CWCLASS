@@ -49,7 +49,7 @@ public:
 	double y;
 	double width;
 	double height;
-	CDRect(int x1,int y1,int width1,int height1){
+	CDRect(double x1,double y1,double width1,double height1){
 		x = x1;
 		y = y1;
 		width = width1;

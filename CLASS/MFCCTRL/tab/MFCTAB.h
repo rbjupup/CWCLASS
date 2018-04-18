@@ -24,11 +24,11 @@ protected:
 public:
 	afx_msg void OnBnClickedButton1();
 	afx_msg void OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult);
-	void ControlDialogShow(int List);
 	virtual BOOL OnInitDialog();
 	CWAONE* m_pwaOne;
 	CWATWO* m_pwaTwo;
 	CW* m_pwBOne;
 	int showtype;
 	CTabCtrl m_TabSwitch;
+	void ControlDialogShow(int List);
 };

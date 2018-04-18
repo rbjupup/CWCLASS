@@ -6,7 +6,7 @@
 #include "BOSSCLASS.h"
 #include "afxwin.h"
 #include "afxcmn.h"
-
+#include "DlgImageProcess.h"
 // CCLASSTESTDlg ¶Ô»°¿ò
 #ifdef BCG
 #define CDialog CBCGPDialog
@@ -70,4 +70,5 @@ public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	afx_msg void OnBnClickedButtonInput2();
 	afx_msg void OnBnClickedButtonInput3();
+	afx_msg void OnBnClickedButtonVision();
 };
